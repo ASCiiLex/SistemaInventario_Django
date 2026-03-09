@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Categoría</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-success">Guardar</button>
+    <a href="/categorias/" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

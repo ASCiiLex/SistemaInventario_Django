@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Proveedores</h2>
+
+<a href="/proveedores/crear/" class="btn btn-success mb-3">Nuevo Proveedor</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Contacto</th>
+            <th>Email</th>
+            <th>Teléfono</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in suppliers %}
+        <tr>
+            <td>{{ s.name }}</td>
+            <td>{{ s.contact_name }}</td>
+            <td>{{ s.email }}</td>
+            <td>{{ s.phone }}</td>
+            <td>
+                <a href="/proveedores/editar/{{ s.id }}/" class="btn btn-sm btn-primary">Editar</a>
+                <a href="/proveedores/eliminar/{{ s.id }}/" class="btn btn-sm btn-danger">Eliminar</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No hay proveedores.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

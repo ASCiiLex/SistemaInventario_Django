@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{{ product.name }}</h2>
+
+<div class="card p-3 mb-3">
+    <p><strong>SKU:</strong> {{ product.sku }}</p>
+    <p><strong>Categoría:</strong> {{ product.category }}</p>
+    <p><strong>Proveedor:</strong> {{ product.supplier }}</p>
+    <p><strong>Stock:</strong> {{ product.stock }}</p>
+    <p><strong>Mínimo:</strong> {{ product.min_stock }}</p>
+
+    {% if product.image %}
+        <img src="{{ product.image.url }}" class="img-fluid rounded mt-3">
+    {% endif %}
+</div>
+
+<a href="/productos/" class="btn btn-secondary">Volver</a>
+{% endblock %}
