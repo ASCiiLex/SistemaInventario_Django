@@ -22,6 +22,9 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
 
+    # Página principal → Dashboard
+    path('', include('dashboard.urls')),
+
     # Inventario
     path('categorias/', include('categories.urls')),
     path('proveedores/', include('suppliers.urls')),

@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4">Dashboard del Inventario</h2>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-bg-primary mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Productos</h5>
+                <p class="card-text fs-3">{{ total_products }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-bg-success mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Stock Total</h5>
+                <p class="card-text fs-3">{{ total_stock }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-bg-warning mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Proveedores</h5>
+                <p class="card-text fs-3">{{ total_suppliers }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-bg-danger mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Bajo Mínimo</h5>
+                <p class="card-text fs-3">{{ low_stock.count }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr>
+
+<h3>Productos Bajo Mínimo</h3>
+<table class="table table-striped mb-4">
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Stock</th>
+            <th>Mínimo</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in low_stock %}
+        <tr>
+            <td>{{ p.name }}</td>
+            <td>{{ p.stock }}</td>
+            <td>{{ p.min_stock }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3">No hay productos bajo mínimo.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<hr>
+
+<h3>Movimientos Recientes</h3>
+<table class="table table-striped mb-4">
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Tipo</th>
+            <th>Cantidad</th>
+            <th>Fecha</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in recent_movements %}
+        <tr>
+            <td>{{ m.product }}</td>
+            <td>{{ m.get_movement_type_display }}</td>
+            <td>{{ m.quantity }}</td>
+            <td>{{ m.created_at }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">No hay movimientos recientes.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<hr>
+
+<h3>Stock por Categoría</h3>
+<canvas id="stockChart"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('stockChart');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [{
+            label: 'Stock total',
+            data: {{ chart_values|safe }},
+            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+        }]
+    }
+});
+</script>
+
+{% endblock %}
