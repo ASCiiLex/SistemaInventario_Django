@@ -22,10 +22,10 @@
             <a href="/movimientos/" class="btn btn-outline-light me-3">Movimientos</a>
 
             <div id="notifications-bell"
-                 hx-get="{% url 'notifications_counter' %}"
-                 hx-trigger="load, every 5s, movement-created from:body"
-                 hx-target="this"
-                 hx-swap="outerHTML">
+                hx-get="{% url 'notifications_counter' %}"
+                hx-trigger="load, every 5s, movement-created from:body, notifications-updated from:body"
+                hx-target="this"
+                hx-swap="outerHTML">
                 {% include 'notifications/partials/bell.html' with unread=notifications_unread %}
             </div>
 

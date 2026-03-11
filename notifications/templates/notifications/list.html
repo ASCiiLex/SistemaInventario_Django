@@ -3,6 +3,49 @@
 {% block content %}
 <h2 class="mb-3">Notificaciones</h2>
 
+<form
+    method="GET"
+    class="row g-2 mb-3"
+    hx-get="{% url 'notifications_list' %}"
+    hx-target="#notifications-table"
+    hx-swap="outerHTML"
+    hx-push-url="true">
+
+    <div class="col-md-3">
+        <select name="status" class="form-control">
+            <option value="">Todas</option>
+            <option value="new" {% if status == "new" %}selected{% endif %}>Solo nuevas</option>
+            <option value="read" {% if status == "read" %}selected{% endif %}>Solo leídas</option>
+        </select>
+    </div>
+
+    <div class="col-md-4">
+        <select name="product" class="form-control">
+            <option value="">Todos los productos</option>
+            {% for pid, pname in products %}
+                <option value="{{ pid }}" {% if product_id|default:'' == pid|stringformat:'s' %}selected{% endif %}>
+                    {{ pname }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-2 d-grid">
+        <button class="btn btn-primary">Filtrar</button>
+    </div>
+
+    <div class="col-md-3 d-grid">
+        <button
+            type="button"
+            class="btn btn-outline-secondary"
+            hx-get="{% url 'notifications_list' %}"
+            hx-target="#notifications-table"
+            hx-swap="outerHTML">
+            Limpiar filtros
+        </button>
+    </div>
+</form>
+
 <button
     class="btn btn-primary mb-3"
     hx-post="{% url 'notifications_mark_all_read' %}"

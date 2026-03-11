@@ -3,9 +3,41 @@ from django.http import HttpResponse
 from .models import Notification
 
 
+def _get_filtered_notifications(request):
+    status = request.GET.get("status", "")
+    product_id = request.GET.get("product", "")
+
+    notifications = Notification.objects.select_related("product").order_by("-created_at")
+
+    if status == "new":
+        notifications = notifications.filter(seen=False)
+    elif status == "read":
+        notifications = notifications.filter(seen=True)
+
+    if product_id:
+        notifications = notifications.filter(product_id=product_id)
+
+    return notifications, {
+        "status": status,
+        "product_id": product_id,
+    }
+
+
 def notifications_list(request):
-    notifications = Notification.objects.order_by("-created_at")
-    context = {"notifications": notifications}
+    notifications, filters_ctx = _get_filtered_notifications(request)
+
+    # Para el filtro por producto en el template
+    products = (
+        Notification.objects.exclude(product__isnull=True)
+        .values_list("product_id", "product__name")
+        .distinct()
+    )
+
+    context = {
+        "notifications": notifications,
+        "products": products,
+        **filters_ctx,
+    }
 
     if request.headers.get("HX-Request"):
         return render(request, "notifications/partials/notifications_table.html", context)
@@ -17,8 +49,17 @@ def notifications_mark_all_read(request):
     Notification.objects.filter(seen=False).update(seen=True)
 
     if request.headers.get("HX-Request"):
-        notifications = Notification.objects.order_by("-created_at")
-        context = {"notifications": notifications}
+        notifications, filters_ctx = _get_filtered_notifications(request)
+        products = (
+            Notification.objects.exclude(product__isnull=True)
+            .values_list("product_id", "product__name")
+            .distinct()
+        )
+        context = {
+            "notifications": notifications,
+            "products": products,
+            **filters_ctx,
+        }
         response = render(request, "notifications/partials/notifications_table.html", context)
         response["HX-Trigger"] = "notifications-updated"
         return response
@@ -32,8 +73,17 @@ def notification_mark_read(request, pk):
     notification.save()
 
     if request.headers.get("HX-Request"):
-        notifications = Notification.objects.order_by("-created_at")
-        context = {"notifications": notifications}
+        notifications, filters_ctx = _get_filtered_notifications(request)
+        products = (
+            Notification.objects.exclude(product__isnull=True)
+            .values_list("product_id", "product__name")
+            .distinct()
+        )
+        context = {
+            "notifications": notifications,
+            "products": products,
+            **filters_ctx,
+        }
         response = render(request, "notifications/partials/notifications_table.html", context)
         response["HX-Trigger"] = "notifications-updated"
         return response
