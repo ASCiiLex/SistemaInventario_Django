@@ -1,21 +1,23 @@
-<h3>Stock por Categoría</h3>
+<div x-data x-transition>
+    <h3>Stock por Categoría</h3>
 
-<canvas id="stockChart"></canvas>
+    <canvas id="stockChart"></canvas>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script>
-const ctx = document.getElementById('stockChart');
+    <script>
+    const ctx = document.getElementById('stockChart');
 
-new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: {{ chart_labels|safe }},
-        datasets: [{
-            label: 'Stock total',
-            data: {{ chart_values|safe }},
-            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-        }]
-    }
-});
-</script>
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Stock total',
+                data: {{ chart_values|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+            }]
+        }
+    });
+    </script>
+</div>

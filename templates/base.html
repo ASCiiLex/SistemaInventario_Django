@@ -3,12 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <title>Sistema de Inventario</title>
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 
+    <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        .fade-enter {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        .fade-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all .25s ease-out;
+        }
+        .fade-leave {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .fade-leave-active {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all .25s ease-in;
+        }
+    </style>
 </head>
 
-<body class="bg-light">
+<body class="bg-light" x-data>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container">
@@ -33,22 +59,22 @@
     </div>
 </nav>
 
-<div class="container">
+<div class="container" x-transition>
     {% block content %}
     {% endblock %}
 </div>
 
 <!-- Modal global -->
-<div class="modal fade" id="mainModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="mainModal" tabindex="-1" aria-hidden="true" x-data>
   <div class="modal-dialog">
-    <div class="modal-content" id="mainModalContent">
+    <div class="modal-content" id="mainModalContent" x-transition>
     </div>
   </div>
 </div>
 
 <!-- Contenedor de toasts -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080;">
-    <div id="toast-container"></div>
+    <div id="toast-container" x-data></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -72,31 +98,41 @@ document.body.addEventListener('movement-created', function (event) {
     if (instance) {
         instance.hide();
     }
-    showToast(event.detail && event.detail.message ? event.detail.message : 'Movimiento creado correctamente');
+    showToast(event.detail?.message || 'Movimiento creado correctamente');
 });
 
 document.body.addEventListener('notifications-updated', function (event) {
-    showToast(event.detail && event.detail.message ? event.detail.message : 'Notificaciones actualizadas');
+    showToast(event.detail?.message || 'Notificaciones actualizadas');
 });
 
 function showToast(message) {
     const container = document.getElementById('toast-container');
     const wrapper = document.createElement('div');
+
     wrapper.innerHTML = `
-        <div class="toast align-items-center text-bg-dark border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+        <div x-data="{show: true}"
+             x-show="show"
+             x-transition:enter="fade-enter"
+             x-transition:enter-active="fade-enter-active"
+             x-transition:leave="fade-leave"
+             x-transition:leave-active="fade-leave-active"
+             @click="show = false"
+             class="toast align-items-center text-bg-dark border-0 mb-2"
+             role="alert">
           <div class="d-flex">
-            <div class="toast-body">
-              ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto"></button>
           </div>
         </div>
     `;
+
     const toastEl = wrapper.firstElementChild;
     container.appendChild(toastEl);
-    const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-    toast.show();
-    toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+
+    setTimeout(() => {
+        toastEl.__x.$data.show = false;
+        setTimeout(() => toastEl.remove(), 300);
+    }, 3000);
 }
 </script>
 

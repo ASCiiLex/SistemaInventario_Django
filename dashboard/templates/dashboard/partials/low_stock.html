@@ -1,22 +1,25 @@
-<h3>Productos Bajo Mínimo</h3>
+<div x-data x-transition>
+    <h3>Productos Bajo Mínimo</h3>
 
-<table class="table table-striped mb-4">
-    <thead>
-        <tr>
-            <th>Producto</th>
-            <th>Stock</th>
-            <th>Mínimo</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for p in low_stock %}
-        <tr>
-            <td>{{ p.name }}</td>
-            <td>{{ p.stock }}</td>
-            <td>{{ p.min_stock }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="3">No hay productos bajo mínimo.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <table class="table table-striped mb-4">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Stock</th>
+                <th>Mínimo</th>
+            </tr>
+        </thead>
+
+        <tbody x-data>
+            {% for p in low_stock %}
+            <tr x-transition>
+                <td>{{ p.name }}</td>
+                <td>{{ p.stock }}</td>
+                <td>{{ p.min_stock }}</td>
+            </tr>
+            {% empty %}
+            <tr x-transition><td colspan="3">No hay productos bajo mínimo.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

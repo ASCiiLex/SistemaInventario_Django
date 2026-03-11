@@ -7,9 +7,10 @@
             <th>Fecha</th>
         </tr>
     </thead>
-    <tbody>
+
+    <tbody x-data>
         {% for m in movements %}
-        <tr>
+        <tr x-transition>
             <td>{{ m.product }}</td>
             <td>
                 {% if m.movement_type == "IN" %}
@@ -22,7 +23,7 @@
             <td>{{ m.created_at|date:"d/m/Y H:i" }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="4">No hay movimientos.</td></tr>
+        <tr x-transition><td colspan="4">No hay movimientos.</td></tr>
         {% endfor %}
     </tbody>
 </table>

@@ -10,9 +10,10 @@
             <th></th>
         </tr>
     </thead>
-    <tbody>
+
+    <tbody x-data>
         {% for p in products %}
-        <tr>
+        <tr x-transition>
             <td><a href="{% url 'product_detail' p.id %}">{{ p.name }}</a></td>
             <td>{{ p.sku }}</td>
             <td>{{ p.category }}</td>
@@ -31,7 +32,7 @@
             </td>
         </tr>
         {% empty %}
-        <tr><td colspan="7">No hay productos.</td></tr>
+        <tr x-transition><td colspan="7">No hay productos.</td></tr>
         {% endfor %}
     </tbody>
 </table>
