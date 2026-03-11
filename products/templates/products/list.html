@@ -1,9 +1,14 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Productos</h2>
+<h2 class="mb-3">Productos</h2>
 
-<a href="/productos/crear/" class="btn btn-success mb-3">Nuevo Producto</a>
+<form method="GET" class="mb-3 d-flex" style="gap: 10px;">
+    <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Buscar producto...">
+    <button class="btn btn-primary">Buscar</button>
+</form>
+
+<a href="{% url 'product_create' %}" class="btn btn-success mb-3">Nuevo Producto</a>
 
 <table class="table table-striped">
     <thead>
@@ -20,15 +25,21 @@
     <tbody>
         {% for p in products %}
         <tr>
-            <td><a href="/productos/{{ p.id }}/">{{ p.name }}</a></td>
+            <td><a href="{% url 'product_detail' p.id %}">{{ p.name }}</a></td>
             <td>{{ p.sku }}</td>
             <td>{{ p.category }}</td>
             <td>{{ p.supplier }}</td>
-            <td>{{ p.stock }}</td>
+            <td>
+                {% if p.is_below_minimum %}
+                    <span class="text-danger fw-bold">{{ p.stock }}</span>
+                {% else %}
+                    {{ p.stock }}
+                {% endif %}
+            </td>
             <td>{{ p.min_stock }}</td>
             <td>
-                <a href="/productos/editar/{{ p.id }}/" class="btn btn-sm btn-primary">Editar</a>
-                <a href="/productos/eliminar/{{ p.id }}/" class="btn btn-sm btn-danger">Eliminar</a>
+                <a href="{% url 'product_edit' p.id %}" class="btn btn-sm btn-primary">Editar</a>
+                <a href="{% url 'product_delete' p.id %}" class="btn btn-sm btn-danger">Eliminar</a>
             </td>
         </tr>
         {% empty %}
