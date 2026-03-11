@@ -8,6 +8,8 @@ from .models import Movement
 from products.models import Product
 from .forms import MovementForm
 
+from notifications.utils import broadcast_notification
+
 
 def _get_filtered_movements(request):
     search = request.GET.get("q", "")
@@ -87,6 +89,13 @@ def movement_create(request):
             movement = form.save()
             product = movement.product
             product.create_low_stock_notification()
+
+            # 🔥 Emitir WebSocket
+            broadcast_notification({
+                "type": "movement",
+                "message": "Nuevo movimiento registrado",
+                "product": product.name,
+            })
 
             if request.headers.get("HX-Request"):
                 movements, filters_ctx = _get_filtered_movements(request)

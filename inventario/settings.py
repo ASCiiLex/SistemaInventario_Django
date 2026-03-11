@@ -26,12 +26,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # Apps del proyecto
     'products',
     'suppliers',
     'categories',
     'movements',
     'dashboard',
     'notifications',
+
+    # Channels (WebSockets)
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -58,13 +62,18 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
 
+                # Notificaciones no leídas en la campanita
                 'notifications.context_processors.notifications_unread',
             ],
         },
     },
 ]
 
+# WSGI (para servidores tradicionales)
 WSGI_APPLICATION = 'inventario.wsgi.application'
+
+# ASGI (para WebSockets con Channels)
+ASGI_APPLICATION = "inventario.asgi.application"
 
 
 # Database
@@ -123,3 +132,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Email backend (para pruebas: muestra emails en consola)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+
+# CHANNELS (WebSockets)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}

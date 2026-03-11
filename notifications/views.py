@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from .models import Notification
+from .utils import broadcast_notification
 
 
 def _get_filtered_notifications(request):
@@ -47,6 +48,12 @@ def notifications_list(request):
 def notifications_mark_all_read(request):
     Notification.objects.filter(seen=False).update(seen=True)
 
+    # 🔥 Emitir WebSocket
+    broadcast_notification({
+        "type": "notification",
+        "message": "Todas las notificaciones marcadas como leídas"
+    })
+
     if request.headers.get("HX-Request"):
         notifications, filters_ctx = _get_filtered_notifications(request)
         products = (
@@ -60,7 +67,7 @@ def notifications_mark_all_read(request):
             **filters_ctx,
         }
         response = render(request, "notifications/partials/notifications_table.html", context)
-        response["HX-Trigger"] = '{"notifications-updated": {"message": "Todas las notificaciones marcadas como leídas"}}'
+        response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificaciones actualizadas"}}'
         return response
 
     return redirect("notifications_list")
@@ -70,6 +77,12 @@ def notification_mark_read(request, pk):
     notification = get_object_or_404(Notification, pk=pk)
     notification.seen = True
     notification.save()
+
+    # 🔥 Emitir WebSocket
+    broadcast_notification({
+        "type": "notification",
+        "message": "Notificación marcada como leída"
+    })
 
     if request.headers.get("HX-Request"):
         notifications, filters_ctx = _get_filtered_notifications(request)
