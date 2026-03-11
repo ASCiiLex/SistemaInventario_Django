@@ -3,7 +3,12 @@
 {% block content %}
 <h2 class="mb-3">Movimientos de Stock</h2>
 
-<form method="GET" class="mb-3 row g-2">
+<form method="GET"
+      class="mb-3 row g-2"
+      hx-get="{% url 'movement_list' %}"
+      hx-target="#movements-table"
+      hx-push-url="true">
+
     <div class="col-md-3">
         <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Buscar producto...">
     </div>
@@ -28,11 +33,11 @@
     </div>
 
     <div class="col-md-2">
-        <input type="date" name="from" value="{{ date_from }}" class="form-control" placeholder="Desde">
+        <input type="date" name="from" value="{{ date_from }}" class="form-control">
     </div>
 
     <div class="col-md-2">
-        <input type="date" name="to" value="{{ date_to }}" class="form-control" placeholder="Hasta">
+        <input type="date" name="to" value="{{ date_to }}" class="form-control">
     </div>
 
     <div class="col-md-12 mt-2 d-flex justify-content-end" style="gap: 10px;">
@@ -40,34 +45,16 @@
     </div>
 </form>
 
-<a href="{% url 'movement_create' %}" class="btn btn-success mb-3">Nuevo Movimiento</a>
+<button class="btn btn-success mb-3"
+        hx-get="{% url 'movement_create' %}"
+        hx-target="#mainModalContent"
+        hx-trigger="click">
+    Nuevo Movimiento
+</button>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Producto</th>
-            <th>Tipo</th>
-            <th>Cantidad</th>
-            <th>Fecha</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for m in movements %}
-        <tr>
-            <td>{{ m.product }}</td>
-            <td>
-                {% if m.movement_type == "IN" %}
-                    <span class="text-success fw-bold">Entrada</span>
-                {% else %}
-                    <span class="text-danger fw-bold">Salida</span>
-                {% endif %}
-            </td>
-            <td>{{ m.quantity }}</td>
-            <td>{{ m.created_at|date:"d/m/Y H:i" }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4">No hay movimientos.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<a href="{% url 'export_movements_csv' %}" class="btn btn-outline-secondary mb-3">Exportar CSV</a>
+
+<div id="movements-table">
+    {% include 'movements/partials/movements_table.html' %}
+</div>
 {% endblock %}

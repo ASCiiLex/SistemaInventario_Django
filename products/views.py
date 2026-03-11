@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.db.models import F
+from django.http import HttpResponse
+import csv
+
 from .models import Product
 from categories.models import Category
 from suppliers.models import Supplier
@@ -11,7 +14,7 @@ def product_list(request):
     search = request.GET.get("q", "")
     category_id = request.GET.get("category", "")
     supplier_id = request.GET.get("supplier", "")
-    stock_filter = request.GET.get("stock", "")  # all / low
+    stock_filter = request.GET.get("stock", "")
 
     products = Product.objects.select_related("category", "supplier").all()
 
@@ -39,7 +42,31 @@ def product_list(request):
         "categories": categories,
         "suppliers": suppliers,
     }
+
+    if request.headers.get("HX-Request"):
+        return render(request, "products/partials/products_table.html", context)
+
     return render(request, "products/list.html", context)
+
+
+def export_products_csv(request):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = "attachment; filename=productos.csv"
+
+    writer = csv.writer(response)
+    writer.writerow(["Nombre", "SKU", "Categoría", "Proveedor", "Stock", "Mínimo"])
+
+    for p in Product.objects.select_related("category", "supplier").all():
+        writer.writerow([
+            p.name,
+            p.sku,
+            p.category.name if p.category else "",
+            p.supplier.name if p.supplier else "",
+            p.stock,
+            p.min_stock,
+        ])
+
+    return response
 
 
 def product_detail(request, pk):

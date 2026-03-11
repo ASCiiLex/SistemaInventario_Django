@@ -1,0 +1,37 @@
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>SKU</th>
+            <th>Categoría</th>
+            <th>Proveedor</th>
+            <th>Stock</th>
+            <th>Mínimo</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in products %}
+        <tr>
+            <td><a href="{% url 'product_detail' p.id %}">{{ p.name }}</a></td>
+            <td>{{ p.sku }}</td>
+            <td>{{ p.category }}</td>
+            <td>{{ p.supplier }}</td>
+            <td>
+                {% if p.is_below_minimum %}
+                    <span class="text-danger fw-bold">{{ p.stock }}</span>
+                {% else %}
+                    {{ p.stock }}
+                {% endif %}
+            </td>
+            <td>{{ p.min_stock }}</td>
+            <td>
+                <a href="{% url 'product_edit' p.id %}" class="btn btn-sm btn-primary">Editar</a>
+                <a href="{% url 'product_delete' p.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">No hay productos.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

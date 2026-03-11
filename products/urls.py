@@ -5,6 +5,7 @@ from .views import (
     product_create,
     product_edit,
     product_delete,
+    export_products_csv,
 )
 
 urlpatterns = [
@@ -13,4 +14,5 @@ urlpatterns = [
     path("crear/", product_create, name="product_create"),
     path("editar/<int:pk>/", product_edit, name="product_edit"),
     path("eliminar/<int:pk>/", product_delete, name="product_delete"),
+    path("exportar/", export_products_csv, name="export_products_csv"),
 ]

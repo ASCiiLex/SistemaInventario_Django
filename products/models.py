@@ -1,6 +1,7 @@
 from django.db import models
 from categories.models import Category
 from suppliers.models import Supplier
+from notifications.models import Notification
 
 
 def product_image_path(instance, filename):
@@ -57,3 +58,10 @@ class Product(models.Model):
     @property
     def last_movement(self):
         return self.movements.order_by('-created_at').first()
+
+    def create_low_stock_notification(self):
+        if self.is_below_minimum:
+            Notification.objects.create(
+                product=self,
+                message=f"El producto {self.name} está por debajo del stock mínimo."
+            )
