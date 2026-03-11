@@ -1,9 +1,14 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Categorías</h2>
+<h2 class="mb-3">Categorías</h2>
 
-<a href="/categorias/crear/" class="btn btn-success mb-3">Nueva Categoría</a>
+<form method="GET" class="mb-3 d-flex" style="gap: 10px;">
+    <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Buscar categoría...">
+    <button class="btn btn-primary">Buscar</button>
+</form>
+
+<a href="{% url 'category_create' %}" class="btn btn-success mb-3">Nueva Categoría</a>
 
 <table class="table table-striped">
     <thead>
@@ -21,8 +26,8 @@
             <td>{{ c.description }}</td>
             <td>{{ c.parent }}</td>
             <td>
-                <a href="/categorias/editar/{{ c.id }}/" class="btn btn-sm btn-primary">Editar</a>
-                <a href="/categorias/eliminar/{{ c.id }}/" class="btn btn-sm btn-danger">Eliminar</a>
+                <a href="{% url 'category_edit' c.id %}" class="btn btn-sm btn-primary">Editar</a>
+                <a href="{% url 'category_delete' c.id %}" class="btn btn-sm btn-danger">Eliminar</a>
             </td>
         </tr>
         {% empty %}

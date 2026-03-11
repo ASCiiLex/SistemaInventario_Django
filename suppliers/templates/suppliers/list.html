@@ -1,9 +1,14 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Proveedores</h2>
+<h2 class="mb-3">Proveedores</h2>
 
-<a href="/proveedores/crear/" class="btn btn-success mb-3">Nuevo Proveedor</a>
+<form method="GET" class="mb-3 d-flex" style="gap: 10px;">
+    <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Buscar proveedor...">
+    <button class="btn btn-primary">Buscar</button>
+</form>
+
+<a href="{% url 'supplier_create' %}" class="btn btn-success mb-3">Nuevo Proveedor</a>
 
 <table class="table table-striped">
     <thead>
@@ -23,8 +28,8 @@
             <td>{{ s.email }}</td>
             <td>{{ s.phone }}</td>
             <td>
-                <a href="/proveedores/editar/{{ s.id }}/" class="btn btn-sm btn-primary">Editar</a>
-                <a href="/proveedores/eliminar/{{ s.id }}/" class="btn btn-sm btn-danger">Eliminar</a>
+                <a href="{% url 'supplier_edit' s.id %}" class="btn btn-sm btn-primary">Editar</a>
+                <a href="{% url 'supplier_delete' s.id %}" class="btn btn-sm btn-danger">Eliminar</a>
             </td>
         </tr>
         {% empty %}
