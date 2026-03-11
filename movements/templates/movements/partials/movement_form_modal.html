@@ -4,7 +4,11 @@
 </div>
 
 <div class="modal-body">
-    <form method="POST">
+    <form
+        method="POST"
+        hx-post="{% url 'movement_create' %}"
+        hx-target="#movements-table"
+        hx-swap="outerHTML">
         {% csrf_token %}
         {{ form.as_p }}
 

@@ -3,36 +3,15 @@
 {% block content %}
 <h2 class="mb-3">Notificaciones</h2>
 
-<a href="{% url 'notifications_mark_all_read' %}" class="btn btn-primary mb-3">
+<button
+    class="btn btn-primary mb-3"
+    hx-post="{% url 'notifications_mark_all_read' %}"
+    hx-target="#notifications-table"
+    hx-swap="outerHTML">
     Marcar todas como leídas
-</a>
+</button>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Mensaje</th>
-            <th>Producto</th>
-            <th>Fecha</th>
-            <th>Estado</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for n in notifications %}
-        <tr>
-            <td>{{ n.message }}</td>
-            <td>{{ n.product }}</td>
-            <td>{{ n.created_at|date:"d/m/Y H:i" }}</td>
-            <td>
-                {% if n.seen %}
-                    <span class="text-success">Leída</span>
-                {% else %}
-                    <span class="text-danger fw-bold">Nueva</span>
-                {% endif %}
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4">No hay notificaciones.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div id="notifications-table">
+    {% include 'notifications/partials/notifications_table.html' %}
+</div>
 {% endblock %}

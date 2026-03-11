@@ -1,0 +1,40 @@
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Mensaje</th>
+            <th>Producto</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for n in notifications %}
+        <tr>
+            <td>{{ n.message }}</td>
+            <td>{{ n.product }}</td>
+            <td>{{ n.created_at|date:"d/m/Y H:i" }}</td>
+            <td>
+                {% if n.seen %}
+                    <span class="text-success">Leída</span>
+                {% else %}
+                    <span class="text-danger fw-bold">Nueva</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if not n.seen %}
+                    <button
+                        class="btn btn-sm btn-outline-primary"
+                        hx-post="{% url 'notification_mark_read' n.id %}"
+                        hx-target="#notifications-table"
+                        hx-swap="outerHTML">
+                        Marcar como leída
+                    </button>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No hay notificaciones.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

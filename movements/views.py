@@ -9,7 +9,7 @@ from products.models import Product
 from .forms import MovementForm
 
 
-def movement_list(request):
+def _get_filtered_movements(request):
     search = request.GET.get("q", "")
     movement_type = request.GET.get("type", "")
     product_id = request.GET.get("product", "")
@@ -37,16 +37,23 @@ def movement_list(request):
         if dt:
             movements = movements.filter(created_at__date__lte=dt)
 
-    products = Product.objects.all()
-
-    context = {
-        "movements": movements,
+    return movements, {
         "search": search,
         "movement_type": movement_type,
         "product_id": product_id,
         "date_from": date_from,
         "date_to": date_to,
+    }
+
+
+def movement_list(request):
+    movements, filters_ctx = _get_filtered_movements(request)
+    products = Product.objects.all()
+
+    context = {
+        "movements": movements,
         "products": products,
+        **filters_ctx,
     }
 
     if request.headers.get("HX-Request"):
@@ -80,6 +87,28 @@ def movement_create(request):
             movement = form.save()
             product = movement.product
             product.create_low_stock_notification()
+
+            # Si viene de HTMX → devolvemos tabla actualizada y disparamos evento
+            if request.headers.get("HX-Request"):
+                movements, filters_ctx = _get_filtered_movements(request)
+                products = Product.objects.all()
+
+                context = {
+                    "movements": movements,
+                    "products": products,
+                    **filters_ctx,
+                }
+
+                response = render(
+                    request,
+                    "movements/partials/movements_table.html",
+                    context,
+                )
+                # Evento global para cerrar modal y refrescar otras zonas
+                response["HX-Trigger"] = "movement-created"
+                return response
+
+            # Flujo clásico
             return redirect(reverse("movement_list"))
     else:
         form = MovementForm()
