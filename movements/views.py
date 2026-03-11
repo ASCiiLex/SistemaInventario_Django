@@ -88,7 +88,6 @@ def movement_create(request):
             product = movement.product
             product.create_low_stock_notification()
 
-            # Si viene de HTMX → devolvemos tabla actualizada y disparamos evento
             if request.headers.get("HX-Request"):
                 movements, filters_ctx = _get_filtered_movements(request)
                 products = Product.objects.all()
@@ -104,11 +103,9 @@ def movement_create(request):
                     "movements/partials/movements_table.html",
                     context,
                 )
-                # Evento global para cerrar modal y refrescar otras zonas
-                response["HX-Trigger"] = "movement-created"
+                response["HX-Trigger"] = '{"movement-created": {"message": "Movimiento creado correctamente"}}'
                 return response
 
-            # Flujo clásico
             return redirect(reverse("movement_list"))
     else:
         form = MovementForm()

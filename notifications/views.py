@@ -26,7 +26,6 @@ def _get_filtered_notifications(request):
 def notifications_list(request):
     notifications, filters_ctx = _get_filtered_notifications(request)
 
-    # Para el filtro por producto en el template
     products = (
         Notification.objects.exclude(product__isnull=True)
         .values_list("product_id", "product__name")
@@ -61,7 +60,7 @@ def notifications_mark_all_read(request):
             **filters_ctx,
         }
         response = render(request, "notifications/partials/notifications_table.html", context)
-        response["HX-Trigger"] = "notifications-updated"
+        response["HX-Trigger"] = '{"notifications-updated": {"message": "Todas las notificaciones marcadas como leídas"}}'
         return response
 
     return redirect("notifications_list")
@@ -85,7 +84,7 @@ def notification_mark_read(request, pk):
             **filters_ctx,
         }
         response = render(request, "notifications/partials/notifications_table.html", context)
-        response["HX-Trigger"] = "notifications-updated"
+        response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificación marcada como leída"}}'
         return response
 
     return redirect("notifications_list")
