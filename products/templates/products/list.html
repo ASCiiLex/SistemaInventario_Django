@@ -50,7 +50,11 @@
 <a href="{% url 'product_create' %}" class="btn btn-success mb-3">Nuevo Producto</a>
 <a href="{% url 'export_products_csv' %}" class="btn btn-outline-secondary mb-3">Exportar CSV</a>
 
-<div id="products-table">
+<div id="products-table"
+     hx-get="{% url 'product_list' %}"
+     hx-trigger="movement-created from:body"
+     hx-target="this"
+     hx-swap="outerHTML">
     {% include 'products/partials/products_table.html' %}
 </div>
 {% endblock %}

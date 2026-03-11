@@ -54,7 +54,11 @@
 
 <a href="{% url 'export_movements_csv' %}" class="btn btn-outline-secondary mb-3">Exportar CSV</a>
 
-<div id="movements-table">
+<div id="movements-table"
+     hx-get="{% url 'movement_list' %}"
+     hx-trigger="movement-created from:body"
+     hx-target="this"
+     hx-swap="outerHTML">
     {% include 'movements/partials/movements_table.html' %}
 </div>
 {% endblock %}

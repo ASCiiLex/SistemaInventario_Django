@@ -54,7 +54,11 @@
     Marcar todas como leídas
 </button>
 
-<div id="notifications-table">
+<div id="notifications-table"
+     hx-get="{% url 'notifications_list' %}"
+     hx-trigger="notifications-updated from:body"
+     hx-target="this"
+     hx-swap="outerHTML">
     {% include 'notifications/partials/notifications_table.html' %}
 </div>
 {% endblock %}
