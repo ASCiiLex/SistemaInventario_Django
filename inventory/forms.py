@@ -52,3 +52,6 @@ class StockTransferForm(forms.ModelForm):
         if qty <= 0:
             raise forms.ValidationError("La cantidad debe ser mayor que cero.")
         return qty
+
+class StockImportForm(forms.Form):
+    csv_file = forms.FileField(label="Archivo CSV")

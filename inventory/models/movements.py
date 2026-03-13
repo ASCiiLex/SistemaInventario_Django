@@ -1,48 +1,8 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-from suppliers.models import Supplier
 from products.models import Product
-
-
-class Location(models.Model):
-    name = models.CharField(max_length=150, unique=True)
-    address = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ["name"]
-        verbose_name = "Location"
-        verbose_name_plural = "Locations"
-
-    def __str__(self):
-        return self.name
-
-
-class StockItem(models.Model):
-    product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name="stock_items"
-    )
-    location = models.ForeignKey(
-        Location,
-        on_delete=models.CASCADE,
-        related_name="stock_items"
-    )
-    quantity = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        unique_together = ("product", "location")
-        verbose_name = "Stock Item"
-        verbose_name_plural = "Stock Items"
-
-    def __str__(self):
-        return f"{self.product.name} @ {self.location.name}: {self.quantity}"
-
-    @property
-    def is_below_minimum(self):
-        return self.quantity <= self.product.min_stock
-
+from .locations import Location
+from .stock import StockItem
 
 class StockMovement(models.Model):
     MOVEMENT_TYPES = (
@@ -85,6 +45,7 @@ class StockMovement(models.Model):
     def __str__(self):
         return f"{self.get_movement_type_display()} - {self.product.name} ({self.quantity})"
 
+    # --- VALIDACIONES ---
     def clean(self):
         if self.quantity <= 0:
             raise ValidationError("La cantidad debe ser mayor que cero.")
@@ -95,9 +56,8 @@ class StockMovement(models.Model):
             if self.origin == self.destination:
                 raise ValidationError("El origen y destino no pueden ser iguales.")
 
-        if self.movement_type == "IN":
-            if not self.destination:
-                raise ValidationError("Las entradas requieren un almacén de destino.")
+        if self.movement_type == "IN" and not self.destination:
+            raise ValidationError("Las entradas requieren un almacén de destino.")
 
         if self.movement_type == "OUT":
             if not self.origin:
@@ -109,6 +69,7 @@ class StockMovement(models.Model):
             if not stock_item or stock_item.quantity < self.quantity:
                 raise ValidationError("No hay suficiente stock en el almacén de origen.")
 
+    # --- APLICACIÓN DE MOVIMIENTOS ---
     def _apply_in(self):
         location = self.destination
         stock_item, _ = StockItem.objects.get_or_create(
@@ -126,8 +87,7 @@ class StockMovement(models.Model):
             location=location,
         )
         stock_item.quantity -= self.quantity
-        if stock_item.quantity < 0:
-            stock_item.quantity = 0
+        stock_item.quantity = max(stock_item.quantity, 0)
         stock_item.save()
 
     def _apply_transfer(self):
@@ -136,8 +96,7 @@ class StockMovement(models.Model):
             location=self.origin,
         )
         origin_item.quantity -= self.quantity
-        if origin_item.quantity < 0:
-            origin_item.quantity = 0
+        origin_item.quantity = max(origin_item.quantity, 0)
         origin_item.save()
 
         dest_item, _ = StockItem.objects.get_or_create(
@@ -162,75 +121,3 @@ class StockMovement(models.Model):
         super().save(*args, **kwargs)
         if is_new:
             self.apply_to_stock()
-
-
-class Order(models.Model):
-    STATUS_CHOICES = (
-        ("pending", "Pendiente"),
-        ("sent", "Enviado"),
-        ("received", "Recibido"),
-    )
-
-    supplier = models.ForeignKey(
-        Supplier,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="orders"
-    )
-    location = models.ForeignKey(
-        Location,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="orders"
-    )
-
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    sent_at = models.DateTimeField(null=True, blank=True)
-    received_at = models.DateTimeField(null=True, blank=True)
-
-    estimated_arrival = models.DateField(null=True, blank=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-        verbose_name = "Order"
-        verbose_name_plural = "Orders"
-
-    def __str__(self):
-        return f"Order #{self.id} - {self.supplier.name if self.supplier else 'N/A'}"
-
-    @property
-    def total_items(self):
-        return sum(item.quantity for item in self.items.all())
-
-    @property
-    def total_cost(self):
-        return sum(item.total_cost for item in self.items.all())
-
-
-class OrderItem(models.Model):
-    order = models.ForeignKey(
-        Order,
-        on_delete=models.CASCADE,
-        related_name="items"
-    )
-    product = models.ForeignKey(
-        Product,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="order_items"
-    )
-    quantity = models.PositiveIntegerField()
-    cost_price = models.DecimalField(max_digits=10, decimal_places=2)
-
-    class Meta:
-        verbose_name = "Order Item"
-        verbose_name_plural = "Order Items"
-
-    def __str__(self):
-        return f"{self.product.name} x {self.quantity}"
-
-    @property
-    def total_cost(self):
-        return self.quantity * self.cost_price

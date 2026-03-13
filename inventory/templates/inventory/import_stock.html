@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Importar stock inicial</h2>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+
+            <button class="btn btn-primary">Subir archivo</button>
+        </form>
+
+        <hr>
+
+        <a href="#" class="btn btn-outline-secondary btn-sm">
+            Descargar plantilla CSV
+        </a>
+    </div>
+</div>
+{% endblock %}
