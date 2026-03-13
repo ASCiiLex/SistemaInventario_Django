@@ -2,9 +2,23 @@ from django.contrib import admin
 from django.utils.html import format_html
 from .models import Product
 
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'sku', 'category', 'supplier', 'stock', 'min_stock', 'below_minimum', 'image_tag')
+    list_display = (
+        'name',
+        'sku',
+        'category',
+        'supplier',
+        'total_stock',
+        'min_stock',
+        'cost_price',
+        'sale_price',
+        'margin_display',
+        'inventory_value_display',
+        'below_minimum',
+        'image_tag',
+    )
     search_fields = ('name', 'sku')
     list_filter = ('category', 'supplier')
 
@@ -16,3 +30,11 @@ class ProductAdmin(admin.ModelAdmin):
         if obj.image:
             return format_html('<img src="{}" width="40" height="40"/>', obj.image.url)
         return "-"
+
+    def margin_display(self, obj):
+        return f"{obj.margin:.2f}"
+    margin_display.short_description = "Margen"
+
+    def inventory_value_display(self, obj):
+        return f"{obj.inventory_value:.2f}"
+    inventory_value_display.short_description = "Valor inventario"

@@ -14,15 +14,18 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Notification',
+            name='Movement',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('message', models.CharField(max_length=255)),
+                ('movement_type', models.CharField(choices=[('IN', 'Entrada'), ('OUT', 'Salida')], db_index=True, max_length=3)),
+                ('quantity', models.PositiveIntegerField()),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('seen', models.BooleanField(default=False)),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='products.product')),
+                ('note', models.TextField(blank=True)),
+                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='movements', to='products.product')),
             ],
             options={
+                'verbose_name': 'Movement',
+                'verbose_name_plural': 'Movements',
                 'ordering': ['-created_at'],
             },
         ),

@@ -13,6 +13,8 @@ class ProductForm(forms.ModelForm):
             "supplier",
             "stock",
             "min_stock",
+            "cost_price",
+            "sale_price",
             "image",
         ]
 
@@ -23,6 +25,8 @@ class ProductForm(forms.ModelForm):
             "supplier": forms.Select(attrs={"class": "form-control"}),
             "stock": forms.NumberInput(attrs={"class": "form-control"}),
             "min_stock": forms.NumberInput(attrs={"class": "form-control"}),
+            "cost_price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "sale_price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
             "image": forms.FileInput(attrs={"class": "form-control"}),
         }
 

@@ -54,7 +54,18 @@ def export_products_csv(request):
     response["Content-Disposition"] = "attachment; filename=productos.csv"
 
     writer = csv.writer(response)
-    writer.writerow(["Nombre", "SKU", "Categoría", "Proveedor", "Stock", "Mínimo"])
+    writer.writerow([
+        "Nombre",
+        "SKU",
+        "Categoría",
+        "Proveedor",
+        "Stock",
+        "Mínimo",
+        "Coste",
+        "Precio venta",
+        "Margen",
+        "Valor inventario",
+    ])
 
     for p in Product.objects.select_related("category", "supplier").all():
         writer.writerow([
@@ -62,8 +73,12 @@ def export_products_csv(request):
             p.sku,
             p.category.name if p.category else "",
             p.supplier.name if p.supplier else "",
-            p.stock,
+            p.total_stock,
             p.min_stock,
+            f"{p.cost_price:.2f}",
+            f"{p.sale_price:.2f}",
+            f"{p.margin:.2f}",
+            f"{p.inventory_value:.2f}",
         ])
 
     return response
