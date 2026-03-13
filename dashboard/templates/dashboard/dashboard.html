@@ -23,9 +23,19 @@
 
 <hr>
 
-<!-- BLOQUE: Movimientos recientes -->
+<!-- BLOQUE: Movimientos legacy -->
 <div id="dashboard-recent-movements"
      hx-get="{% url 'dashboard_recent_movements' %}"
+     hx-trigger="load, every 10s"
+     hx-target="this"
+     hx-swap="outerHTML">
+</div>
+
+<hr>
+
+<!-- BLOQUE: Movimientos modernos -->
+<div id="dashboard-recent-stock-movements"
+     hx-get="{% url 'dashboard_recent_stock_movements' %}"
      hx-trigger="load, every 10s"
      hx-target="this"
      hx-swap="outerHTML">

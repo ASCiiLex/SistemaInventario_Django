@@ -11,15 +11,7 @@ def dashboard_view(request):
     return render(request, "dashboard/dashboard.html")
 
 
-# --- Helpers internos --------------------------------------------------------
-
-
 def _get_real_stock_for_product(product):
-    """
-    Devuelve el stock 'real' de un producto:
-    - Si hay StockItem → suma por ubicaciones
-    - Si no hay → usa product.stock (campo antiguo)
-    """
     qty = product.stock_items.aggregate(total=Sum("quantity"))["total"]
     if qty is None:
         return product.stock or 0
@@ -27,10 +19,6 @@ def _get_real_stock_for_product(product):
 
 
 def _get_low_stock_products():
-    """
-    Devuelve una lista de dicts con productos bajo mínimo,
-    usando stock real si existe, o product.stock como fallback.
-    """
     low_stock = []
     products = Product.objects.all().prefetch_related("stock_items")
 
@@ -48,13 +36,8 @@ def _get_low_stock_products():
     return low_stock
 
 
-# --- Vistas del dashboard ----------------------------------------------------
-
-
 def dashboard_totals(request):
-    # Stock total real (StockItem) con fallback a Product.stock
     total_stock_real = StockItem.objects.aggregate(total=Sum("quantity"))["total"]
-
     if total_stock_real is None:
         total_stock_real = Product.objects.aggregate(total=Sum("stock"))["total"] or 0
 
@@ -71,29 +54,15 @@ def dashboard_totals(request):
 
 
 def dashboard_low_stock(request):
-    """
-    Lista de productos bajo mínimo (StockItem) o product.stock como fallback.
-    """
     low_stock = _get_low_stock_products()
     return render(request, "dashboard/partials/low_stock.html", {"low_stock": low_stock})
 
 
 def dashboard_recent_movements(request):
-    """
-    Movimientos recientes:
-    - Si hay StockMovement → se usan como sistema principal
-    - Si no hay → se usan Movement (histórico antiguo)
-    """
-    if StockMovement.objects.exists():
-        recent_movements = (
-            StockMovement.objects.select_related("product")
-            .order_by("-created_at")[:10]
-        )
-    else:
-        recent_movements = (
-            Movement.objects.select_related("product")
-            .order_by("-created_at")[:10]
-        )
+    recent_movements = (
+        Movement.objects.select_related("product")
+        .order_by("-created_at")[:10]
+    )
 
     return render(
         request,
@@ -102,11 +71,20 @@ def dashboard_recent_movements(request):
     )
 
 
-def dashboard_chart(request):
-    """
-    Gráfico por categoría:
+def dashboard_recent_stock_movements(request):
+    recent_stock_movements = (
+        StockMovement.objects.select_related("product", "origin", "destination")
+        .order_by("-created_at")[:10]
+    )
 
-    """
+    return render(
+        request,
+        "dashboard/partials/recent_stock_movements.html",
+        {"recent_stock_movements": recent_stock_movements},
+    )
+
+
+def dashboard_chart(request):
     categories = (
         Category.objects
         .annotate(

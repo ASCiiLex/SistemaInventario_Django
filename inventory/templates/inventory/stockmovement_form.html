@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ title }}</h1>
+    <form method="post" class="mt-3">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form.product.label_tag }}
+                {{ form.product }}
+                {{ form.product.errors }}
+            </div>
+            <div class="col-md-6 mb-3">
+                {{ form.movement_type.label_tag }}
+                {{ form.movement_type }}
+                {{ form.movement_type.errors }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form.origin.label_tag }}
+                {{ form.origin }}
+                {{ form.origin.errors }}
+            </div>
+            <div class="col-md-6 mb-3">
+                {{ form.destination.label_tag }}
+                {{ form.destination }}
+                {{ form.destination.errors }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                {{ form.quantity.label_tag }}
+                {{ form.quantity }}
+                {{ form.quantity.errors }}
+            </div>
+            <div class="col-md-8 mb-3">
+                {{ form.note.label_tag }}
+                {{ form.note }}
+                {{ form.note.errors }}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a href="{% url 'stockmovement_list' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

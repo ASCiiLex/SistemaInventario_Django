@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Pedidos</h1>
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Proveedor</th>
+                <th>Almacén</th>
+                <th>Estado</th>
+                <th>Creado</th>
+                <th>Items</th>
+                <th>Coste total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+                <tr>
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.supplier }}</td>
+                    <td>{{ order.location }}</td>
+                    <td>{{ order.get_status_display }}</td>
+                    <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
+                    <td>{{ order.total_items }}</td>
+                    <td>{{ order.total_cost }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">No hay pedidos registrados.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

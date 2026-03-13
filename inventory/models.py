@@ -86,19 +86,82 @@ class StockMovement(models.Model):
         return f"{self.get_movement_type_display()} - {self.product.name} ({self.quantity})"
 
     def clean(self):
+        if self.quantity <= 0:
+            raise ValidationError("La cantidad debe ser mayor que cero.")
+
         if self.movement_type == "TRANSFER":
             if not self.origin or not self.destination:
                 raise ValidationError("Las transferencias requieren origen y destino.")
             if self.origin == self.destination:
                 raise ValidationError("El origen y destino no pueden ser iguales.")
 
+        if self.movement_type == "IN":
+            if not self.destination:
+                raise ValidationError("Las entradas requieren un almacén de destino.")
+
         if self.movement_type == "OUT":
+            if not self.origin:
+                raise ValidationError("Las salidas requieren un almacén de origen.")
             stock_item = StockItem.objects.filter(
                 product=self.product,
                 location=self.origin
             ).first()
             if not stock_item or stock_item.quantity < self.quantity:
                 raise ValidationError("No hay suficiente stock en el almacén de origen.")
+
+    def _apply_in(self):
+        location = self.destination
+        stock_item, _ = StockItem.objects.get_or_create(
+            product=self.product,
+            location=location,
+            defaults={"quantity": 0},
+        )
+        stock_item.quantity += self.quantity
+        stock_item.save()
+
+    def _apply_out(self):
+        location = self.origin
+        stock_item = StockItem.objects.get(
+            product=self.product,
+            location=location,
+        )
+        stock_item.quantity -= self.quantity
+        if stock_item.quantity < 0:
+            stock_item.quantity = 0
+        stock_item.save()
+
+    def _apply_transfer(self):
+        origin_item = StockItem.objects.get(
+            product=self.product,
+            location=self.origin,
+        )
+        origin_item.quantity -= self.quantity
+        if origin_item.quantity < 0:
+            origin_item.quantity = 0
+        origin_item.save()
+
+        dest_item, _ = StockItem.objects.get_or_create(
+            product=self.product,
+            location=self.destination,
+            defaults={"quantity": 0},
+        )
+        dest_item.quantity += self.quantity
+        dest_item.save()
+
+    def apply_to_stock(self):
+        if self.movement_type == "IN":
+            self._apply_in()
+        elif self.movement_type == "OUT":
+            self._apply_out()
+        elif self.movement_type == "TRANSFER":
+            self._apply_transfer()
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        self.full_clean()
+        super().save(*args, **kwargs)
+        if is_new:
+            self.apply_to_stock()
 
 
 class Order(models.Model):
