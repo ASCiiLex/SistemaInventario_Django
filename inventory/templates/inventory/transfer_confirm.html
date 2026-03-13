@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Confirmar transferencia #{{ transfer.id }}</h2>
+
+<p>¿Deseas confirmar la recepción de esta transferencia?</p>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-success">Confirmar</button>
+</form>
+
+<a href="{% url 'transfer_detail' transfer.id %}" class="btn btn-secondary">Cancelar</a>
+
+{% endblock %}
