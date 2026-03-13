@@ -50,7 +50,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'inventario.urls'
+ROOT_URLCONF = 'sistema_inventario.urls'
 
 TEMPLATES = [
     {
@@ -70,10 +70,10 @@ TEMPLATES = [
 ]
 
 # WSGI (para servidores tradicionales)
-WSGI_APPLICATION = 'inventario.wsgi.application'
+WSGI_APPLICATION = 'sistema_inventario.wsgi.application'
 
 # ASGI (para WebSockets con Channels)
-ASGI_APPLICATION = "inventario.asgi.application"
+ASGI_APPLICATION = "sistema_inventario.asgi.application"
 
 
 # Database
