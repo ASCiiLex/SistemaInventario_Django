@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'movements',
     'dashboard',
     'notifications',
+    'inventory',
 
     # Channels (WebSockets)
     'channels',
