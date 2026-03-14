@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Eliminar almacén</h2>
+
+    <div class="alert alert-warning">
+        ¿Seguro que deseas eliminar el almacén <strong>{{ location.name }}</strong>?
+    </div>
+
+    <form method="post" class="d-inline">
+        {% csrf_token %}
+        <button class="btn btn-danger">Eliminar</button>
+    </form>
+    <a href="{% url 'location_list' %}" class="btn btn-secondary ms-2">Cancelar</a>
+</div>
+{% endblock %}

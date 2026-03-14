@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Location(models.Model):
     name = models.CharField(max_length=150, unique=True)
     address = models.TextField(blank=True)

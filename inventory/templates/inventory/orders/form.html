@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">{{ title }}</h2>
+
+    <form method="post" class="card card-body">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                {{ form.supplier.label_tag }}
+                {{ form.supplier }}
+                {{ form.supplier.errors }}
+            </div>
+            <div class="col-md-4">
+                {{ form.location.label_tag }}
+                {{ form.location }}
+                {{ form.location.errors }}
+            </div>
+            <div class="col-md-4">
+                {{ form.estimated_arrival.label_tag }}
+                {{ form.estimated_arrival }}
+                {{ form.estimated_arrival.errors }}
+            </div>
+            <div class="col-md-4">
+                {{ form.status.label_tag }}
+                {{ form.status }}
+                {{ form.status.errors }}
+            </div>
+        </div>
+
+        <h5 class="mt-3">Líneas del pedido</h5>
+
+        {{ formset.management_form }}
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio coste</th>
+                    <th>Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in formset.forms %}
+                    <tr>
+                        <td>
+                            {{ f.product }}
+                            {{ f.product.errors }}
+                        </td>
+                        <td>
+                            {{ f.quantity }}
+                            {{ f.quantity.errors }}
+                        </td>
+                        <td>
+                            {{ f.cost_price }}
+                            {{ f.cost_price.errors }}
+                        </td>
+                        <td>
+                            {% if f.instance.pk %}
+                                {{ f.instance.total_cost }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if f.instance.pk %}
+                                {{ f.DELETE }}
+                                <label>{{ f.DELETE.label }}</label>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-primary">Guardar</button>
+            <a href="{% url 'order_list' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

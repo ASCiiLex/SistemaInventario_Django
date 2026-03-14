@@ -1,30 +1,37 @@
-<!-- inventory/templates/inventory/location_list.html -->
 {% extends "base.html" %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Almacenes</h1>
-    <table class="table table-striped mt-3">
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Dirección</th>
-                <th>Activo</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for location in locations %}
-                <tr>
-                    <td>{{ location.name }}</td>
-                    <td>{{ location.address|default:"-" }}</td>
-                    <td>{{ location.is_active|yesno:"Sí,No" }}</td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="3" class="text-center">No hay almacenes definidos.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Almacenes</h1>
+        <a href="{% url 'location_create' %}" class="btn btn-success">Nuevo almacén</a>
+    </div>
+
+    <form
+        method="get"
+        class="row g-2 mb-3"
+        hx-get="{% url 'location_list' %}"
+        hx-target="#locations-table"
+        hx-push-url="true"
+    >
+        <div class="col-md-4">
+            <label for="id_q" class="form-label">Buscar</label>
+            <input
+                type="text"
+                name="q"
+                id="id_q"
+                value="{{ search }}"
+                class="form-control"
+                placeholder="Nombre del almacén"
+            >
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-outline-primary w-100">Filtrar</button>
+        </div>
+    </form>
+
+    <div id="locations-table">
+        {% include "inventory/locations/partials/table.html" %}
+    </div>
 </div>
 {% endblock %}

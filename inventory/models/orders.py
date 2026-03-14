@@ -3,24 +3,28 @@ from suppliers.models import Supplier
 from products.models import Product
 from .locations import Location
 
+
 class Order(models.Model):
     STATUS_CHOICES = (
         ("pending", "Pendiente"),
         ("sent", "Enviado"),
         ("received", "Recibido"),
+        ("cancelled", "Cancelado"),
+        ("partially_received", "Parcialmente recibido"),
+        ("backordered", "Backorder"),
     )
 
     supplier = models.ForeignKey(
         Supplier,
         on_delete=models.SET_NULL,
         null=True,
-        related_name="orders"
+        related_name="orders",
     )
     location = models.ForeignKey(
         Location,
         on_delete=models.SET_NULL,
         null=True,
-        related_name="orders"
+        related_name="orders",
     )
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
@@ -52,13 +56,13 @@ class OrderItem(models.Model):
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
-        related_name="items"
+        related_name="items",
     )
     product = models.ForeignKey(
         Product,
         on_delete=models.SET_NULL,
         null=True,
-        related_name="order_items"
+        related_name="order_items",
     )
     quantity = models.PositiveIntegerField()
     cost_price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -68,7 +72,7 @@ class OrderItem(models.Model):
         verbose_name_plural = "Order Items"
 
     def __str__(self):
-        return f"{self.product.name} x {self.quantity}"
+        return f"{self.product.name if self.product else 'N/A'} x {self.quantity}"
 
     @property
     def total_cost(self):

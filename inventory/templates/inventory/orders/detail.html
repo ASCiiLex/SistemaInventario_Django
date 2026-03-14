@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Pedido #{{ order.id }}</h2>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <p><strong>Proveedor:</strong> {{ order.supplier }}</p>
+            <p><strong>Almacén:</strong> {{ order.location }}</p>
+            <p>
+                <strong>Estado:</strong>
+                {% if order.status == "pending" %}
+                    <span class="badge bg-warning">Pendiente</span>
+                {% elif order.status == "sent" %}
+                    <span class="badge bg-info">Enviado</span>
+                {% elif order.status == "received" %}
+                    <span class="badge bg-success">Recibido</span>
+                {% elif order.status == "cancelled" %}
+                    <span class="badge bg-danger">Cancelado</span>
+                {% elif order.status == "partially_received" %}
+                    <span class="badge bg-primary">Parcialmente recibido</span>
+                {% elif order.status == "backordered" %}
+                    <span class="badge bg-secondary">Backorder</span>
+                {% endif %}
+            </p>
+            <p><strong>Creado:</strong> {{ order.created_at|date:"d/m/Y H:i" }}</p>
+            <p><strong>Fecha estimada:</strong> {{ order.estimated_arrival|default:"-" }}</p>
+        </div>
+    </div>
+
+    <h5>Líneas</h5>
+    <table class="table table-striped mb-3">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio coste</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+                <tr>
+                    <td>{{ item.product }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.cost_price }}</td>
+                    <td>{{ item.total_cost }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No hay líneas en este pedido.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p><strong>Total items:</strong> {{ order.total_items }}</p>
+    <p><strong>Coste total:</strong> {{ order.total_cost }}</p>
+
+    <div class="d-flex gap-2 mt-3 mb-3">
+        <a href="{% url 'order_edit' order.id %}" class="btn btn-primary">Editar</a>
+        {% if order.status == "pending" %}
+            <a href="{% url 'order_send' order.id %}" class="btn btn-info">Marcar como enviado</a>
+        {% endif %}
+        {% if order.status in "sent,partially_received,backordered" %}
+            <a href="{% url 'order_receive' order.id %}" class="btn btn-success">Marcar como recibido</a>
+        {% endif %}
+        {% if order.status not in "received,cancelled" %}
+            <a href="{% url 'order_cancel' order.id %}" class="btn btn-danger">Cancelar</a>
+        {% endif %}
+        <a href="{% url 'order_list' %}" class="btn btn-secondary">Volver</a>
+    </div>
+</div>
+{% endblock %}
