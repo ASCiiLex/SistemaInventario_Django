@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
 from .models import Notification
 from .utils import broadcast_notification
 
@@ -48,7 +47,6 @@ def notifications_list(request):
 def notifications_mark_all_read(request):
     Notification.objects.filter(seen=False).update(seen=True)
 
-    # 🔥 Emitir WebSocket
     broadcast_notification({
         "type": "notification",
         "message": "Todas las notificaciones marcadas como leídas"
@@ -78,7 +76,6 @@ def notification_mark_read(request, pk):
     notification.seen = True
     notification.save()
 
-    # 🔥 Emitir WebSocket
     broadcast_notification({
         "type": "notification",
         "message": "Notificación marcada como leída"
@@ -106,3 +103,38 @@ def notification_mark_read(request, pk):
 def notifications_counter(request):
     unread = Notification.objects.filter(seen=False).count()
     return render(request, "notifications/partials/bell.html", {"unread": unread})
+
+
+def notifications_panel(request):
+    notifications = Notification.objects.select_related("product").all()
+    return render(request, "notifications/partials/panel.html", {"notifications": notifications})
+
+
+def notifications_panel_mark_all(request):
+    Notification.objects.filter(seen=False).update(seen=True)
+
+    broadcast_notification({
+        "type": "notification",
+        "message": "Todas las notificaciones marcadas como leídas"
+    })
+
+    notifications = Notification.objects.select_related("product").all()
+    response = render(request, "notifications/partials/panel.html", {"notifications": notifications})
+    response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificaciones actualizadas"}}'
+    return response
+
+
+def notifications_panel_mark_one(request, pk):
+    notification = get_object_or_404(Notification, pk=pk)
+    notification.seen = True
+    notification.save()
+
+    broadcast_notification({
+        "type": "notification",
+        "message": "Notificación marcada como leída"
+    })
+
+    notifications = Notification.objects.select_related("product").all()
+    response = render(request, "notifications/partials/panel.html", {"notifications": notifications})
+    response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificación marcada como leída"}}'
+    return response

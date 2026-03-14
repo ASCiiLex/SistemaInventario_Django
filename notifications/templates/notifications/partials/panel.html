@@ -1,0 +1,39 @@
+<div>
+    <div class="d-flex justify-content-end mb-2">
+        <button
+            class="btn btn-sm btn-outline-primary"
+            hx-post="{% url 'notifications_panel_mark_all' %}"
+            hx-target="#notificationsPanelBody"
+            hx-swap="innerHTML">
+            Marcar todas como leídas
+        </button>
+    </div>
+
+    <ul class="list-group">
+        {% for n in notifications %}
+            <li class="list-group-item d-flex justify-content-between align-items-start {% if not n.seen %}fw-bold{% endif %}">
+                <div>
+                    {{ n.message }}<br>
+                    {% if n.product %}
+                        <small class="text-muted">Producto: {{ n.product }}</small><br>
+                    {% endif %}
+                    <small class="text-muted">{{ n.created_at|date:"d/m/Y H:i" }}</small>
+                </div>
+
+                {% if not n.seen %}
+                    <button
+                        class="btn btn-sm btn-outline-success"
+                        hx-post="{% url 'notifications_panel_mark_one' n.pk %}"
+                        hx-target="#notificationsPanelBody"
+                        hx-swap="innerHTML">
+                        ✓
+                    </button>
+                {% endif %}
+            </li>
+        {% empty %}
+            <li class="list-group-item text-center text-muted">
+                No hay notificaciones
+            </li>
+        {% endfor %}
+    </ul>
+</div>

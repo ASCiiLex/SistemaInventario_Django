@@ -1,8 +1,13 @@
-<a href="/notificaciones/" class="position-relative">
+<div
+    class="position-relative"
+    style="cursor:pointer;"
+    data-bs-toggle="offcanvas"
+    data-bs-target="#notificationsPanelOffcanvas"
+>
     <span class="btn btn-warning">🔔</span>
     {% if unread > 0 %}
         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
             {{ unread }}
         </span>
     {% endif %}
-</a>
+</div>
