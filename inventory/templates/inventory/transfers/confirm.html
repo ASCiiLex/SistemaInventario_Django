@@ -1,16 +1,26 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Confirmar transferencia #{{ transfer.id }}</h2>
+<div class="container mt-4">
+    <h2 class="mb-3">Confirmar transferencia #{{ transfer.id }}</h2>
 
-<p>¿Deseas confirmar la recepción de esta transferencia?</p>
+    <div class="card mb-3">
+        <div class="card-body">
+            <p>¿Deseas confirmar la recepción de esta transferencia?</p>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Producto:</strong> {{ transfer.product.name }}</li>
+                <li class="list-group-item"><strong>Origen:</strong> {{ transfer.origin.name }}</li>
+                <li class="list-group-item"><strong>Destino:</strong> {{ transfer.destination.name }}</li>
+                <li class="list-group-item"><strong>Cantidad:</strong> {{ transfer.quantity }}</li>
+            </ul>
+        </div>
+    </div>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn btn-success">Confirmar</button>
-</form>
-
-<a href="{% url 'transfer_detail' transfer.id %}" class="btn btn-secondary">Cancelar</a>
-
+    <form method="post" class="d-inline">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn btn-success">Confirmar</button>
+    </form>
+    <a href="{% url 'transfer_detail' transfer.id %}" class="btn btn-secondary ms-2">Cancelar</a>
+</div>
 {% endblock %}

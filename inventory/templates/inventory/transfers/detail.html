@@ -1,23 +1,38 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Transferencia #{{ transfer.id }}</h2>
+<div class="container mt-4">
+    <h2 class="mb-3">Transferencia #{{ transfer.id }}</h2>
 
-<ul class="list-group mb-3">
-    <li class="list-group-item"><strong>Producto:</strong> {{ transfer.product.name }}</li>
-    <li class="list-group-item"><strong>Origen:</strong> {{ transfer.origin.name }}</li>
-    <li class="list-group-item"><strong>Destino:</strong> {{ transfer.destination.name }}</li>
-    <li class="list-group-item"><strong>Cantidad:</strong> {{ transfer.quantity }}</li>
-    <li class="list-group-item"><strong>Estado:</strong> {{ transfer.get_status_display }}</li>
-    <li class="list-group-item"><strong>Creada por:</strong> {{ transfer.created_by }}</li>
-    <li class="list-group-item"><strong>Fecha:</strong> {{ transfer.created_at|date:"d/m/Y H:i" }}</li>
-</ul>
+    <div class="card mb-3">
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Producto:</strong> {{ transfer.product.name }}</li>
+                <li class="list-group-item"><strong>Origen:</strong> {{ transfer.origin.name }}</li>
+                <li class="list-group-item"><strong>Destino:</strong> {{ transfer.destination.name }}</li>
+                <li class="list-group-item"><strong>Cantidad:</strong> {{ transfer.quantity }}</li>
+                <li class="list-group-item">
+                    <strong>Estado:</strong>
+                    {% if transfer.status == "pending" %}
+                        <span class="badge bg-warning">Pendiente</span>
+                    {% elif transfer.status == "received" %}
+                        <span class="badge bg-success">Recibida</span>
+                    {% else %}
+                        <span class="badge bg-danger">Cancelada</span>
+                    {% endif %}
+                </li>
+                <li class="list-group-item"><strong>Creada por:</strong> {{ transfer.created_by }}</li>
+                <li class="list-group-item"><strong>Fecha:</strong> {{ transfer.created_at|date:"d/m/Y H:i" }}</li>
+            </ul>
+        </div>
+    </div>
 
-{% if transfer.status == "pending" %}
-    <a href="{% url 'transfer_confirm' transfer.id %}" class="btn btn-success">Confirmar recepción</a>
-    <a href="{% url 'transfer_cancel' transfer.id %}" class="btn btn-danger">Cancelar</a>
-{% endif %}
-
-<a href="{% url 'transfer_list' %}" class="btn btn-secondary">Volver</a>
-
+    <div class="d-flex gap-2 mb-3">
+        {% if transfer.status == "pending" %}
+            <a href="{% url 'transfer_confirm' transfer.id %}" class="btn btn-success">Confirmar recepción</a>
+            <a href="{% url 'transfer_cancel' transfer.id %}" class="btn btn-danger">Cancelar</a>
+        {% endif %}
+        <a href="{% url 'transfer_list' %}" class="btn btn-secondary">Volver</a>
+    </div>
+</div>
 {% endblock %}

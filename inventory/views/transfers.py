@@ -1,8 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.core.paginator import Paginator
 
 from ..models import StockTransfer
-from ..forms import StockTransferCreateForm, StockTransferConfirmForm, StockTransferFilterForm
+from ..forms import (
+    StockTransferCreateForm,
+    StockTransferConfirmForm,
+    StockTransferFilterForm,
+)
 
 
 def transfer_list(request):
@@ -25,8 +30,6 @@ def transfer_list(request):
             qs = qs.filter(destination=destination)
         if status:
             qs = qs.filter(status=status)
-
-    from django.core.paginator import Paginator
 
     paginator = Paginator(qs, 25)
     page_number = request.GET.get("page")
