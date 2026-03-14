@@ -1,19 +1,47 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 
 from ..models import StockTransfer
-from ..forms import StockTransferCreateForm, StockTransferConfirmForm
-
+from ..forms import StockTransferCreateForm, StockTransferConfirmForm, StockTransferFilterForm
 
 
 def transfer_list(request):
-    transfers = StockTransfer.objects.select_related(
+    qs = StockTransfer.objects.select_related(
         "product", "origin", "destination", "created_by", "confirmed_by"
     ).all()
 
-    return render(request, "inventory/transfers/list.html", {"transfers": transfers})
+    filter_form = StockTransferFilterForm(request.GET or None)
+    if filter_form.is_valid():
+        product = filter_form.cleaned_data.get("product")
+        origin = filter_form.cleaned_data.get("origin")
+        destination = filter_form.cleaned_data.get("destination")
+        status = filter_form.cleaned_data.get("status")
 
+        if product:
+            qs = qs.filter(product=product)
+        if origin:
+            qs = qs.filter(origin=origin)
+        if destination:
+            qs = qs.filter(destination=destination)
+        if status:
+            qs = qs.filter(status=status)
+
+    from django.core.paginator import Paginator
+
+    paginator = Paginator(qs, 25)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "transfers": page_obj,
+        "page_obj": page_obj,
+        "filter_form": filter_form,
+    }
+
+    if request.headers.get("HX-Request"):
+        return render(request, "inventory/transfers/partials/table.html", context)
+
+    return render(request, "inventory/transfers/list.html", context)
 
 
 def transfer_create(request):
@@ -35,11 +63,9 @@ def transfer_create(request):
     )
 
 
-
 def transfer_detail(request, pk):
     transfer = get_object_or_404(StockTransfer, pk=pk)
     return render(request, "inventory/transfers/detail.html", {"transfer": transfer})
-
 
 
 def transfer_confirm(request, pk):
@@ -66,7 +92,6 @@ def transfer_confirm(request, pk):
         "inventory/transfers/confirm.html",
         {"transfer": transfer, "form": form},
     )
-
 
 
 def transfer_cancel(request, pk):

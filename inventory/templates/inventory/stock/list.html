@@ -3,42 +3,43 @@
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Movimientos de stock </h1>
+        <h1>Movimientos de stock</h1>
         <div>
             <a href="{% url 'stockmovement_create' %}" class="btn btn-primary me-2">Nuevo movimiento</a>
             <a href="{% url 'transfer_create' %}" class="btn btn-secondary">Transferencia entre almacenes</a>
         </div>
     </div>
 
-    <table class="table table-striped mt-3">
-        <thead>
-            <tr>
-                <th>Fecha</th>
-                <th>Producto</th>
-                <th>Tipo</th>
-                <th>Origen</th>
-                <th>Destino</th>
-                <th>Cantidad</th>
-                <th>Nota</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for m in movements %}
-                <tr>
-                    <td>{{ m.created_at|date:"d/m/Y H:i" }}</td>
-                    <td>{{ m.product }}</td>
-                    <td>{{ m.get_movement_type_display }}</td>
-                    <td>{{ m.origin|default:"-" }}</td>
-                    <td>{{ m.destination|default:"-" }}</td>
-                    <td>{{ m.quantity }}</td>
-                    <td>{{ m.note|default:"-" }}</td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="7" class="text-center">No hay movimientos de stock registrados.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <form
+        method="get"
+        class="row g-2 mb-3"
+        hx-get="{% url 'stockmovement_list' %}"
+        hx-target="#movements-table"
+        hx-push-url="true"
+    >
+        <div class="col-md-3">
+            {{ filter_form.product.label_tag }}
+            {{ filter_form.product }}
+        </div>
+        <div class="col-md-2">
+            {{ filter_form.movement_type.label_tag }}
+            {{ filter_form.movement_type }}
+        </div>
+        <div class="col-md-3">
+            {{ filter_form.origin.label_tag }}
+            {{ filter_form.origin }}
+        </div>
+        <div class="col-md-3">
+            {{ filter_form.destination.label_tag }}
+            {{ filter_form.destination }}
+        </div>
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="submit" class="btn btn-outline-primary w-100">Filtrar</button>
+        </div>
+    </form>
+
+    <div id="movements-table">
+        {% include "inventory/stock/partials/table.html" %}
+    </div>
 </div>
 {% endblock %}

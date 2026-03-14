@@ -1,47 +1,42 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Transferencias</h2>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Transferencias</h2>
+        <a href="{% url 'transfer_create' %}" class="btn btn-success">Nueva transferencia</a>
+    </div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Producto</th>
-            <th>Origen</th>
-            <th>Destino</th>
-            <th>Cantidad</th>
-            <th>Estado</th>
-            <th>Fecha</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for t in transfers %}
-        <tr>
-            <td>{{ t.id }}</td>
-            <td>{{ t.product.name }}</td>
-            <td>{{ t.origin.name }}</td>
-            <td>{{ t.destination.name }}</td>
-            <td>{{ t.quantity }}</td>
-            <td>
-                {% if t.status == "pending" %}
-                    <span class="badge bg-warning">Pendiente</span>
-                {% elif t.status == "received" %}
-                    <span class="badge bg-success">Recibida</span>
-                {% else %}
-                    <span class="badge bg-danger">Cancelada</span>
-                {% endif %}
-            </td>
-            <td>{{ t.created_at|date:"d/m/Y H:i" }}</td>
-            <td>
-                <a href="{% url 'transfer_detail' t.id %}" class="btn btn-sm btn-primary">Ver</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <form
+        method="get"
+        class="row g-2 mb-3"
+        hx-get="{% url 'transfer_list' %}"
+        hx-target="#transfers-table"
+        hx-push-url="true"
+    >
+        <div class="col-md-3">
+            {{ filter_form.product.label_tag }}
+            {{ filter_form.product }}
+        </div>
+        <div class="col-md-3">
+            {{ filter_form.origin.label_tag }}
+            {{ filter_form.origin }}
+        </div>
+        <div class="col-md-3">
+            {{ filter_form.destination.label_tag }}
+            {{ filter_form.destination }}
+        </div>
+        <div class="col-md-2">
+            {{ filter_form.status.label_tag }}
+            {{ filter_form.status }}
+        </div>
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="submit" class="btn btn-outline-primary w-100">Filtrar</button>
+        </div>
+    </form>
 
-<a href="{% url 'transfer_create' %}" class="btn btn-success">Nueva transferencia</a>
-
+    <div id="transfers-table">
+        {% include "inventory/transfers/partials/table.html" %}
+    </div>
+</div>
 {% endblock %}

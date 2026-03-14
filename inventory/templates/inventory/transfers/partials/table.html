@@ -1,0 +1,86 @@
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Producto</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th>Cantidad</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in transfers %}
+        <tr>
+            <td>{{ t.id }}</td>
+            <td>{{ t.product.name }}</td>
+            <td>{{ t.origin.name }}</td>
+            <td>{{ t.destination.name }}</td>
+            <td>{{ t.quantity }}</td>
+            <td>
+                {% if t.status == "pending" %}
+                    <span class="badge bg-warning">Pendiente</span>
+                {% elif t.status == "received" %}
+                    <span class="badge bg-success">Recibida</span>
+                {% else %}
+                    <span class="badge bg-danger">Cancelada</span>
+                {% endif %}
+            </td>
+            <td>{{ t.created_at|date:"d/m/Y H:i" }}</td>
+            <td>
+                <a href="{% url 'transfer_detail' t.id %}" class="btn btn-sm btn-primary">Ver</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" class="text-center">No hay transferencias registradas.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if page_obj.has_other_pages %}
+<nav aria-label="Paginación de transferencias">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                   hx-get="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|safe|cut:'page='|cut:page_obj.number|stringformat:'s' }}{% endif %}"
+                   hx-target="#transfers-table"
+                   hx-push-url="true"
+                >&laquo;</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% else %}
+                <li class="page-item">
+                    <a class="page-link"
+                       hx-get="?page={{ num }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|safe|cut:'page='|cut:page_obj.number|stringformat:'s' }}{% endif %}"
+                       hx-target="#transfers-table"
+                       hx-push-url="true"
+                    >{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                   hx-get="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|safe|cut:'page='|cut:page_obj.number|stringformat:'s' }}{% endif %}"
+                   hx-target="#transfers-table"
+                   hx-push-url="true"
+                >&raquo;</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}

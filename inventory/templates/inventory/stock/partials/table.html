@@ -1,0 +1,74 @@
+<table class="table table-striped mt-3">
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Producto</th>
+            <th>Tipo</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th>Cantidad</th>
+            <th>Nota</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in movements %}
+            <tr>
+                <td>{{ m.created_at|date:"d/m/Y H:i" }}</td>
+                <td>{{ m.product }}</td>
+                <td>{{ m.get_movement_type_display }}</td>
+                <td>{{ m.origin|default:"-" }}</td>
+                <td>{{ m.destination|default:"-" }}</td>
+                <td>{{ m.quantity }}</td>
+                <td>{{ m.note|default:"-" }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No hay movimientos de stock registrados.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if page_obj.has_other_pages %}
+<nav aria-label="Paginación de movimientos">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                   hx-get="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|safe|cut:'page='|cut:page_obj.number|stringformat:'s' }}{% endif %}"
+                   hx-target="#movements-table"
+                   hx-push-url="true"
+                >&laquo;</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% else %}
+                <li class="page-item">
+                    <a class="page-link"
+                       hx-get="?page={{ num }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|safe|cut:'page='|cut:page_obj.number|stringformat:'s' }}{% endif %}"
+                       hx-target="#movements-table"
+                       hx-push-url="true"
+                    >{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                   hx-get="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|safe|cut:'page='|cut:page_obj.number|stringformat:'s' }}{% endif %}"
+                   hx-target="#movements-table"
+                   hx-push-url="true"
+                >&raquo;</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
