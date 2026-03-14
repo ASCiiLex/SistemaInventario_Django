@@ -3,7 +3,6 @@ from django.db.models import Sum
 from products.models import Product
 from suppliers.models import Supplier
 from categories.models import Category
-from movements.models import Movement
 from inventory.models import StockItem, StockMovement
 
 
@@ -60,7 +59,8 @@ def dashboard_low_stock(request):
 
 def dashboard_recent_movements(request):
     recent_movements = (
-        Movement.objects.select_related("product")
+        StockMovement.objects
+        .select_related("product")
         .order_by("-created_at")[:10]
     )
 
@@ -69,6 +69,7 @@ def dashboard_recent_movements(request):
         "dashboard/partials/recent_movements.html",
         {"recent_movements": recent_movements},
     )
+
 
 
 def dashboard_recent_stock_movements(request):

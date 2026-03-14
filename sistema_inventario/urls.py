@@ -14,7 +14,6 @@ urlpatterns = [
     path('categorias/', include('categories.urls')),
     path('proveedores/', include('suppliers.urls')),
     path('productos/', include('products.urls')),
-    path('movimientos/', include('movements.urls')),
     
 
     # Notificaciones

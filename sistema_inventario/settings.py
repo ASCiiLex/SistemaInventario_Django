@@ -30,7 +30,6 @@ INSTALLED_APPS = [
     'products.apps.ProductsConfig',
     'suppliers',
     'categories',
-    'movements',
     'dashboard',
     'notifications',
     'inventory',
