@@ -17,6 +17,16 @@ class StockMovementForm(forms.ModelForm):
             "note": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # TRANSFER se gestiona por StockTransfer
+        self.fields["movement_type"].choices = [
+            ("IN", "Entrada"),
+            ("OUT", "Salida"),
+        ]
+        self.fields["origin"].queryset = Location.objects.all()
+        self.fields["destination"].queryset = Location.objects.all()
+
     def clean_quantity(self):
         qty = self.cleaned_data["quantity"]
         if qty <= 0:
@@ -53,4 +63,24 @@ class StockMovementFilterForm(forms.Form):
         required=False,
         widget=forms.Select(attrs={"class": "form-select select2"}),
         label="Destino",
+    )
+
+    q = forms.CharField(
+        required=False,
+        label="Buscar",
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Buscar producto..."}
+        ),
+    )
+
+    date_from = forms.DateField(
+        required=False,
+        label="Desde",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+
+    date_to = forms.DateField(
+        required=False,
+        label="Hasta",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
     )

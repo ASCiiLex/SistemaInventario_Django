@@ -35,7 +35,7 @@
         {% if page_obj.has_previous %}
             <li class="page-item">
                 <a class="page-link"
-                   hx-get="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|safe|cut:'page='|cut:page_obj.number|stringformat:'s' }}{% endif %}"
+                   hx-get="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}"
                    hx-target="#movements-table"
                    hx-push-url="true"
                 >&laquo;</a>
@@ -50,7 +50,7 @@
             {% else %}
                 <li class="page-item">
                     <a class="page-link"
-                       hx-get="?page={{ num }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|safe|cut:'page='|cut:page_obj.number|stringformat:'s' }}{% endif %}"
+                       hx-get="?page={{ num }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}"
                        hx-target="#movements-table"
                        hx-push-url="true"
                     >{{ num }}</a>
@@ -61,7 +61,7 @@
         {% if page_obj.has_next %}
             <li class="page-item">
                 <a class="page-link"
-                   hx-get="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|safe|cut:'page='|cut:page_obj.number|stringformat:'s' }}{% endif %}"
+                   hx-get="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}"
                    hx-target="#movements-table"
                    hx-push-url="true"
                 >&raquo;</a>
