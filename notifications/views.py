@@ -1,11 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.timezone import localdate
+from django.core.paginator import Paginator
+from datetime import timedelta
 from .models import Notification
 from .utils import broadcast_notification
 
 
+# ---------------------------------------------------------
+# LISTA PRINCIPAL (tabla)
+# ---------------------------------------------------------
+
 def _get_filtered_notifications(request):
     status = request.GET.get("status", "")
     product_id = request.GET.get("product", "")
+    type_filter = request.GET.get("type", "")
 
     notifications = Notification.objects.select_related("product").order_by("-created_at")
 
@@ -17,9 +25,13 @@ def _get_filtered_notifications(request):
     if product_id:
         notifications = notifications.filter(product_id=product_id)
 
+    if type_filter:
+        notifications = notifications.filter(type=type_filter)
+
     return notifications, {
         "status": status,
         "product_id": product_id,
+        "type": type_filter,
     }
 
 
@@ -100,14 +112,78 @@ def notification_mark_read(request, pk):
     return redirect("notifications_list")
 
 
+def notification_mark_unread(request, pk):
+    notification = get_object_or_404(Notification, pk=pk)
+    notification.seen = False
+    notification.save()
+
+    broadcast_notification({
+        "type": "notification",
+        "message": "Notificación marcada como no leída"
+    })
+
+    notifications, filters_ctx = _get_filtered_notifications(request)
+    products = (
+        Notification.objects.exclude(product__isnull=True)
+        .values_list("product_id", "product__name")
+        .distinct()
+    )
+    context = {
+        "notifications": notifications,
+        "products": products,
+        **filters_ctx,
+    }
+    response = render(request, "notifications/partials/notifications_table.html", context)
+    response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificación marcada como no leída"}}'
+    return response
+
+
+# ---------------------------------------------------------
+# CAMPANA
+# ---------------------------------------------------------
+
 def notifications_counter(request):
     unread = Notification.objects.filter(seen=False).count()
     return render(request, "notifications/partials/bell.html", {"unread": unread})
 
 
+# ---------------------------------------------------------
+# PANEL LATERAL
+# ---------------------------------------------------------
+
+def _get_panel_notifications(request):
+    q = request.GET.get("q", "").strip().lower()
+    page = request.GET.get("page", 1)
+
+    notifications = Notification.objects.select_related("product").order_by("-created_at")
+
+    if q:
+        notifications = notifications.filter(message__icontains=q)
+
+    paginator = Paginator(notifications, 10)
+    page_obj = paginator.get_page(page)
+
+    return page_obj
+
+
+def _panel_context(page_obj):
+    today = localdate()
+    yesterday = today - timedelta(days=1)
+    week_start = today - timedelta(days=today.weekday())
+
+    return {
+        "page_obj": page_obj,
+        "notifications": page_obj.object_list,
+        "today": today,
+        "yesterday": yesterday,
+        "week_start": week_start,
+    }
+
+
 def notifications_panel(request):
-    notifications = Notification.objects.select_related("product").all()
-    return render(request, "notifications/partials/panel.html", {"notifications": notifications})
+    page_obj = _get_panel_notifications(request)
+    context = _panel_context(page_obj)
+    return render(request, "notifications/partials/panel.html", context)
 
 
 def notifications_panel_mark_all(request):
@@ -118,8 +194,10 @@ def notifications_panel_mark_all(request):
         "message": "Todas las notificaciones marcadas como leídas"
     })
 
-    notifications = Notification.objects.select_related("product").all()
-    response = render(request, "notifications/partials/panel.html", {"notifications": notifications})
+    page_obj = _get_panel_notifications(request)
+    context = _panel_context(page_obj)
+
+    response = render(request, "notifications/partials/panel.html", context)
     response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificaciones actualizadas"}}'
     return response
 
@@ -134,7 +212,27 @@ def notifications_panel_mark_one(request, pk):
         "message": "Notificación marcada como leída"
     })
 
-    notifications = Notification.objects.select_related("product").all()
-    response = render(request, "notifications/partials/panel.html", {"notifications": notifications})
+    page_obj = _get_panel_notifications(request)
+    context = _panel_context(page_obj)
+
+    response = render(request, "notifications/partials/panel.html", context)
     response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificación marcada como leída"}}'
+    return response
+
+
+def notifications_panel_mark_unread(request, pk):
+    notification = get_object_or_404(Notification, pk=pk)
+    notification.seen = False
+    notification.save()
+
+    broadcast_notification({
+        "type": "notification",
+        "message": "Notificación marcada como no leída"
+    })
+
+    page_obj = _get_panel_notifications(request)
+    context = _panel_context(page_obj)
+
+    response = render(request, "notifications/partials/panel.html", context)
+    response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificación marcada como no leída"}}'
     return response

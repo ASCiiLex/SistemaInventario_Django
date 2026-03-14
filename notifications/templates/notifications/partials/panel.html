@@ -1,4 +1,20 @@
 <div>
+
+    <!-- BUSCADOR -->
+    <div class="mb-3">
+        <input
+            type="text"
+            class="form-control"
+            placeholder="Buscar notificaciones..."
+            hx-get="{% url 'notifications_panel' %}"
+            hx-target="#notificationsPanelBody"
+            hx-swap="innerHTML"
+            name="q"
+            hx-trigger="keyup changed delay:200ms"
+        >
+    </div>
+
+    <!-- BOTÓN MARCAR TODAS -->
     <div class="d-flex justify-content-end mb-2">
         <button
             class="btn btn-sm btn-outline-primary"
@@ -9,31 +25,105 @@
         </button>
     </div>
 
-    <ul class="list-group">
-        {% for n in notifications %}
-            <li class="list-group-item d-flex justify-content-between align-items-start {% if not n.seen %}fw-bold{% endif %}">
-                <div>
-                    {{ n.message }}<br>
-                    {% if n.product %}
-                        <small class="text-muted">Producto: {{ n.product }}</small><br>
-                    {% endif %}
-                    <small class="text-muted">{{ n.created_at|date:"d/m/Y H:i" }}</small>
-                </div>
+    <!-- AGRUPACIÓN POR FECHAS -->
+    {% regroup notifications by created_at.date as grouped %}
 
-                {% if not n.seen %}
-                    <button
-                        class="btn btn-sm btn-outline-success"
-                        hx-post="{% url 'notifications_panel_mark_one' n.pk %}"
-                        hx-target="#notificationsPanelBody"
-                        hx-swap="innerHTML">
-                        ✓
-                    </button>
-                {% endif %}
-            </li>
-        {% empty %}
-            <li class="list-group-item text-center text-muted">
-                No hay notificaciones
-            </li>
-        {% endfor %}
-    </ul>
+    {% for group in grouped %}
+        {% with group_date=group.grouper %}
+            {% if group_date == today %}
+                <h6 class="text-primary mt-3">Hoy</h6>
+            {% elif group_date == yesterday %}
+                <h6 class="text-primary mt-3">Ayer</h6>
+            {% elif group_date >= week_start %}
+                <h6 class="text-primary mt-3">Esta semana</h6>
+            {% else %}
+                <h6 class="text-primary mt-3">Más antiguas</h6>
+            {% endif %}
+        {% endwith %}
+
+        <ul class="list-group mb-3">
+            {% for n in group.list %}
+                <li class="list-group-item d-flex justify-content-between align-items-start {% if not n.seen %}fw-bold{% endif %}"
+                    x-data="{show:true}"
+                    x-show="show"
+                    x-transition>
+                    
+                    <div>
+                        <!-- ICONO SEGÚN TIPO -->
+                        {% if n.type == "movement" %}
+                            <span class="text-primary">📦</span>
+                        {% elif n.type == "stock_low" %}
+                            <span class="text-danger">🔴</span>
+                        {% elif n.type == "order" %}
+                            <span class="text-secondary">🧾</span>
+                        {% elif n.type == "alert" %}
+                            <span class="text-warning">⚠️</span>
+                        {% else %}
+                            <span class="text-success">🔔</span>
+                        {% endif %}
+
+                        {{ n.message }}<br>
+
+                        {% if n.product %}
+                            <small class="text-muted">Producto: {{ n.product }}</small><br>
+                        {% endif %}
+
+                        <small class="text-muted">{{ n.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+
+                    <div class="d-flex gap-2">
+
+                        {% if not n.seen %}
+                            <button
+                                class="btn btn-sm btn-outline-success"
+                                hx-post="{% url 'notifications_panel_mark_one' n.pk %}"
+                                hx-target="#notificationsPanelBody"
+                                hx-swap="innerHTML">
+                                ✓
+                            </button>
+                        {% else %}
+                            <button
+                                class="btn btn-sm btn-outline-secondary"
+                                hx-post="{% url 'notifications_panel_mark_unread' n.pk %}"
+                                hx-target="#notificationsPanelBody"
+                                hx-swap="innerHTML">
+                                ↺
+                            </button>
+                        {% endif %}
+
+                    </div>
+
+                </li>
+            {% endfor %}
+        </ul>
+
+    {% empty %}
+        <p class="text-muted text-center">No hay notificaciones.</p>
+    {% endfor %}
+
+    <!-- PAGINACIÓN -->
+    <div class="d-flex justify-content-between mt-3">
+        {% if page_obj.has_previous %}
+            <button
+                class="btn btn-sm btn-outline-primary"
+                hx-get="{% url 'notifications_panel' %}?page={{ page_obj.previous_page_number }}"
+                hx-target="#notificationsPanelBody"
+                hx-swap="innerHTML">
+                ← Anterior
+            </button>
+        {% else %}
+            <span></span>
+        {% endif %}
+
+        {% if page_obj.has_next %}
+            <button
+                class="btn btn-sm btn-outline-primary"
+                hx-get="{% url 'notifications_panel' %}?page={{ page_obj.next_page_number }}"
+                hx-target="#notificationsPanelBody"
+                hx-swap="innerHTML">
+                Siguiente →
+            </button>
+        {% endif %}
+    </div>
+
 </div>
