@@ -6,7 +6,7 @@ from ..models import StockTransfer
 from ..forms import StockTransferCreateForm, StockTransferConfirmForm
 
 
-@login_required
+
 def transfer_list(request):
     transfers = StockTransfer.objects.select_related(
         "product", "origin", "destination", "created_by", "confirmed_by"
@@ -15,7 +15,7 @@ def transfer_list(request):
     return render(request, "inventory/transfers/list.html", {"transfers": transfers})
 
 
-@login_required
+
 def transfer_create(request):
     if request.method == "POST":
         form = StockTransferCreateForm(request.POST)
@@ -35,13 +35,13 @@ def transfer_create(request):
     )
 
 
-@login_required
+
 def transfer_detail(request, pk):
     transfer = get_object_or_404(StockTransfer, pk=pk)
     return render(request, "inventory/transfers/detail.html", {"transfer": transfer})
 
 
-@login_required
+
 def transfer_confirm(request, pk):
     transfer = get_object_or_404(StockTransfer, pk=pk)
 
@@ -68,7 +68,7 @@ def transfer_confirm(request, pk):
     )
 
 
-@login_required
+
 def transfer_cancel(request, pk):
     transfer = get_object_or_404(StockTransfer, pk=pk)
 

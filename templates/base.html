@@ -38,10 +38,10 @@
                         Inventario
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/inventory/stock-movements/">Movimientos de stock</a></li>
-                        <li><a class="dropdown-item" href="/inventory/stock-movements/transferencia/">Transferencias entre almacenes</a></li>
-                        <li><a class="dropdown-item" href="/inventory/locations/">Almacenes</a></li>
-                        <li><a class="dropdown-item" href="/inventory/orders/">Pedidos</a></li>
+                        <li><a class="dropdown-item" href="{% url 'stockmovement_list' %}">Movimientos de stock</a></li>
+                        <li><a class="dropdown-item" href="{% url 'transfer_create' %}">Transferencias entre almacenes</a></li>
+                        <li><a class="dropdown-item" href="{% url 'location_list' %}">Almacenes</a></li>
+                        <li><a class="dropdown-item" href="{% url 'order_list' %}">Pedidos</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="/movimientos/">Historial de movimientos</a></li>
                     </ul>
