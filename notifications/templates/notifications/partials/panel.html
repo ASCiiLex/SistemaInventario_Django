@@ -1,6 +1,25 @@
 <div>
 
-    <!-- BUSCADOR -->
+    <div class="mb-3 p-2 border rounded bg-light"
+         x-data="notifSettings()"
+         x-init="loadSettings()">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Preferencias</strong>
+        </div>
+        <div class="d-flex justify-content-between">
+            <button class="btn btn-sm"
+                    :class="sound ? 'btn-success' : 'btn-outline-secondary'"
+                    @click="toggleSound()">
+                🔊 Sonido: <strong x-text="sound ? 'ON' : 'OFF'"></strong>
+            </button>
+            <button class="btn btn-sm"
+                    :class="push ? 'btn-primary' : 'btn-outline-secondary'"
+                    @click="togglePush()">
+                🖥️ Push: <strong x-text="push ? 'ON' : 'OFF'"></strong>
+            </button>
+        </div>
+    </div>
+
     <div class="mb-3">
         <input
             type="text"
@@ -14,7 +33,6 @@
         >
     </div>
 
-    <!-- BOTÓN MARCAR TODAS -->
     <div class="d-flex justify-content-end mb-2">
         <button
             class="btn btn-sm btn-outline-primary"
@@ -25,7 +43,6 @@
         </button>
     </div>
 
-    <!-- AGRUPACIÓN POR FECHAS -->
     {% regroup notifications by created_at.date as grouped %}
 
     {% for group in grouped %}
@@ -47,9 +64,8 @@
                     x-data="{show:true}"
                     x-show="show"
                     x-transition>
-                    
+
                     <div>
-                        <!-- ICONO SEGÚN TIPO -->
                         {% if n.type == "movement" %}
                             <span class="text-primary">📦</span>
                         {% elif n.type == "stock_low" %}
@@ -72,7 +88,6 @@
                     </div>
 
                     <div class="d-flex gap-2">
-
                         {% if not n.seen %}
                             <button
                                 class="btn btn-sm btn-outline-success"
@@ -90,7 +105,6 @@
                                 ↺
                             </button>
                         {% endif %}
-
                     </div>
 
                 </li>
@@ -101,7 +115,6 @@
         <p class="text-muted text-center">No hay notificaciones.</p>
     {% endfor %}
 
-    <!-- PAGINACIÓN -->
     <div class="d-flex justify-content-between mt-3">
         {% if page_obj.has_previous %}
             <button

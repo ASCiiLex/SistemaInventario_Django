@@ -3,7 +3,15 @@
 {% block content %}
 <h2 class="mb-4">Dashboard del Inventario</h2>
 
-<!-- BLOQUE: Totales -->
+<!-- 1. Resumen de notificaciones -->
+<div id="dashboard-notifications-summary"
+     hx-get="{% url 'dashboard_notifications_summary' %}"
+     hx-trigger="load, every 20s"
+     hx-target="this"
+     hx-swap="outerHTML">
+</div>
+
+<!-- 2. Cajas Totales -->
 <div id="dashboard-totals"
      hx-get="{% url 'dashboard_totals' %}"
      hx-trigger="load, every 10s"
@@ -11,9 +19,17 @@
      hx-swap="outerHTML">
 </div>
 
+<!-- 3. Últimas notificaciones -->
+<div id="dashboard-notifications-recent"
+     hx-get="{% url 'dashboard_notifications_recent' %}"
+     hx-trigger="load, every 30s"
+     hx-target="this"
+     hx-swap="outerHTML">
+</div>
+
 <hr>
 
-<!-- BLOQUE: Productos bajo mínimo -->
+<!-- 4. Productos bajo mínimo -->
 <div id="dashboard-low-stock"
      hx-get="{% url 'dashboard_low_stock' %}"
      hx-trigger="load, every 10s"
@@ -23,7 +39,7 @@
 
 <hr>
 
-<!-- BLOQUE: Movimientos legacy -->
+<!-- 5. Histórico de movimientos -->
 <div id="dashboard-recent-movements"
      hx-get="{% url 'dashboard_recent_movements' %}"
      hx-trigger="load, every 10s"
@@ -33,7 +49,7 @@
 
 <hr>
 
-<!-- BLOQUE: Movimientos modernos -->
+<!-- 6. Actividad reciente del inventario -->
 <div id="dashboard-recent-stock-movements"
      hx-get="{% url 'dashboard_recent_stock_movements' %}"
      hx-trigger="load, every 10s"
@@ -43,7 +59,7 @@
 
 <hr>
 
-<!-- BLOQUE: Gráfico -->
+<!-- 7. Stock por categoría -->
 <div id="dashboard-chart"
      hx-get="{% url 'dashboard_chart' %}"
      hx-trigger="load, every 10s"
@@ -51,4 +67,5 @@
      hx-swap="outerHTML">
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 {% endblock %}

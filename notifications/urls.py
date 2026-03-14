@@ -1,26 +1,20 @@
 from django.urls import path
-from .views import (
-    notifications_list,
-    notifications_mark_all_read,
-    notification_mark_read,
-    notification_mark_unread,
-    notifications_counter,
-    notifications_panel,
-    notifications_panel_mark_all,
-    notifications_panel_mark_one,
-    notifications_panel_mark_unread,
-
-)
+from . import views
 
 urlpatterns = [
-    path("", notifications_list, name="notifications_list"),
-    path("leer-todas/", notifications_mark_all_read, name="notifications_mark_all_read"),
-    path("leer/<int:pk>/", notification_mark_read, name="notification_mark_read"),
-    path("contador/", notifications_counter, name="notifications_counter"),
+    path("lista/", views.notifications_list, name="notifications_list"),
+    path("marcar-todas/", views.notifications_mark_all_read, name="notifications_mark_all_read"),
+    path("marcar-leida/<int:pk>/", views.notification_mark_read, name="notification_mark_read"),
+    path("marcar-no-leida/<int:pk>/", views.notification_mark_unread, name="notification_mark_unread"),
 
-    path("panel/", notifications_panel, name="notifications_panel"),
-    path("panel/leer-todas/", notifications_panel_mark_all, name="notifications_panel_mark_all"),
-    path("panel/leer/<int:pk>/", notifications_panel_mark_one, name="notifications_panel_mark_one"),
-    path("panel/no-leida/<int:pk>/", notifications_panel_mark_unread, name="notifications_panel_mark_unread"),
-    path("no-leida/<int:pk>/", notification_mark_unread, name="notification_mark_unread"),
+    path("contador/", views.notifications_counter, name="notifications_counter"),
+
+    path("panel/", views.notifications_panel, name="notifications_panel"),
+    path("panel/marcar-todas/", views.notifications_panel_mark_all, name="notifications_panel_mark_all"),
+    path("panel/marcar-una/<int:pk>/", views.notifications_panel_mark_one, name="notifications_panel_mark_one"),
+    path("panel/marcar-no-leida/<int:pk>/", views.notifications_panel_mark_unread, name="notifications_panel_mark_unread"),
+
+    path("dashboard/resumen/", views.notifications_summary, name="dashboard_notifications_summary"),
+    path("dashboard/graficos/", views.notifications_chart, name="dashboard_notifications_chart"),
+    path("dashboard/recientes/", views.notifications_recent, name="dashboard_notifications_recent"),
 ]

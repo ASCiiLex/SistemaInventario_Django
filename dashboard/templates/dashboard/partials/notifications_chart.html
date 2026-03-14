@@ -1,0 +1,50 @@
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Actividad de notificaciones</h5>
+    </div>
+    <div class="card-body">
+        <div id="notif-by-day" class="mb-4"></div>
+        <div class="row">
+            <div class="col-md-6">
+                <div id="notif-by-type"></div>
+            </div>
+            <div class="col-md-6">
+                <div id="notif-read-vs-unread"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function() {
+            const dayOptions = {
+                chart: { type: 'line', height: 250 },
+                series: [{ name: 'Notificaciones', data: {{ values|safe }} }],
+                xaxis: { categories: {{ labels|safe }} }
+            };
+            const typeOptions = {
+                chart: { type: 'donut', height: 250 },
+                labels: {{ type_labels|safe }},
+                series: {{ type_values|safe }}
+            };
+            const readOptions = {
+                chart: { type: 'pie', height: 250 },
+                labels: ['Leídas', 'No leídas'],
+                series: [{{ read_count }}, {{ unread_count }}]
+            };
+            const dayEl = document.querySelector('#notif-by-day');
+            if (dayEl) {
+                const chart1 = new ApexCharts(dayEl, dayOptions);
+                chart1.render();
+            }
+            const typeEl = document.querySelector('#notif-by-type');
+            if (typeEl) {
+                const chart2 = new ApexCharts(typeEl, typeOptions);
+                chart2.render();
+            }
+            const readEl = document.querySelector('#notif-read-vs-unread');
+            if (readEl) {
+                const chart3 = new ApexCharts(readEl, readOptions);
+                chart3.render();
+            }
+        })();
+    </script>
+</div>
