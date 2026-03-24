@@ -1,4 +1,6 @@
-/* ======== SECCIONES PRINCIPALES ======== */
+/* ============================
+   SECCIONES PRINCIPALES
+============================ */
 
 .section-header {
     display: flex;
@@ -9,47 +11,120 @@
     padding: 10px 15px;
 }
 
+/* Flechas principales */
 .toggle-arrow {
     font-size: 1.2rem;
     transition: transform 0.25s ease;
 }
 
+.toggle-arrow.arrow-down::after {
+    content: "▼"; /* Cerrado */
+}
+
+.toggle-arrow.arrow-up::after {
+    content: "▲"; /* Abierto */
+}
+
+/* Estado cerrado */
 .card-section.closed .section-content {
     display: none;
 }
 
-.card-section.closed .toggle-arrow {
-    transform: rotate(180deg);
-}
-
-/* ======== SUBSECCIONES (FLECHAS INTERNAS) ======== */
+/* ============================
+   SUBSECCIONES INTERNAS
+============================ */
 
 .subsection-header {
     display: flex;
     justify-content: space-between;
     cursor: pointer;
     padding: 6px 10px;
-    background: #f3f3f3;
+    background: #414040;
     border-radius: 4px;
     font-size: 0.9rem;
     margin-bottom: 4px;
+    color: #fafafa;
 }
 
+/* Flechas internas */
 .sub-toggle-arrow {
     font-size: 0.9rem;
     transition: transform 0.25s ease;
 }
 
+.sub-toggle-arrow.sub-arrow-down::after {
+    content: "▸"; /* Cerrado */
+}
+
+.sub-toggle-arrow.sub-arrow-up::after {
+    content: "▾"; /* Abierto */
+}
+
+/* Estado cerrado */
 .subsection.closed .subsection-content {
     display: none;
 }
 
-.subsection.closed .sub-toggle-arrow {
-    transform: rotate(90deg);
+/* ============================
+   TABLAS DE SUBSECCIONES
+============================ */
+
+/* Fondo suave para tablas internas */
+.subsection table {
+    background-color: #5c5a5a !important;
+    border-top: 2px solid #ccc;
+    
 }
 
-/* ======== ALTURAS IGUALADAS ======== */
+/* Rayado muy suave */
+.subsection table tbody tr:nth-child(odd) {
+    background-color: #5c5a5a !important;
+}
+
+/* Cabeceras de subsección más destacadas */
+.subsection-header {
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 10px 12px;
+    color: #fff;
+}
+
+/* Cabeceras de tabla internas más suaves */
+.subsection table thead {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #000;
+}
+
+/* ============================
+   ALTURAS IGUALADAS
+============================ */
 
 .row.g-3 > [class*="col-md-6"] .card-section {
     height: 100%;
+}
+
+/* ============================
+   REDUCCIÓN DE ESPACIOS EN TABLAS
+============================ */
+
+/* Reduce padding general del contenedor */
+.compact-table {
+    padding: 6px 10px !important;
+}
+
+/* Reduce padding de celdas */
+.compact-table table td,
+.compact-table table th {
+    padding: 4px 6px !important;
+}
+
+/* Reduce separación entre subsección y tabla */
+.compact-table .subsection-header {
+    margin-bottom: 2px;
+}
+
+/* Reduce separación entre filas */
+.compact-table table tbody tr {
+    line-height: 1.1;
 }

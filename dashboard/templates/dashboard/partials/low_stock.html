@@ -1,6 +1,5 @@
-{% if low_stock %}
 <table class="table table-striped">
-    <thead>
+    <thead class="table-danger">
         <tr>
             <th>Producto</th>
             <th>Stock</th>
@@ -8,15 +7,18 @@
         </tr>
     </thead>
     <tbody>
-        {% for item in low_stock %}
-        <tr>
-            <td>{{ item.product.name }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>{{ item.product.minimum_stock }}</td>
-        </tr>
-        {% endfor %}
+        {% if low_stock %}
+            {% for item in low_stock %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.min_stock }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="3" class="text-center">No hay productos bajo mínimo.</td>
+            </tr>
+        {% endif %}
     </tbody>
 </table>
-{% else %}
-<p>No hay productos bajo mínimo.</p>
-{% endif %}

@@ -15,9 +15,9 @@
             <div class="card card-section" data-section="noti-summary">
                 <div class="card-header section-header bg-info text-white">
                     <span>Resumen de Notificaciones</span>
-                    <span class="toggle-arrow">▼</span>
+                    <span class="toggle-arrow arrow-up"></span>
                 </div>
-                <div class="card-body section-content">
+                <div class="card-body section-content compact-table">
                     {% include "dashboard/partials/notifications_summary.html" %}
                 </div>
             </div>
@@ -28,9 +28,9 @@
             <div class="card card-section" data-section="noti-latest">
                 <div class="card-header section-header bg-primary text-white">
                     <span>Últimas Notificaciones</span>
-                    <span class="toggle-arrow">▼</span>
+                    <span class="toggle-arrow arrow-up"></span>
                 </div>
-                <div class="card-body section-content"
+                <div class="card-body section-content compact-table"
                      hx-get="{% url 'dashboard_notifications_recent' %}"
                      hx-trigger="load"
                      hx-target="this">
@@ -50,7 +50,7 @@
             <div class="card card-section" data-section="kpis">
                 <div class="card-header section-header bg-secondary text-white">
                     <span>Indicadores Clave</span>
-                    <span class="toggle-arrow">▼</span>
+                    <span class="toggle-arrow arrow-up"></span>
                 </div>
                 <div class="card-body section-content">
                     {% include "dashboard/partials/totals.html" %}
@@ -63,7 +63,7 @@
             <div class="card card-section" data-section="chart">
                 <div class="card-header section-header bg-warning text-dark">
                     <span>Stock por Categoría</span>
-                    <span class="toggle-arrow">▼</span>
+                    <span class="toggle-arrow arrow-up"></span>
                 </div>
                 <div class="card-body section-content">
                     <canvas id="categoryChart" height="180"></canvas>
@@ -81,9 +81,9 @@
             <div class="card card-section" data-section="low-stock">
                 <div class="card-header section-header bg-danger text-white">
                     <span>Productos Bajo Mínimo</span>
-                    <span class="toggle-arrow">▼</span>
+                    <span class="toggle-arrow arrow-up"></span>
                 </div>
-                <div class="card-body section-content"
+                <div class="card-body section-content compact-table"
                      hx-get="{% url 'dashboard_low_stock' %}"
                      hx-trigger="load"
                      hx-target="this">
@@ -100,7 +100,7 @@
             <div class="card card-section" data-section="activity">
                 <div class="card-header section-header bg-dark text-white">
                     <span>Registro de Actividad</span>
-                    <span class="toggle-arrow">▼</span>
+                    <span class="toggle-arrow arrow-up"></span>
                 </div>
 
                 <div class="card-body section-content">
@@ -109,7 +109,7 @@
                     <div class="subsection">
                         <div class="subsection-header">
                             <span>Actividad Reciente</span>
-                            <span class="sub-toggle-arrow">▸</span>
+                            <span class="sub-toggle-arrow sub-arrow-up"></span>
                         </div>
                         <div class="subsection-content"
                              hx-get="{% url 'dashboard_recent_movements' %}"
@@ -122,7 +122,7 @@
                     <div class="subsection mt-3">
                         <div class="subsection-header">
                             <span>Histórico de Movimientos</span>
-                            <span class="sub-toggle-arrow">▸</span>
+                            <span class="sub-toggle-arrow sub-arrow-up"></span>
                         </div>
                         <div class="subsection-content"
                              hx-get="{% url 'dashboard_recent_stock_movements' %}"

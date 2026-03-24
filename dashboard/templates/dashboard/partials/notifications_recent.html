@@ -1,6 +1,5 @@
-{% if notifications %}
 <table class="table table-striped">
-    <thead>
+    <thead class="table-primary">
         <tr>
             <th>Mensaje</th>
             <th>Producto</th>
@@ -10,17 +9,20 @@
         </tr>
     </thead>
     <tbody>
-        {% for n in notifications %}
-        <tr>
-            <td>{{ n.message }}</td>
-            <td>{{ n.product }}</td>
-            <td>{{ n.type }}</td>
-            <td>{{ n.read }}</td>
-            <td>{{ n.created_at }}</td>
-        </tr>
-        {% endfor %}
+        {% if notifications %}
+            {% for n in notifications %}
+            <tr>
+                <td>{{ n.message }}</td>
+                <td>{{ n.product }}</td>
+                <td>{{ n.get_type_display }}</td>
+                <td>{{ n.seen|yesno:"Sí,No" }}</td>
+                <td>{{ n.created_at }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="5" class="text-center">No hay notificaciones recientes.</td>
+            </tr>
+        {% endif %}
     </tbody>
 </table>
-{% else %}
-<p>No hay notificaciones recientes.</p>
-{% endif %}
