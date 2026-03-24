@@ -9,6 +9,7 @@ from ..models import StockMovement
 from ..forms import StockMovementForm, StockMovementFilterForm
 from notifications.utils import broadcast_notification
 
+
 def _filtered_stockmovements(request):
     qs = StockMovement.objects.select_related("product", "origin", "destination").all()
     filter_form = StockMovementFilterForm(request.GET or None)
@@ -39,6 +40,7 @@ def _filtered_stockmovements(request):
 
     return qs, filter_form
 
+
 def stockmovement_list(request):
     qs, filter_form = _filtered_stockmovements(request)
 
@@ -57,15 +59,13 @@ def stockmovement_list(request):
 
     return render(request, "inventory/stock/list.html", context)
 
+
 def stockmovement_create(request):
     if request.method == "POST":
         form = StockMovementForm(request.POST)
         if form.is_valid():
             movement = form.save()
             product = movement.product
-
-            if hasattr(product, "create_low_stock_notification"):
-                product.create_low_stock_notification()
 
             broadcast_notification(
                 {
@@ -113,6 +113,7 @@ def stockmovement_create(request):
         "inventory/stock/form.html",
         {"form": form, "title": "Nuevo movimiento de stock"},
     )
+
 
 def export_stockmovements_csv(request):
     response = HttpResponse(content_type="text/csv")

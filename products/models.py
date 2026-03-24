@@ -2,6 +2,8 @@ from django.db import models
 from django.db.models import Sum
 from categories.models import Category
 from suppliers.models import Supplier
+from django.utils.timezone import now
+from django.apps import apps
 
 
 def product_image_path(instance, filename):
@@ -34,6 +36,8 @@ class Product(models.Model):
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     image = models.ImageField(upload_to=product_image_path, blank=True, null=True)
+
+    last_low_stock_alert = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -77,3 +81,28 @@ class Product(models.Model):
     @property
     def last_movement(self):
         return self.movements.order_by('-created_at').first()
+
+    def create_low_stock_notification(self):
+        if self.total_stock > self.min_stock:
+            return
+
+        Notification = apps.get_model("notifications", "Notification")
+
+        existing = Notification.objects.filter(
+            product=self,
+            type="stock_low",
+            seen=False
+        ).first()
+
+        if existing:
+            return
+
+        Notification.objects.create(
+            product=self,
+            type="stock_low",
+            message=f"Stock bajo para {self.name}",
+            seen=False
+        )
+
+        self.last_low_stock_alert = now()
+        self.save(update_fields=["last_low_stock_alert"])
