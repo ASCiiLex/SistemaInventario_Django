@@ -1,0 +1,35 @@
+/* ======== SECCIONES PLEGABLES ======== */
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 10px 15px;
+}
+
+.toggle-arrow {
+    font-size: 1.2rem;
+    transition: transform 0.25s ease;
+}
+
+.card-section .section-content {
+    overflow: hidden;
+    transition: height 0.3s ease;
+}
+
+/* Cuando está plegado */
+.card-section.closed .section-content {
+    display: none;
+}
+
+.card-section.closed .toggle-arrow {
+    transform: rotate(180deg);
+}
+
+/* ======== ALTURAS IGUALADAS ======== */
+
+.row.g-3 > [class*="col-md-6"] .card-section {
+    height: 100%;
+}

@@ -1,71 +1,129 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-<h2 class="mb-4">Dashboard del Inventario</h2>
 
-<!-- 1. Resumen de notificaciones -->
-<div id="dashboard-notifications-summary"
-     hx-get="{% url 'dashboard_notifications_summary' %}"
-     hx-trigger="load, every 20s"
-     hx-target="this"
-     hx-swap="outerHTML">
+<div class="container-fluid">
+
+    <!-- ========================= -->
+    <!-- FILA 1: NOTIFICACIONES -->
+    <!-- ========================= -->
+    <div class="row g-3">
+
+        <!-- Resumen de Notificaciones -->
+        <div class="col-md-6">
+            <div class="card card-section" data-section="noti-summary">
+                <div class="card-header section-header bg-info text-white">
+                    <span>Resumen de Notificaciones</span>
+                    <span class="toggle-arrow">▼</span>
+                </div>
+                <div class="card-body section-content">
+                    {% include "dashboard/partials/notifications_summary.html" %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Últimas Notificaciones -->
+        <div class="col-md-6">
+            <div class="card card-section" data-section="noti-latest">
+                <div class="card-header section-header bg-primary text-white">
+                    <span>Últimas Notificaciones</span>
+                    <span class="toggle-arrow">▼</span>
+                </div>
+                <div class="card-body section-content"
+                     hx-get="{% url 'dashboard_notifications_recent' %}"
+                     hx-trigger="load"
+                     hx-target="this">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- FILA 2: KPIs + GRÁFICO -->
+    <!-- ========================= -->
+    <div class="row g-3 mt-1">
+
+        <!-- KPIs -->
+        <div class="col-md-6">
+            <div class="card card-section" data-section="kpis">
+                <div class="card-header section-header bg-secondary text-white">
+                    <span>Indicadores Clave</span>
+                    <span class="toggle-arrow">▼</span>
+                </div>
+                <div class="card-body section-content">
+                    {% include "dashboard/partials/totals.html" %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico -->
+        <div class="col-md-6">
+            <div class="card card-section" data-section="chart">
+                <div class="card-header section-header bg-warning text-dark">
+                    <span>Stock por Categoría</span>
+                    <span class="toggle-arrow">▼</span>
+                </div>
+                <div class="card-body section-content">
+                    <canvas id="categoryChart" height="180"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- FILA 3: BAJO MÍNIMO -->
+    <!-- ========================= -->
+    <div class="row g-3 mt-1">
+        <div class="col-12">
+            <div class="card card-section" data-section="low-stock">
+                <div class="card-header section-header bg-danger text-white">
+                    <span>Productos Bajo Mínimo</span>
+                    <span class="toggle-arrow">▼</span>
+                </div>
+                <div class="card-body section-content"
+                     hx-get="{% url 'dashboard_low_stock' %}"
+                     hx-trigger="load"
+                     hx-target="this">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================= -->
+    <!-- FILA 4: REGISTRO ACTIVIDAD -->
+    <!-- ========================= -->
+    <div class="row g-3 mt-1">
+        <div class="col-12">
+            <div class="card card-section" data-section="activity">
+                <div class="card-header section-header bg-dark text-white">
+                    <span>Registro de Actividad</span>
+                    <span class="toggle-arrow">▼</span>
+                </div>
+
+                <div class="card-body section-content">
+
+                    <!-- Actividad Reciente -->
+                    <div class="mb-4"
+                         hx-get="{% url 'dashboard_recent_movements' %}"
+                         hx-trigger="load"
+                         hx-target="this">
+                    </div>
+
+                    <!-- Histórico -->
+                    <div
+                         hx-get="{% url 'dashboard_recent_stock_movements' %}"
+                         hx-trigger="load"
+                         hx-target="this">
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<!-- 2. Cajas Totales -->
-<div id="dashboard-totals"
-     hx-get="{% url 'dashboard_totals' %}"
-     hx-trigger="load, every 10s"
-     hx-target="this"
-     hx-swap="outerHTML">
-</div>
-
-<!-- 3. Últimas notificaciones -->
-<div id="dashboard-notifications-recent"
-     hx-get="{% url 'dashboard_notifications_recent' %}"
-     hx-trigger="load, every 30s"
-     hx-target="this"
-     hx-swap="outerHTML">
-</div>
-
-<hr>
-
-<!-- 4. Productos bajo mínimo -->
-<div id="dashboard-low-stock"
-     hx-get="{% url 'dashboard_low_stock' %}"
-     hx-trigger="load, every 10s"
-     hx-target="this"
-     hx-swap="outerHTML">
-</div>
-
-<hr>
-
-<!-- 5. Histórico de movimientos -->
-<div id="dashboard-recent-movements"
-     hx-get="{% url 'dashboard_recent_movements' %}"
-     hx-trigger="load, every 10s"
-     hx-target="this"
-     hx-swap="outerHTML">
-</div>
-
-<hr>
-
-<!-- 6. Actividad reciente del inventario -->
-<div id="dashboard-recent-stock-movements"
-     hx-get="{% url 'dashboard_recent_stock_movements' %}"
-     hx-trigger="load, every 10s"
-     hx-target="this"
-     hx-swap="outerHTML">
-</div>
-
-<hr>
-
-<!-- 7. Stock por categoría -->
-<div id="dashboard-chart"
-     hx-get="{% url 'dashboard_chart' %}"
-     hx-trigger="load, every 10s"
-     hx-target="this"
-     hx-swap="outerHTML">
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 {% endblock %}

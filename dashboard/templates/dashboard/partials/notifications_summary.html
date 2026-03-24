@@ -1,27 +1,14 @@
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-info text-white">
-        <h5 class="mb-0">Resumen de Notificaciones</h5>
+<div class="row text-center">
+    <div class="col">
+        <h5>Total</h5>
+        <p class="fs-4">{{ notifications_total }}</p>
     </div>
-    <div class="card-body">
-        <div class="row text-center">
-            <div class="col-md-4">
-                <h6>Total</h6>
-                <p class="fs-3 mb-0">{{ total_notifications }}</p>
-            </div>
-            <div class="col-md-4">
-                <h6>No leídas</h6>
-                <p class="fs-3 mb-0 text-danger">{{ unread_notifications }}</p>
-            </div>
-            <div class="col-md-4">
-                <h6>Por tipo</h6>
-                <ul class="list-unstyled mb-0">
-                    {% for row in by_type %}
-                        <li><strong>{{ row.type|default:"info" }}</strong>: {{ row.c }}</li>
-                    {% empty %}
-                        <li class="text-muted">Sin datos</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
+    <div class="col">
+        <h5>No leídas</h5>
+        <p class="fs-4">{{ notifications_unread }}</p>
+    </div>
+    <div class="col">
+        <h5>Por tipo</h5>
+        <p class="fs-6">{{ notifications_by_type|default:"Sin datos" }}</p>
     </div>
 </div>
