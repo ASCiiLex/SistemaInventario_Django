@@ -1,4 +1,4 @@
-/* ======== SECCIONES PLEGABLES ======== */
+/* ======== SECCIONES PRINCIPALES ======== */
 
 .section-header {
     display: flex;
@@ -14,18 +14,38 @@
     transition: transform 0.25s ease;
 }
 
-.card-section .section-content {
-    overflow: hidden;
-    transition: height 0.3s ease;
-}
-
-/* Cuando está plegado */
 .card-section.closed .section-content {
     display: none;
 }
 
 .card-section.closed .toggle-arrow {
     transform: rotate(180deg);
+}
+
+/* ======== SUBSECCIONES (FLECHAS INTERNAS) ======== */
+
+.subsection-header {
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 6px 10px;
+    background: #f3f3f3;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.sub-toggle-arrow {
+    font-size: 0.9rem;
+    transition: transform 0.25s ease;
+}
+
+.subsection.closed .subsection-content {
+    display: none;
+}
+
+.subsection.closed .sub-toggle-arrow {
+    transform: rotate(90deg);
 }
 
 /* ======== ALTURAS IGUALADAS ======== */
