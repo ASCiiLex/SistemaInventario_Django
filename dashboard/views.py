@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Sum
+from django.http import JsonResponse
 from products.models import Product
 from suppliers.models import Supplier
 from categories.models import Category
@@ -7,19 +8,7 @@ from inventory.models import StockItem, StockMovement
 from notifications.models import Notification
 
 
-# ============================
-# DASHBOARD PRINCIPAL
-# ============================
-
 def dashboard_view(request):
-    """
-    Renderiza el dashboard principal con:
-    - KPIs
-    - Datos del gráfico
-    - Todo lo necesario para que dashboard.js pueda inicializar Chart.js
-    """
-
-    # ----- KPIs -----
     total_stock_real = StockItem.objects.aggregate(total=Sum("quantity"))["total"]
     if total_stock_real is None:
         total_stock_real = Product.objects.aggregate(total=Sum("stock"))["total"] or 0
@@ -27,7 +16,6 @@ def dashboard_view(request):
     low_stock_list = _get_low_stock_products()
     low_stock_count = len(low_stock_list)
 
-    # ----- Datos para el gráfico -----
     categories = (
         Category.objects
         .annotate(
@@ -48,23 +36,16 @@ def dashboard_view(request):
         chart_values.append(total)
 
     context = {
-        # KPIs
         "total_products": Product.objects.count(),
         "total_suppliers": Supplier.objects.count(),
         "total_stock": total_stock_real,
         "low_stock_count": low_stock_count,
-
-        # Datos del gráfico para dashboard.js
         "chart_labels": chart_labels,
         "chart_values": chart_values,
     }
 
     return render(request, "dashboard/dashboard.html", context)
 
-
-# ============================
-# FUNCIONES AUXILIARES
-# ============================
 
 def _get_real_stock_for_product(product):
     qty = product.stock_items.aggregate(total=Sum("quantity"))["total"]
@@ -74,12 +55,6 @@ def _get_real_stock_for_product(product):
 
 
 def _get_low_stock_products():
-    """
-    Devuelve una lista de diccionarios con:
-    - product (objeto completo)
-    - quantity (stock actual)
-    - min_stock
-    """
     low_stock = []
     products = Product.objects.all().prefetch_related("stock_items")
 
@@ -97,14 +72,7 @@ def _get_low_stock_products():
     return low_stock
 
 
-# ============================
-# PARCIALES HTMX
-# ============================
-
 def dashboard_totals(request):
-    """
-    Parcial para KPIs (si se usa vía HTMX).
-    """
     total_stock_real = StockItem.objects.aggregate(total=Sum("quantity"))["total"]
     if total_stock_real is None:
         total_stock_real = Product.objects.aggregate(total=Sum("stock"))["total"] or 0
@@ -127,9 +95,6 @@ def dashboard_low_stock(request):
 
 
 def dashboard_notifications_recent(request):
-    """
-    Parcial para la primera fila (Últimas notificaciones).
-    """
     notifications = Notification.objects.order_by("-created_at")[:10]
 
     return render(
@@ -140,9 +105,6 @@ def dashboard_notifications_recent(request):
 
 
 def dashboard_recent_movements(request):
-    """
-    Actividad reciente del inventario (con origen/destino).
-    """
     recent_movements = (
         StockMovement.objects
         .select_related("product", "origin", "destination")
@@ -157,9 +119,6 @@ def dashboard_recent_movements(request):
 
 
 def dashboard_recent_stock_movements(request):
-    """
-    Histórico de movimientos (solo producto, tipo, cantidad, fecha).
-    """
     recent_stock_movements = (
         StockMovement.objects
         .select_related("product")
@@ -173,11 +132,7 @@ def dashboard_recent_stock_movements(request):
     )
 
 
-# ============================
-# PARCIAL DEL GRÁFICO (si se usa vía HTMX)
-# ============================
-
-def dashboard_chart(request):
+def _get_chart_by_category():
     categories = (
         Category.objects
         .annotate(
@@ -197,9 +152,109 @@ def dashboard_chart(request):
             total = cat.total_product_stock or 0
         values.append(total)
 
+    return labels, values
+
+
+def _get_chart_by_supplier():
+    suppliers = (
+        Supplier.objects
+        .annotate(
+            total_stock_items=Sum("products__stock_items__quantity"),
+            total_product_stock=Sum("products__stock"),
+        )
+        .order_by("name")
+    )
+
+    labels = []
+    values = []
+
+    for sup in suppliers:
+        labels.append(sup.name)
+        total = sup.total_stock_items
+        if total is None:
+            total = sup.total_product_stock or 0
+        values.append(total)
+
+    return labels, values
+
+
+def _get_chart_by_location():
+    items = (
+        StockItem.objects
+        .values("location__name")
+        .annotate(total=Sum("quantity"))
+        .order_by("location__name")
+    )
+
+    labels = []
+    values = []
+
+    for row in items:
+        labels.append(row["location__name"] or "Sin ubicación")
+        values.append(row["total"] or 0)
+
+    return labels, values
+
+
+def _get_chart_rotation_by_product():
+    movements = (
+        StockMovement.objects
+        .values("product__name")
+        .annotate(total=Sum("quantity"))
+        .order_by("-total")[:10]
+    )
+
+    labels = []
+    values = []
+
+    for row in movements:
+        labels.append(row["product__name"] or "Sin producto")
+        values.append(row["total"] or 0)
+
+    return labels, values
+
+
+def _get_chart_movements_by_type():
+    movements = (
+        StockMovement.objects
+        .values("movement_type")
+        .annotate(total=Sum("quantity"))
+        .order_by("movement_type")
+    )
+
+    labels = []
+    values = []
+
+    for row in movements:
+        labels.append(row["movement_type"] or "Sin tipo")
+        values.append(row["total"] or 0)
+
+    return labels, values
+
+
+def dashboard_chart(request):
+    labels, values = _get_chart_by_category()
+
     context = {
         "chart_labels": labels,
         "chart_values": values,
     }
 
     return render(request, "dashboard/partials/chart.html", context)
+
+
+def dashboard_chart_data(request, tipo):
+    if tipo == "categorias":
+        labels, values = _get_chart_by_category()
+    elif tipo == "proveedores":
+        labels, values = _get_chart_by_supplier()
+    elif tipo == "almacenes":
+        labels, values = _get_chart_by_location()
+    elif tipo == "rotacion":
+        labels, values = _get_chart_rotation_by_product()
+    elif tipo == "movimientos":
+        labels, values = _get_chart_movements_by_type()
+    else:
+        labels, values = [], []
+
+    return JsonResponse({"labels": labels, "values": values})

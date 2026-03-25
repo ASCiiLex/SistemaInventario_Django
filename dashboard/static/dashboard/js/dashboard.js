@@ -10,7 +10,6 @@ function initMainSections() {
 
         if (!header || !content || !arrow) return;
 
-        // Estado inicial: abiertas
         section.classList.remove("closed");
         arrow.classList.remove("arrow-down");
         arrow.classList.add("arrow-up");
@@ -44,7 +43,6 @@ function initSubSections() {
 
         if (!header || !content || !arrow) return;
 
-        // Estado inicial: cerradas
         sub.classList.add("closed");
         arrow.classList.remove("sub-arrow-up");
         arrow.classList.add("sub-arrow-down");
@@ -67,8 +65,10 @@ function initSubSections() {
 }
 
 /* ============================================
-   GRÁFICO HORIZONTAL
+   GRÁFICO HORIZONTAL + SELECTOR DINÁMICO
 ============================================ */
+
+let categoryChart = null;
 
 function initChart() {
     if (!window.categoryChartData) return;
@@ -76,7 +76,7 @@ function initChart() {
     const ctx = document.getElementById("categoryChart");
     if (!ctx) return;
 
-    new Chart(ctx, {
+    categoryChart = new Chart(ctx, {
         type: "bar",
         data: {
             labels: window.categoryChartData.labels,
@@ -94,6 +94,26 @@ function initChart() {
             }
         }
     });
+
+    initChartSelector();
+}
+
+function initChartSelector() {
+    const selector = document.getElementById("chartSelector");
+    if (!selector || !categoryChart) return;
+
+    selector.addEventListener("change", function () {
+        const tipo = this.value;
+
+        fetch(`/dashboard/grafico/${tipo}/`)
+            .then(response => response.json())
+            .then(data => {
+                categoryChart.data.labels = data.labels || [];
+                categoryChart.data.datasets[0].data = data.values || [];
+                categoryChart.update();
+            })
+            .catch(() => {});
+    });
 }
 
 /* ============================================
@@ -106,7 +126,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initChart();
 });
 
-// Reaplicar comportamiento tras cargas HTMX
 document.body.addEventListener("htmx:afterSwap", () => {
     initMainSections();
     initSubSections();

@@ -1,3 +1,25 @@
+:root {
+    --bg-body: #ffffff;
+    --text-color: #212529;
+    --card-bg: #ffffff;
+}
+
+body.dark-mode {
+    --bg-body: #1e1e1e;
+    --text-color: #eaeaea;
+    --card-bg: #2a2a2a;
+}
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-color);
+}
+
+.card {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
 /* ============================
    SECCIONES PRINCIPALES
 ============================ */
@@ -18,11 +40,11 @@
 }
 
 .toggle-arrow.arrow-down::after {
-    content: "▼"; /* Cerrado */
+    content: "▼";
 }
 
 .toggle-arrow.arrow-up::after {
-    content: "▲"; /* Abierto */
+    content: "▲";
 }
 
 /* Estado cerrado */
@@ -38,12 +60,13 @@
     display: flex;
     justify-content: space-between;
     cursor: pointer;
-    padding: 6px 10px;
+    padding: 10px 12px;
     background: #414040;
     border-radius: 4px;
-    font-size: 0.9rem;
+    font-size: 1rem;
     margin-bottom: 4px;
     color: #fafafa;
+    font-weight: 700;
 }
 
 /* Flechas internas */
@@ -53,11 +76,11 @@
 }
 
 .sub-toggle-arrow.sub-arrow-down::after {
-    content: "▸"; /* Cerrado */
+    content: "▸";
 }
 
 .sub-toggle-arrow.sub-arrow-up::after {
-    content: "▾"; /* Abierto */
+    content: "▾";
 }
 
 /* Estado cerrado */
@@ -69,27 +92,15 @@
    TABLAS DE SUBSECCIONES
 ============================ */
 
-/* Fondo suave para tablas internas */
 .subsection table {
     background-color: #5c5a5a !important;
     border-top: 2px solid #ccc;
-    
 }
 
-/* Rayado muy suave */
 .subsection table tbody tr:nth-child(odd) {
     background-color: #5c5a5a !important;
 }
 
-/* Cabeceras de subsección más destacadas */
-.subsection-header {
-    font-size: 1rem;
-    font-weight: 700;
-    padding: 10px 12px;
-    color: #fff;
-}
-
-/* Cabeceras de tabla internas más suaves */
 .subsection table thead {
     font-size: 0.9rem;
     font-weight: 600;
@@ -108,23 +119,43 @@
    REDUCCIÓN DE ESPACIOS EN TABLAS
 ============================ */
 
-/* Reduce padding general del contenedor */
 .compact-table {
     padding: 6px 10px !important;
 }
 
-/* Reduce padding de celdas */
 .compact-table table td,
 .compact-table table th {
     padding: 4px 6px !important;
 }
 
-/* Reduce separación entre subsección y tabla */
 .compact-table .subsection-header {
     margin-bottom: 2px;
 }
 
-/* Reduce separación entre filas */
 .compact-table table tbody tr {
     line-height: 1.1;
+}
+
+/* ============================
+   SELECTOR DEL GRÁFICO
+============================ */
+
+.chart-selector {
+    width: auto;
+}
+
+@media (max-width: 576px) {
+    .chart-selector {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .section-header {
+        padding: 8px 10px;
+        font-size: 0.95rem;
+    }
+
+    .card-body.section-content {
+        padding: 8px 10px;
+    }
 }

@@ -62,10 +62,19 @@
         <div class="col-md-6">
             <div class="card card-section" data-section="chart">
                 <div class="card-header section-header bg-warning text-dark">
-                    <span>Stock por Categoría</span>
+                    <span>Gráfico de Stock</span>
                     <span class="toggle-arrow arrow-up"></span>
                 </div>
                 <div class="card-body section-content">
+                    <div class="d-flex justify-content-end mb-2">
+                        <select id="chartSelector" class="form-select form-select-sm chart-selector">
+                            <option value="categorias">Stock por categoría</option>
+                            <option value="proveedores">Stock por proveedor</option>
+                            <option value="almacenes">Stock por almacén</option>
+                            <option value="rotacion">Rotación por producto</option>
+                            <option value="movimientos">Movimientos por tipo</option>
+                        </select>
+                    </div>
                     <canvas id="categoryChart" height="180"></canvas>
                 </div>
             </div>
@@ -106,36 +115,12 @@
                 <div class="card-body section-content">
 
                     <!-- Actividad Reciente -->
-                    <div class="subsection">
+                    <div class="subsection" id="actividad-reciente">
                         <div class="subsection-header">
                             <span>Actividad Reciente</span>
                             <span class="sub-toggle-arrow sub-arrow-up"></span>
                         </div>
-                        <div class="subsection-content"
-                             hx-get="{% url 'dashboard_recent_movements' %}"
-                             hx-trigger="load"
-                             hx-target="this">
-                        </div>
-                    </div>
-
-                    <!-- Histórico -->
-                    <div class="subsection mt-3">
-                        <div class="subsection-header">
-                            <span>Histórico de Movimientos</span>
-                            <span class="sub-toggle-arrow sub-arrow-up"></span>
-                        </div>
-                        <div class="subsection-content"
-                             hx-get="{% url 'dashboard_recent_stock_movements' %}"
-                             hx-trigger="load"
-                             hx-target="this">
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
-
-</div>
+                        <div class="subsection-content compact-table"
+                             hx-get="{% url 'dashboard_recent
 
 {% endblock %}
