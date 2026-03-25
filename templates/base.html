@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <title>Sistema de Inventario</title>
@@ -14,7 +14,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 
     <!-- ========================= -->
-    <!-- CSS PROPIO DEL DASHBOARD -->
+    <!-- CSS GLOBAL -->
+    <!-- ========================= -->
+    <link rel="stylesheet" href="{% static 'css/core.css' %}">
+
+    <!-- ========================= -->
+    <!-- CSS DASHBOARD -->
     <!-- ========================= -->
     <link rel="stylesheet" href="{% static 'dashboard/css/dashboard.css' %}">
 
@@ -25,7 +30,12 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <!-- ========================= -->
-    <!-- JS PROPIO DEL DASHBOARD -->
+    <!-- JS GLOBAL -->
+    <!-- ========================= -->
+    <script src="{% static 'js/theme.js' %}" defer></script>
+
+    <!-- ========================= -->
+    <!-- JS DASHBOARD -->
     <!-- ========================= -->
     <script src="{% static 'dashboard/js/dashboard.js' %}" defer></script>
 
@@ -40,7 +50,7 @@
     </style>
 </head>
 
-<body class="bg-light" x-data>
+<body x-data>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container">
@@ -72,6 +82,9 @@
                 </li>
 
             </ul>
+
+            <!-- Toggle Dark Mode -->
+            <button id="themeToggle" class="btn btn-sm btn-outline-light me-3">🌙</button>
 
             <div id="notifications-bell"
                  hx-get="{% url 'notifications_counter' %}"
@@ -120,6 +133,17 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
+/* =========================
+   DARK MODE INIT
+========================= */
+(function () {
+    const saved = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", saved);
+})();
+
+/* =========================
+   MODAL + TOAST + EVENTS
+========================= */
 document.body.addEventListener('htmx:afterSwap', function (event) {
     if (event.detail.target.id === 'mainModalContent') {
         const modalEl = document.getElementById('mainModal');
@@ -155,8 +179,7 @@ function showToast(message) {
              x-transition:leave="fade-leave"
              x-transition:leave-active="fade-leave-active"
              @click="show = false"
-             class="toast align-items-center text-bg-dark border-0 mb-2"
-             role="alert">
+             class="toast align-items-center border-0 mb-2 bg-dark text-white">
           <div class="d-flex">
             <div class="toast-body">${message}</div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto"></button>
@@ -173,47 +196,26 @@ function showToast(message) {
     }, 3000);
 }
 
-/* sonido moderno base64 (recortado aquí, pon tu cadena completa) */
-const notifSound = new Audio(
-    "data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA..."
-);
+/* =========================
+   SELECT2 INIT
+========================= */
+function initSelect2(context) {
+    if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) return;
+    const $ = window.jQuery;
 
-function notifSettings() {
-    return {
-        sound: false,
-        push: false,
-        loadSettings() {
-            this.sound = localStorage.getItem("notif_sound") === "on";
-            this.push = localStorage.getItem("notif_push") === "on";
-        },
-        toggleSound() {
-            this.sound = !this.sound;
-            localStorage.setItem("notif_sound", this.sound ? "on" : "off");
-        },
-        async togglePush() {
-            if (!this.push) {
-                const perm = await Notification.requestPermission();
-                if (perm !== "granted") {
-                    showToast("Permiso denegado para notificaciones push");
-                    return;
-                }
-            }
-            this.push = !this.push;
-            localStorage.setItem("notif_push", this.push ? "on" : "off");
+    $(context).find('select.select2').each(function () {
+        if (!$(this).data('select2')) {
+            $(this).select2({ width: '100%', theme: 'bootstrap-5' });
         }
-    }
+    });
 }
 
-document.body.addEventListener("htmx:afterSwap", (ev) => {
-    if (ev.detail.target.id === "notifications-bell") {
-        const badge = ev.detail.target.querySelector(".badge");
-        if (!badge) return;
-        badge.classList.remove("animate__animated", "animate__bounceIn");
-        void badge.offsetWidth;
-        badge.classList.add("animate__animated", "animate__bounceIn");
-    }
-});
+document.addEventListener('DOMContentLoaded', () => initSelect2(document));
+document.body.addEventListener('htmx:afterSwap', e => initSelect2(e.target));
 
+/* =========================
+   WEBSOCKET
+========================= */
 const socket = new WebSocket("ws://" + window.location.host + "/ws/notificaciones/");
 
 socket.onmessage = function(e) {
@@ -225,44 +227,10 @@ socket.onmessage = function(e) {
     }
 
     if (data.type === "notification") {
-        if (localStorage.getItem("notif_sound") === "on") {
-            try { notifSound.play(); } catch (err) {}
-        }
-        if (localStorage.getItem("notif_push") === "on" && Notification.permission === "granted") {
-            try {
-                new Notification("Nueva notificación", {
-                    body: data.message,
-                    icon: "/static/img/bell.png"
-                });
-            } catch (err) {}
-        }
         showToast(data.message);
         htmx.trigger(document.body, "notifications-updated");
     }
 };
-
-function initSelect2(context) {
-    if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) {
-        return;
-    }
-    const $ = window.jQuery;
-    $(context).find('select.select2').each(function () {
-        if (!$(this).data('select2')) {
-            $(this).select2({
-                width: '100%',
-                theme: 'bootstrap-5'
-            });
-        }
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-    initSelect2(document);
-});
-
-document.body.addEventListener('htmx:afterSwap', function (event) {
-    initSelect2(event.target);
-});
 </script>
 
 </body>

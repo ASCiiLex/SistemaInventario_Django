@@ -120,7 +120,31 @@
                             <span>Actividad Reciente</span>
                             <span class="sub-toggle-arrow sub-arrow-up"></span>
                         </div>
+
                         <div class="subsection-content compact-table"
-                             hx-get="{% url 'dashboard_recent
+                            hx-get="{% url 'dashboard_recent_movements' %}"
+                            hx-trigger="load"
+                            hx-target="this">
+                        </div>
+                    </div>
+
+                    <!-- Histórico de Movimientos -->
+                    <div class="subsection mt-2" id="historico-movimientos">
+                        <div class="subsection-header">
+                            <span>Histórico de Movimientos</span>
+                            <span class="sub-toggle-arrow sub-arrow-down"></span>
+                        </div>
+
+                        <div class="subsection-content compact-table"
+                            hx-get="{% url 'dashboard_recent_stock_movements' %}"
+                            hx-trigger="load"
+                            hx-target="this">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
 
 {% endblock %}

@@ -1,23 +1,25 @@
+/* ============================
+   VARIABLES (HEREDADAS CORE)
+============================ */
+
 :root {
-    --bg-body: #ffffff;
-    --text-color: #212529;
-    --card-bg: #ffffff;
+    --section-bg: #ffffff;
+    --sub-bg: #414040;
+    --sub-text: #fafafa;
 }
 
-body.dark-mode {
-    --bg-body: #1e1e1e;
-    --text-color: #eaeaea;
-    --card-bg: #2a2a2a;
+[data-theme="dark"] {
+    --section-bg: #1e1e1e;
+    --sub-bg: #2c2c2c;
+    --sub-text: #eaeaea;
 }
 
-body {
-    background-color: var(--bg-body);
-    color: var(--text-color);
-}
+/* ============================
+   BASE
+============================ */
 
 .card {
-    background-color: var(--card-bg);
-    color: var(--text-color);
+    background-color: var(--section-bg);
 }
 
 /* ============================
@@ -33,27 +35,20 @@ body {
     padding: 10px 15px;
 }
 
-/* Flechas principales */
 .toggle-arrow {
     font-size: 1.2rem;
     transition: transform 0.25s ease;
 }
 
-.toggle-arrow.arrow-down::after {
-    content: "▼";
-}
+.toggle-arrow.arrow-down::after { content: "▼"; }
+.toggle-arrow.arrow-up::after { content: "▲"; }
 
-.toggle-arrow.arrow-up::after {
-    content: "▲";
-}
-
-/* Estado cerrado */
 .card-section.closed .section-content {
     display: none;
 }
 
 /* ============================
-   SUBSECCIONES INTERNAS
+   SUBSECCIONES
 ============================ */
 
 .subsection-header {
@@ -61,54 +56,46 @@ body {
     justify-content: space-between;
     cursor: pointer;
     padding: 10px 12px;
-    background: #414040;
+    background: var(--sub-bg);
     border-radius: 4px;
     font-size: 1rem;
     margin-bottom: 4px;
-    color: #fafafa;
+    color: var(--sub-text);
     font-weight: 700;
 }
 
-/* Flechas internas */
 .sub-toggle-arrow {
     font-size: 0.9rem;
     transition: transform 0.25s ease;
 }
 
-.sub-toggle-arrow.sub-arrow-down::after {
-    content: "▸";
-}
+.sub-toggle-arrow.sub-arrow-down::after { content: "▸"; }
+.sub-toggle-arrow.sub-arrow-up::after { content: "▾"; }
 
-.sub-toggle-arrow.sub-arrow-up::after {
-    content: "▾";
-}
-
-/* Estado cerrado */
 .subsection.closed .subsection-content {
     display: none;
 }
 
 /* ============================
-   TABLAS DE SUBSECCIONES
+   TABLAS
 ============================ */
 
 .subsection table {
-    background-color: #5c5a5a !important;
+    background-color: var(--sub-bg) !important;
     border-top: 2px solid #ccc;
 }
 
 .subsection table tbody tr:nth-child(odd) {
-    background-color: #5c5a5a !important;
+    background-color: var(--sub-bg) !important;
 }
 
 .subsection table thead {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #000;
 }
 
 /* ============================
-   ALTURAS IGUALADAS
+   ALTURAS
 ============================ */
 
 .row.g-3 > [class*="col-md-6"] .card-section {
@@ -116,7 +103,7 @@ body {
 }
 
 /* ============================
-   REDUCCIÓN DE ESPACIOS EN TABLAS
+   COMPACT TABLE
 ============================ */
 
 .compact-table {
@@ -128,23 +115,29 @@ body {
     padding: 4px 6px !important;
 }
 
-.compact-table .subsection-header {
-    margin-bottom: 2px;
-}
-
 .compact-table table tbody tr {
     line-height: 1.1;
 }
 
 /* ============================
-   SELECTOR DEL GRÁFICO
+   CHART SELECTOR
 ============================ */
 
 .chart-selector {
     width: auto;
 }
 
-@media (max-width: 576px) {
+/* ============================
+   RESPONSIVE
+============================ */
+
+@media (max-width: 768px) {
+
+    .row.g-3 > [class*="col-md-6"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
     .chart-selector {
         width: 100%;
         margin-bottom: 10px;
@@ -158,4 +151,25 @@ body {
     .card-body.section-content {
         padding: 8px 10px;
     }
+
+    canvas {
+        max-height: 250px;
+    }
 }
+
+/* ============================
+   FIX TEXTOS DARK MODE 
+============================ */
+
+/* Texto general dentro de cards */
+[data-theme="dark"] .card,
+[data-theme="dark"] .card-body {
+    color: #eaeaea;
+}
+
+/* Notificaciones summary */
+[data-theme="dark"] .card-body h5,
+[data-theme="dark"] .card-body p {
+    color: #eaeaea !important;
+}
+

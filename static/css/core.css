@@ -1,0 +1,50 @@
+:root {
+    --bg: #f8f9fa;
+    --text: #212529;
+    --card: #ffffff;
+    --border: #dee2e6;
+}
+
+[data-theme="dark"] {
+    --bg: #121212;
+    --text: #eaeaea;
+    --card: #1e1e1e;
+    --border: #2c2c2c;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    transition: background .25s ease, color .25s ease;
+}
+
+/* Cards */
+.card {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+/* Tables responsive */
+.table {
+    font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+    .table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+
+/* Forms */
+input, select {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+/* Navbar dark adapt */
+[data-theme="dark"] .navbar {
+    background-color: #1a1a1a !important;
+}

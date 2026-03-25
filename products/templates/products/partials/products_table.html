@@ -1,3 +1,4 @@
+<div class="table-responsive">
 <table class="table table-striped">
     <thead>
         <tr>
@@ -11,9 +12,9 @@
         </tr>
     </thead>
 
-    <tbody x-data>
+    <tbody>
         {% for p in products %}
-        <tr x-transition>
+        <tr>
             <td><a href="{% url 'product_detail' p.id %}">{{ p.name }}</a></td>
             <td>{{ p.sku }}</td>
             <td>{{ p.category }}</td>
@@ -32,7 +33,8 @@
             </td>
         </tr>
         {% empty %}
-        <tr x-transition><td colspan="7">No hay productos.</td></tr>
+        <tr><td colspan="7">No hay productos.</td></tr>
         {% endfor %}
     </tbody>
 </table>
+</div>
