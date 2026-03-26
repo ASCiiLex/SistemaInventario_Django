@@ -16,6 +16,7 @@
         hx-get="{% url 'stockmovement_list' %}"
         hx-target="#movements-table"
         hx-push-url="true"
+        hx-include="this"
     >
         <div class="col-md-3">
             {{ filter_form.product.label_tag }}
