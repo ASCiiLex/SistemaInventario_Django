@@ -92,14 +92,23 @@ function initChartSelector() {
     const selector = document.getElementById("chartSelector");
     if (!selector || !categoryChart) return;
 
-    selector.onchange = function () {
-        fetch(`/dashboard/grafico/${this.value}/`)
-            .then(r => r.json())
-            .then(data => {
-                categoryChart.data.labels = data.labels || [];
-                categoryChart.data.datasets[0].data = data.values || [];
-                categoryChart.update();
-            });
+    // CLAVE: resetear handler siempre
+    selector.onchange = null;
+
+    selector.onchange = async function () {
+        const tipo = this.value;
+
+        try {
+            const response = await fetch(window.dashboardChartUrl.replace("TIPO", tipo));
+            const data = await response.json();
+
+            categoryChart.data.labels = data.labels || [];
+            categoryChart.data.datasets[0].data = data.values || [];
+            categoryChart.update();
+
+        } catch (error) {
+            console.error("Error cargando gráfico:", error);
+        }
     };
 }
 
