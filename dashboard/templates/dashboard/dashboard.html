@@ -33,8 +33,9 @@
                 <div class="card-body section-content compact-table"
                      style="max-height: 300px; overflow-y: auto;"
                      hx-get="{% url 'dashboard_notifications_recent' %}"
-                     hx-trigger="load"
-                     hx-target="this">
+                     hx-trigger="load, notifications-updated from:body"
+                     hx-target="this"
+                     hx-swap="innerHTML">
                 </div>
             </div>
         </div>
@@ -53,8 +54,14 @@
                     <span>Indicadores Clave</span>
                     <span class="toggle-arrow arrow-up"></span>
                 </div>
-                <div class="card-body section-content">
-                    {% include "dashboard/partials/totals.html" %}
+
+                <!-- 🔥 CONTENEDOR REACTIVO -->
+                <div id="kpis-container"
+                     class="card-body section-content"
+                     hx-get="{% url 'dashboard_totals' %}"
+                     hx-trigger="load, refresh from:body, movement-created from:body"
+                     hx-target="this"
+                     hx-swap="innerHTML">
                 </div>
             </div>
         </div>
@@ -95,10 +102,14 @@
                     <span>Productos Bajo Mínimo</span>
                     <span class="toggle-arrow arrow-up"></span>
                 </div>
-                <div class="card-body section-content compact-table"
+
+                <!-- 🔥 CONTENEDOR REACTIVO -->
+                <div id="low-stock-container"
+                     class="card-body section-content compact-table"
                      hx-get="{% url 'dashboard_low_stock' %}"
-                     hx-trigger="load"
-                     hx-target="this">
+                     hx-trigger="load, refresh from:body, movement-created from:body"
+                     hx-target="this"
+                     hx-swap="innerHTML">
                 </div>
             </div>
         </div>
@@ -115,7 +126,8 @@
                     <span class="toggle-arrow arrow-up"></span>
                 </div>
 
-                <div class="card-body section-content">
+                <!-- 🔥 CONTENEDOR REACTIVO -->
+                <div id="activity-container" class="card-body section-content">
 
                     <!-- Actividad Reciente -->
                     <div class="subsection" id="actividad-reciente">
@@ -125,9 +137,10 @@
                         </div>
 
                         <div class="subsection-content compact-table"
-                            hx-get="{% url 'dashboard_recent_movements' %}"
-                            hx-trigger="load"
-                            hx-target="this">
+                             hx-get="{% url 'dashboard_recent_movements' %}"
+                             hx-trigger="load, refresh from:body, movement-created from:body"
+                             hx-target="this"
+                             hx-swap="innerHTML">
                         </div>
                     </div>
 
@@ -139,9 +152,10 @@
                         </div>
 
                         <div class="subsection-content compact-table"
-                            hx-get="{% url 'dashboard_recent_stock_movements' %}"
-                            hx-trigger="load"
-                            hx-target="this">
+                             hx-get="{% url 'dashboard_recent_stock_movements' %}"
+                             hx-trigger="load, refresh from:body, movement-created from:body"
+                             hx-target="this"
+                             hx-swap="innerHTML">
                         </div>
                     </div>
 

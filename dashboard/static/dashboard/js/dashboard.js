@@ -45,7 +45,7 @@ function initSubSections() {
 }
 
 /* ============================================
-   CHART + LOCALSTORAGE + REALTIME
+   CHART + LOCALSTORAGE
 ============================================ */
 
 let categoryChart = null;
@@ -85,9 +85,7 @@ function initChart() {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: "y",
-            animation: {
-                duration: 500
-            },
+            animation: { duration: 500 },
             scales: {
                 x: { beginAtZero: true }
             }
@@ -101,20 +99,16 @@ function initChartSelector() {
     const selector = document.getElementById("chartSelector");
     if (!selector || !categoryChart) return;
 
-    // Evitar duplicados (HTMX)
     if (selector.dataset.bound === "true") return;
     selector.dataset.bound = "true";
 
-    // 👉 aplicar valor guardado
     const savedType = getSavedChartType();
     selector.value = savedType;
 
-    // 👉 cargar ese gráfico al inicio
     loadChartData(savedType);
 
     selector.addEventListener("change", function () {
         const tipo = this.value;
-
         saveChartType(tipo);
         loadChartData(tipo);
     });
@@ -148,17 +142,23 @@ async function loadChartData(tipo) {
 }
 
 /* ============================================
-   REALTIME (HTMX + WEBSOCKET)
+   REALTIME DASHBOARD
 ============================================ */
 
-function initRealtimeChartUpdates() {
-    // Evento que ya usas en el sistema
+function refreshDashboard() {
+    htmx.trigger("#kpis-container", "refresh");
+    htmx.trigger("#low-stock-container", "refresh");
+    htmx.trigger("#activity-container", "refresh");
+}
+
+function initRealtime() {
     document.body.addEventListener("movement-created", () => {
+        refreshDashboard();
         refreshChart();
     });
 
     document.body.addEventListener("notifications-updated", () => {
-        refreshChart();
+        refreshDashboard();
     });
 }
 
@@ -166,9 +166,7 @@ function refreshChart() {
     const selector = document.getElementById("chartSelector");
     if (!selector) return;
 
-    const tipo = selector.value;
-
-    loadChartData(tipo);
+    loadChartData(selector.value);
 }
 
 /* ============================================
@@ -179,9 +177,8 @@ function initAll() {
     initMainSections();
     initSubSections();
     initChart();
-    initRealtimeChartUpdates();
+    initRealtime();
 }
 
 document.addEventListener("DOMContentLoaded", initAll);
-
 document.body.addEventListener("htmx:afterSwap", initAll);
