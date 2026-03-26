@@ -1,21 +1,21 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.core.paginator import Paginator
 from django.contrib import messages
 
 from ..models import Location
 from ..forms import LocationForm
+from ..utils.listing import ListViewMixin
 
 
 def location_list(request):
+    view = ListViewMixin()
+
     qs = Location.objects.all()
 
     search = request.GET.get("q")
     if search:
         qs = qs.filter(name__icontains=search)
 
-    paginator = Paginator(qs, 25)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    page_obj = view.paginate_queryset(request, qs)
 
     context = {
         "locations": page_obj,
@@ -23,7 +23,7 @@ def location_list(request):
         "search": search or "",
     }
 
-    if request.headers.get("HX-Request"):
+    if view.is_htmx(request):
         return render(request, "inventory/locations/partials/table.html", context)
 
     return render(request, "inventory/locations/list.html", context)

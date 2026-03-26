@@ -2,51 +2,48 @@ import csv
 
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.core.paginator import Paginator
 from django.http import HttpResponse
 
 from ..models import StockMovement
 from ..forms import StockMovementForm, StockMovementFilterForm
+from ..utils.listing import ListViewMixin
 from notifications.utils import broadcast_notification
 
 
-def _filtered_stockmovements(request):
-    qs = StockMovement.objects.select_related("product", "origin", "destination").all()
-    filter_form = StockMovementFilterForm(request.GET or None)
+class StockMovementListView(ListViewMixin):
+    def get_queryset(self, request):
+        qs = StockMovement.objects.select_related(
+            "product", "origin", "destination"
+        ).all()
 
-    if filter_form.is_valid():
-        product = filter_form.cleaned_data.get("product")
-        movement_type = filter_form.cleaned_data.get("movement_type")
-        origin = filter_form.cleaned_data.get("origin")
-        destination = filter_form.cleaned_data.get("destination")
-        q = filter_form.cleaned_data.get("q")
-        date_from = filter_form.cleaned_data.get("date_from")
-        date_to = filter_form.cleaned_data.get("date_to")
+        filter_form = StockMovementFilterForm(request.GET or None)
 
-        if product:
-            qs = qs.filter(product=product)
-        if movement_type:
-            qs = qs.filter(movement_type=movement_type)
-        if origin:
-            qs = qs.filter(origin=origin)
-        if destination:
-            qs = qs.filter(destination=destination)
-        if q:
-            qs = qs.filter(product__name__icontains=q)
-        if date_from:
-            qs = qs.filter(created_at__date__gte=date_from)
-        if date_to:
-            qs = qs.filter(created_at__date__lte=date_to)
+        if filter_form.is_valid():
+            data = filter_form.cleaned_data
 
-    return qs, filter_form
+            if data.get("product"):
+                qs = qs.filter(product=data["product"])
+            if data.get("movement_type"):
+                qs = qs.filter(movement_type=data["movement_type"])
+            if data.get("origin"):
+                qs = qs.filter(origin=data["origin"])
+            if data.get("destination"):
+                qs = qs.filter(destination=data["destination"])
+            if data.get("q"):
+                qs = qs.filter(product__name__icontains=data["q"])
+            if data.get("date_from"):
+                qs = qs.filter(created_at__date__gte=data["date_from"])
+            if data.get("date_to"):
+                qs = qs.filter(created_at__date__lte=data["date_to"])
+
+        return qs, filter_form
 
 
 def stockmovement_list(request):
-    qs, filter_form = _filtered_stockmovements(request)
+    view = StockMovementListView()
 
-    paginator = Paginator(qs, 25)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    qs, filter_form = view.get_queryset(request)
+    page_obj = view.paginate_queryset(request, qs)
 
     context = {
         "movements": page_obj,
@@ -54,7 +51,7 @@ def stockmovement_list(request):
         "filter_form": filter_form,
     }
 
-    if request.headers.get("HX-Request"):
+    if view.is_htmx(request):
         return render(request, "inventory/stock/partials/table.html", context)
 
     return render(request, "inventory/stock/list.html", context)
@@ -75,18 +72,17 @@ def stockmovement_create(request):
                 }
             )
 
-            if request.headers.get("HX-Request"):
-                qs, filter_form = _filtered_stockmovements(request)
-                paginator = Paginator(qs, 25)
-                page_number = request.GET.get("page")
-                page_obj = paginator.get_page(page_number)
+            view = StockMovementListView()
+            qs, filter_form = view.get_queryset(request)
+            page_obj = view.paginate_queryset(request, qs)
 
-                context = {
-                    "movements": page_obj,
-                    "page_obj": page_obj,
-                    "filter_form": filter_form,
-                }
+            context = {
+                "movements": page_obj,
+                "page_obj": page_obj,
+                "filter_form": filter_form,
+            }
 
+            if view.is_htmx(request):
                 response = render(
                     request,
                     "inventory/stock/partials/table.html",

@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.core.paginator import Paginator
 from django.contrib import messages
 from django.utils import timezone
 
@@ -10,27 +9,27 @@ from ..forms import (
     OrderFilterForm,
     OrderReceiveForm,
 )
+from ..utils.listing import ListViewMixin
 
 
 def order_list(request):
+    view = ListViewMixin()
+
     qs = Order.objects.select_related("supplier", "location").all()
 
     filter_form = OrderFilterForm(request.GET or None)
+
     if filter_form.is_valid():
-        supplier = filter_form.cleaned_data.get("supplier")
-        location = filter_form.cleaned_data.get("location")
-        status = filter_form.cleaned_data.get("status")
+        data = filter_form.cleaned_data
 
-        if supplier:
-            qs = qs.filter(supplier=supplier)
-        if location:
-            qs = qs.filter(location=location)
-        if status:
-            qs = qs.filter(status=status)
+        if data.get("supplier"):
+            qs = qs.filter(supplier=data["supplier"])
+        if data.get("location"):
+            qs = qs.filter(location=data["location"])
+        if data.get("status"):
+            qs = qs.filter(status=data["status"])
 
-    paginator = Paginator(qs, 25)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    page_obj = view.paginate_queryset(request, qs)
 
     context = {
         "orders": page_obj,
@@ -38,7 +37,7 @@ def order_list(request):
         "filter_form": filter_form,
     }
 
-    if request.headers.get("HX-Request"):
+    if view.is_htmx(request):
         return render(request, "inventory/orders/partials/table.html", context)
 
     return render(request, "inventory/orders/list.html", context)

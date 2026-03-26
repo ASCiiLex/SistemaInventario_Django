@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.core.paginator import Paginator
 
 from ..models import StockTransfer
 from ..forms import (
@@ -8,32 +7,31 @@ from ..forms import (
     StockTransferConfirmForm,
     StockTransferFilterForm,
 )
+from ..utils.listing import ListViewMixin
 
 
 def transfer_list(request):
+    view = ListViewMixin()
+
     qs = StockTransfer.objects.select_related(
         "product", "origin", "destination", "created_by", "confirmed_by"
     ).all()
 
     filter_form = StockTransferFilterForm(request.GET or None)
+
     if filter_form.is_valid():
-        product = filter_form.cleaned_data.get("product")
-        origin = filter_form.cleaned_data.get("origin")
-        destination = filter_form.cleaned_data.get("destination")
-        status = filter_form.cleaned_data.get("status")
+        data = filter_form.cleaned_data
 
-        if product:
-            qs = qs.filter(product=product)
-        if origin:
-            qs = qs.filter(origin=origin)
-        if destination:
-            qs = qs.filter(destination=destination)
-        if status:
-            qs = qs.filter(status=status)
+        if data.get("product"):
+            qs = qs.filter(product=data["product"])
+        if data.get("origin"):
+            qs = qs.filter(origin=data["origin"])
+        if data.get("destination"):
+            qs = qs.filter(destination=data["destination"])
+        if data.get("status"):
+            qs = qs.filter(status=data["status"])
 
-    paginator = Paginator(qs, 25)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    page_obj = view.paginate_queryset(request, qs)
 
     context = {
         "transfers": page_obj,
@@ -41,7 +39,7 @@ def transfer_list(request):
         "filter_form": filter_form,
     }
 
-    if request.headers.get("HX-Request"):
+    if view.is_htmx(request):
         return render(request, "inventory/transfers/partials/table.html", context)
 
     return render(request, "inventory/transfers/list.html", context)

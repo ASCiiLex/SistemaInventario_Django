@@ -8,9 +8,12 @@ from .models import Product
 from categories.models import Category
 from suppliers.models import Supplier
 from .forms import ProductForm
+from inventory.utils.listing import ListViewMixin
 
 
 def product_list(request):
+    view = ListViewMixin()
+
     search = request.GET.get("q", "")
     category_id = request.GET.get("category", "")
     supplier_id = request.GET.get("supplier", "")
@@ -30,11 +33,14 @@ def product_list(request):
     if stock_filter == "low":
         products = products.filter(stock__lte=F("min_stock"))
 
+    page_obj = view.paginate_queryset(request, products)
+
     categories = Category.objects.all()
     suppliers = Supplier.objects.all()
 
     context = {
-        "products": products,
+        "products": page_obj,
+        "page_obj": page_obj,
         "search": search,
         "category_id": category_id,
         "supplier_id": supplier_id,
@@ -43,7 +49,7 @@ def product_list(request):
         "suppliers": suppliers,
     }
 
-    if request.headers.get("HX-Request"):
+    if view.is_htmx(request):
         return render(request, "products/partials/products_table.html", context)
 
     return render(request, "products/list.html", context)
