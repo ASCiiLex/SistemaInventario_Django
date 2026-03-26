@@ -45,16 +45,22 @@ function initSubSections() {
 }
 
 /* ============================================
-   CHART (CORRECTO)
+   CHART + LOCALSTORAGE + REALTIME
 ============================================ */
 
 let categoryChart = null;
 
+function getSavedChartType() {
+    return localStorage.getItem("dashboardChartType") || "categorias";
+}
+
+function saveChartType(tipo) {
+    localStorage.setItem("dashboardChartType", tipo);
+}
+
 function initChart() {
     const canvas = document.getElementById("categoryChart");
-    if (!canvas) return;
-
-    if (!window.chartData) return;
+    if (!canvas || !window.chartData) return;
 
     const labels = window.chartData.labels || [];
     const values = window.chartData.values || [];
@@ -79,6 +85,9 @@ function initChart() {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: "y",
+            animation: {
+                duration: 500
+            },
             scales: {
                 x: { beginAtZero: true }
             }
@@ -92,38 +101,87 @@ function initChartSelector() {
     const selector = document.getElementById("chartSelector");
     if (!selector || !categoryChart) return;
 
-    // CLAVE: resetear handler siempre
-    selector.onchange = null;
+    // Evitar duplicados (HTMX)
+    if (selector.dataset.bound === "true") return;
+    selector.dataset.bound = "true";
 
-    selector.onchange = async function () {
+    // 👉 aplicar valor guardado
+    const savedType = getSavedChartType();
+    selector.value = savedType;
+
+    // 👉 cargar ese gráfico al inicio
+    loadChartData(savedType);
+
+    selector.addEventListener("change", function () {
         const tipo = this.value;
 
-        try {
-            const response = await fetch(window.dashboardChartUrl.replace("TIPO", tipo));
-            const data = await response.json();
+        saveChartType(tipo);
+        loadChartData(tipo);
+    });
+}
 
-            categoryChart.data.labels = data.labels || [];
-            categoryChart.data.datasets[0].data = data.values || [];
-            categoryChart.update();
+async function loadChartData(tipo) {
+    const loader = document.getElementById("chart-loader");
 
-        } catch (error) {
-            console.error("Error cargando gráfico:", error);
-        }
-    };
+    try {
+        if (loader) loader.style.display = "flex";
+
+        const response = await fetch(
+            window.dashboardChartUrl.replace("TIPO", tipo)
+        );
+
+        const data = await response.json();
+
+        if (!categoryChart) return;
+
+        categoryChart.data.labels = data.labels || [];
+        categoryChart.data.datasets[0].data = data.values || [];
+
+        categoryChart.update();
+
+    } catch (error) {
+        console.error("Error cargando gráfico:", error);
+
+    } finally {
+        if (loader) loader.style.display = "none";
+    }
+}
+
+/* ============================================
+   REALTIME (HTMX + WEBSOCKET)
+============================================ */
+
+function initRealtimeChartUpdates() {
+    // Evento que ya usas en el sistema
+    document.body.addEventListener("movement-created", () => {
+        refreshChart();
+    });
+
+    document.body.addEventListener("notifications-updated", () => {
+        refreshChart();
+    });
+}
+
+function refreshChart() {
+    const selector = document.getElementById("chartSelector");
+    if (!selector) return;
+
+    const tipo = selector.value;
+
+    loadChartData(tipo);
 }
 
 /* ============================================
    EVENTS
 ============================================ */
 
-document.addEventListener("DOMContentLoaded", () => {
+function initAll() {
     initMainSections();
     initSubSections();
     initChart();
-});
+    initRealtimeChartUpdates();
+}
 
-document.body.addEventListener("htmx:afterSwap", () => {
-    initMainSections();
-    initSubSections();
-    initChart();
-});
+document.addEventListener("DOMContentLoaded", initAll);
+
+document.body.addEventListener("htmx:afterSwap", initAll);

@@ -1,5 +1,13 @@
-<div style="height: 200px;">
+<div id="chart-container" style="height: 200px; position: relative;">
+
+    <!-- Loader -->
+    <div id="chart-loader"
+         style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.6); z-index:10; display:none;">
+        <div class="spinner-border text-primary"></div>
+    </div>
+
     <canvas id="categoryChart"></canvas>
+
 </div>
 
 <script>
