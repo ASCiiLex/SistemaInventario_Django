@@ -1,109 +1,136 @@
 import random
 from django.contrib.auth.models import User, Group
+from django.utils import timezone
+
+from products.models import Product
 from categories.models import Category
 from suppliers.models import Supplier
-from products.models import Product
-from inventory.models.locations import Location
-from inventory.models.stock import StockItem
-from inventory.models.movements import StockMovement
-from inventory.models.orders import Order, OrderItem
-
-from django.utils import timezone
+from inventory.models import Location, StockItem, StockMovement, Order, OrderItem
 
 
 def run():
-    print("🔄 Generando datos...")
+    print("🔄 Generando datos PRO...")
 
     # -------------------
     # USERS & GROUPS
     # -------------------
-    group, _ = Group.objects.get_or_create(name="Managers")
+    admin_group, _ = Group.objects.get_or_create(name="Admin")
+    user_group, _ = Group.objects.get_or_create(name="Usuario")
 
-    for i in range(5):
-        user = User.objects.create_user(
-            username=f"user{i}",
-            password="1234",
-            email=f"user{i}@test.com"
-        )
-        user.groups.add(group)
+    if not User.objects.filter(username="admin").exists():
+        User.objects.create_superuser("admin", "admin@test.com", "admin1234")
+
+    users = []
+    for i in range(3):
+        u, _ = User.objects.get_or_create(username=f"user{i}")
+        u.set_password("1234")
+        u.save()
+        u.groups.add(user_group)
+        users.append(u)
 
     # -------------------
-    # CATEGORIES
+    # CATEGORIES & SUPPLIERS
     # -------------------
     categories = []
-    for i in range(5):
-        c = Category.objects.create(name=f"Categoria {i}")
+    for name in ["Electrónica", "Ropa", "Hogar"]:
+        c, _ = Category.objects.get_or_create(name=name)
         categories.append(c)
 
-    # -------------------
-    # SUPPLIERS
-    # -------------------
     suppliers = []
-    for i in range(5):
-        s = Supplier.objects.create(name=f"Proveedor {i}")
+    for name in ["Amazon", "Ikea", "Zara"]:
+        s, _ = Supplier.objects.get_or_create(name=name)
         suppliers.append(s)
 
     # -------------------
     # LOCATIONS
     # -------------------
     locations = []
-    for i in range(3):
-        l = Location.objects.create(name=f"Almacen {i}")
-        locations.append(l)
+    for name in ["Madrid", "Barcelona", "Valencia"]:
+        loc, _ = Location.objects.get_or_create(name=name)
+        locations.append(loc)
 
     # -------------------
     # PRODUCTS
     # -------------------
     products = []
-    for i in range(50):
-        p = Product.objects.create(
-            name=f"Producto {i}",
-            sku=f"SKU-{i}",
-            category=random.choice(categories),
-            supplier=random.choice(suppliers),
-            stock=0,
-            min_stock=10,
-            cost_price=5,
-            sale_price=10,
+    for i in range(20):
+        p, _ = Product.objects.get_or_create(
+            sku=f"SKU{i}",
+            defaults={
+                "name": f"Producto {i}",
+                "category": random.choice(categories),
+                "supplier": random.choice(suppliers),
+                "min_stock": random.randint(5, 15),
+                "cost_price": random.uniform(5, 50),
+                "sale_price": random.uniform(60, 120),
+            }
         )
         products.append(p)
 
     # -------------------
-    # STOCK ITEMS
+    # STOCK INICIAL (CRÍTICO)
     # -------------------
     for p in products:
         for loc in locations:
-            StockItem.objects.create(
+            qty = random.randint(10, 50)
+
+            StockMovement.objects.create(
                 product=p,
-                location=loc,
-                quantity=random.randint(0, 100)
+                movement_type="IN",
+                destination=loc,
+                quantity=qty,
+                note="Stock inicial",
             )
 
     # -------------------
-    # MOVEMENTS
+    # MOVIMIENTOS REALISTAS
     # -------------------
-    for _ in range(100):
+    for _ in range(200):
         p = random.choice(products)
-        origin = random.choice(locations)
-        destination = random.choice(locations)
+        movement_type = random.choice(["OUT", "TRANSFER"])
 
-        StockMovement.objects.create(
-            product=p,
-            movement_type=random.choice(["IN", "OUT", "TRANSFER"]),
-            origin=origin,
-            destination=destination,
-            quantity=random.randint(1, 20),
-        )
+        if movement_type == "OUT":
+            origin = random.choice(locations)
+
+            stock = StockItem.objects.filter(product=p, location=origin).first()
+            if not stock or stock.quantity <= 1:
+                continue
+
+            qty = random.randint(1, stock.quantity)
+
+            StockMovement.objects.create(
+                product=p,
+                movement_type="OUT",
+                origin=origin,
+                quantity=qty,
+            )
+
+        elif movement_type == "TRANSFER":
+            origin, destination = random.sample(locations, 2)
+
+            stock = StockItem.objects.filter(product=p, location=origin).first()
+            if not stock or stock.quantity <= 1:
+                continue
+
+            qty = random.randint(1, stock.quantity)
+
+            StockMovement.objects.create(
+                product=p,
+                movement_type="TRANSFER",
+                origin=origin,
+                destination=destination,
+                quantity=qty,
+            )
 
     # -------------------
     # ORDERS
     # -------------------
-    for _ in range(20):
+    for _ in range(10):
         order = Order.objects.create(
             supplier=random.choice(suppliers),
             location=random.choice(locations),
             status=random.choice(["pending", "sent", "received"]),
-            created_at=timezone.now()
+            created_at=timezone.now(),
         )
 
         for _ in range(random.randint(1, 5)):
@@ -111,7 +138,7 @@ def run():
                 order=order,
                 product=random.choice(products),
                 quantity=random.randint(1, 10),
-                cost_price=5
+                cost_price=random.uniform(5, 50),
             )
 
-    print("✅ Datos generados correctamente")
+    print("✅ Seed PRO completado")
