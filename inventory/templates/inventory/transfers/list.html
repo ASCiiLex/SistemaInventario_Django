@@ -13,21 +13,18 @@
         hx-get="{% url 'transfer_list' %}"
         hx-target="#transfers-table"
         hx-push-url="true"
+        hx-include="this"
     >
         <div class="col-md-3">
-            {{ filter_form.product.label_tag }}
-            {{ filter_form.product }}
+            {{ filter_form.product|add_class:"select2" }}
         </div>
         <div class="col-md-3">
-            {{ filter_form.origin.label_tag }}
-            {{ filter_form.origin }}
+            {{ filter_form.origin|add_class:"select2" }}
         </div>
         <div class="col-md-3">
-            {{ filter_form.destination.label_tag }}
-            {{ filter_form.destination }}
+            {{ filter_form.destination|add_class:"select2" }}
         </div>
         <div class="col-md-2">
-            {{ filter_form.status.label_tag }}
             {{ filter_form.status }}
         </div>
         <div class="col-md-1 d-flex align-items-end">

@@ -13,17 +13,15 @@
         hx-get="{% url 'order_list' %}"
         hx-target="#orders-table"
         hx-push-url="true"
+        hx-include="this"
     >
         <div class="col-md-3">
-            {{ filter_form.supplier.label_tag }}
-            {{ filter_form.supplier }}
+            {{ filter_form.supplier|add_class:"select2" }}
         </div>
         <div class="col-md-3">
-            {{ filter_form.location.label_tag }}
-            {{ filter_form.location }}
+            {{ filter_form.location|add_class:"select2" }}
         </div>
         <div class="col-md-3">
-            {{ filter_form.status.label_tag }}
             {{ filter_form.status }}
         </div>
         <div class="col-md-2 d-flex align-items-end">
