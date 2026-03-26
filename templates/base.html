@@ -26,8 +26,21 @@
     <!-- ========================= -->
     <!-- JS EXTERNOS -->
     <!-- ========================= -->
+
+    <!-- jQuery (necesario para Select2) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <!-- Chart.js (CRÍTICO) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Alpine -->
+   <!-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <!-- ========================= -->
     <!-- JS GLOBAL -->
@@ -83,7 +96,6 @@
 
             </ul>
 
-            <!-- Toggle Dark Mode -->
             <button id="themeToggle" class="btn btn-sm btn-outline-light me-3">🌙</button>
 
             <div id="notifications-bell"
@@ -133,17 +145,11 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-/* =========================
-   DARK MODE INIT
-========================= */
 (function () {
     const saved = localStorage.getItem("theme") || "light";
     document.documentElement.setAttribute("data-theme", saved);
 })();
 
-/* =========================
-   MODAL + TOAST + EVENTS
-========================= */
 document.body.addEventListener('htmx:afterSwap', function (event) {
     if (event.detail.target.id === 'mainModalContent') {
         const modalEl = document.getElementById('mainModal');
@@ -196,9 +202,6 @@ function showToast(message) {
     }, 3000);
 }
 
-/* =========================
-   SELECT2 INIT
-========================= */
 function initSelect2(context) {
     if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) return;
     const $ = window.jQuery;
@@ -213,9 +216,6 @@ function initSelect2(context) {
 document.addEventListener('DOMContentLoaded', () => initSelect2(document));
 document.body.addEventListener('htmx:afterSwap', e => initSelect2(e.target));
 
-/* =========================
-   WEBSOCKET
-========================= */
 const socket = new WebSocket("ws://" + window.location.host + "/ws/notificaciones/");
 
 socket.onmessage = function(e) {

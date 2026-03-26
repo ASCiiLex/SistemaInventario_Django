@@ -1,5 +1,5 @@
 /* ============================================
-   INICIALIZACIÓN DE SECCIONES PRINCIPALES
+   INICIALIZACIÓN DE SECCIONES
 ============================================ */
 
 function initMainSections() {
@@ -17,23 +17,12 @@ function initMainSections() {
 
         header.onclick = () => {
             const isClosed = section.classList.toggle("closed");
-
-            if (isClosed) {
-                arrow.classList.remove("arrow-up");
-                arrow.classList.add("arrow-down");
-                content.style.display = "none";
-            } else {
-                arrow.classList.remove("arrow-down");
-                arrow.classList.add("arrow-up");
-                content.style.display = "block";
-            }
+            content.style.display = isClosed ? "none" : "block";
+            arrow.classList.toggle("arrow-up", !isClosed);
+            arrow.classList.toggle("arrow-down", isClosed);
         };
     });
 }
-
-/* ============================================
-   INICIALIZACIÓN DE SUBSECCIONES INTERNAS
-============================================ */
 
 function initSubSections() {
     document.querySelectorAll(".subsection").forEach(sub => {
@@ -44,51 +33,52 @@ function initSubSections() {
         if (!header || !content || !arrow) return;
 
         sub.classList.add("closed");
-        arrow.classList.remove("sub-arrow-up");
-        arrow.classList.add("sub-arrow-down");
         content.style.display = "none";
 
         header.onclick = () => {
             const isClosed = sub.classList.toggle("closed");
-
-            if (isClosed) {
-                arrow.classList.remove("sub-arrow-up");
-                arrow.classList.add("sub-arrow-down");
-                content.style.display = "none";
-            } else {
-                arrow.classList.remove("sub-arrow-down");
-                arrow.classList.add("sub-arrow-up");
-                content.style.display = "block";
-            }
+            content.style.display = isClosed ? "none" : "block";
+            arrow.classList.toggle("sub-arrow-up", !isClosed);
+            arrow.classList.toggle("sub-arrow-down", isClosed);
         };
     });
 }
 
 /* ============================================
-   GRÁFICO HORIZONTAL + SELECTOR DINÁMICO
+   CHART (CORRECTO)
 ============================================ */
 
 let categoryChart = null;
 
 function initChart() {
-    if (!window.categoryChartData) return;
+    const canvas = document.getElementById("categoryChart");
+    if (!canvas) return;
 
-    const ctx = document.getElementById("categoryChart");
-    if (!ctx) return;
+    if (!window.chartData) return;
 
-    categoryChart = new Chart(ctx, {
+    const labels = window.chartData.labels || [];
+    const values = window.chartData.values || [];
+
+    if (!labels.length) return;
+
+    if (categoryChart) {
+        categoryChart.destroy();
+    }
+
+    categoryChart = new Chart(canvas, {
         type: "bar",
         data: {
-            labels: window.categoryChartData.labels,
+            labels: labels,
             datasets: [{
                 label: "Stock",
-                data: window.categoryChartData.values,
+                data: values,
                 backgroundColor: "#0d6efd"
             }]
         },
         options: {
-            indexAxis: "y",
             responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: "y",
             scales: {
                 x: { beginAtZero: true }
             }
@@ -102,22 +92,19 @@ function initChartSelector() {
     const selector = document.getElementById("chartSelector");
     if (!selector || !categoryChart) return;
 
-    selector.addEventListener("change", function () {
-        const tipo = this.value;
-
-        fetch(`/dashboard/grafico/${tipo}/`)
-            .then(response => response.json())
+    selector.onchange = function () {
+        fetch(`/dashboard/grafico/${this.value}/`)
+            .then(r => r.json())
             .then(data => {
                 categoryChart.data.labels = data.labels || [];
                 categoryChart.data.datasets[0].data = data.values || [];
                 categoryChart.update();
-            })
-            .catch(() => {});
-    });
+            });
+    };
 }
 
 /* ============================================
-   EVENTOS
+   EVENTS
 ============================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -129,4 +116,5 @@ document.addEventListener("DOMContentLoaded", () => {
 document.body.addEventListener("htmx:afterSwap", () => {
     initMainSections();
     initSubSections();
+    initChart();
 });

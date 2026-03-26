@@ -1,33 +1,10 @@
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-success text-white">
-        <h5 class="mb-0">Stock por categoría</h5>
-    </div>
-
-    <div class="card-body">
-        <canvas id="categoryChart"></canvas>
-    </div>
-
-    <script>
-        const ctx = document.getElementById('categoryChart');
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: {{ chart_labels|safe }},
-                datasets: [{
-                    label: 'Stock total',
-                    data: {{ chart_values|safe }},
-                    backgroundColor: 'rgba(25, 135, 84, 0.6)',
-                    borderColor: 'rgba(25, 135, 84, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
-        });
-    </script>
+<div style="height: 200px;">
+    <canvas id="categoryChart"></canvas>
 </div>
+
+<script>
+window.chartData = {
+    labels: {{ chart_labels|safe }},
+    values: {{ chart_values|safe }}
+};
+</script>

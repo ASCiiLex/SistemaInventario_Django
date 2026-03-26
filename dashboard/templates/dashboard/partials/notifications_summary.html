@@ -9,6 +9,14 @@
     </div>
     <div class="col">
         <h5>Por tipo</h5>
-        <p class="fs-6">{{ notifications_by_type|default:"Sin datos" }}</p>
+        <p class="fs-6">
+            {% if notifications_by_type %}
+                {% for t in notifications_by_type %}
+                    {{ t.type }} ({{ t.total }}){% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            {% else %}
+                Sin datos
+            {% endif %}
+        </p>
     </div>
 </div>

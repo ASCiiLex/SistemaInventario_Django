@@ -1,6 +1,7 @@
 from django.shortcuts import render
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.http import JsonResponse
+
 from products.models import Product
 from suppliers.models import Supplier
 from categories.models import Category
@@ -35,6 +36,17 @@ def dashboard_view(request):
             total = cat.total_product_stock or 0
         chart_values.append(total)
 
+    # -------------------------
+    # FIX NOTIFICATIONS SUMMARY
+    # -------------------------
+    notifications_total = Notification.objects.count()
+    notifications_unread = Notification.objects.filter(seen=False).count()
+    notifications_by_type = (
+        Notification.objects
+        .values("type")
+        .annotate(total=Count("id"))
+    )
+
     context = {
         "total_products": Product.objects.count(),
         "total_suppliers": Supplier.objects.count(),
@@ -42,10 +54,19 @@ def dashboard_view(request):
         "low_stock_count": low_stock_count,
         "chart_labels": chart_labels,
         "chart_values": chart_values,
+
+        # FIX
+        "notifications_total": notifications_total,
+        "notifications_unread": notifications_unread,
+        "notifications_by_type": notifications_by_type,
     }
 
     return render(request, "dashboard/dashboard.html", context)
 
+
+# ============================================
+# HELPERS
+# ============================================
 
 def _get_real_stock_for_product(product):
     qty = product.stock_items.aggregate(total=Sum("quantity"))["total"]
@@ -71,6 +92,10 @@ def _get_low_stock_products():
 
     return low_stock
 
+
+# ============================================
+# PARTIALS
+# ============================================
 
 def dashboard_totals(request):
     total_stock_real = StockItem.objects.aggregate(total=Sum("quantity"))["total"]
@@ -108,6 +133,7 @@ def dashboard_recent_movements(request):
     recent_movements = (
         StockMovement.objects
         .select_related("product", "origin", "destination")
+        .exclude(origin__isnull=True, destination__isnull=True)  # FIX
         .order_by("-created_at")[:10]
     )
 
@@ -131,6 +157,10 @@ def dashboard_recent_stock_movements(request):
         {"stock_movements": recent_stock_movements},
     )
 
+
+# ============================================
+# CHARTS
+# ============================================
 
 def _get_chart_by_category():
     categories = (
