@@ -29,6 +29,15 @@ body {
     font-size: 0.95rem;
 }
 
+th {
+    user-select: none;
+}
+
+th:hover {
+    text-decoration: underline;
+    opacity: 0.85;
+}
+
 @media (max-width: 768px) {
     .table {
         display: block;
