@@ -80,7 +80,7 @@ function connectWS() {
 connectWS();
 
 // ===============================
-// EVENT MAP (🔥 CLAVE)
+// EVENT MAP 
 // ===============================
 document.body.addEventListener("inventory:movement", () => {
     emitEvent("inventory:refresh");
@@ -105,4 +105,40 @@ document.body.addEventListener("htmx:afterSwap", () => {
     bar.style.width = "100%";
     setTimeout(() => bar.style.width = "0%", 300);
 });
+</script>
+
+<script>
+// ===============================
+// ALPINE: NOTIFICATION SETTINGS
+// ===============================
+function notifSettings() {
+    return {
+        sound: true,
+        push: true,
+
+        loadSettings() {
+            const saved = JSON.parse(localStorage.getItem("notifSettings") || "{}");
+
+            this.sound = saved.sound ?? true;
+            this.push = saved.push ?? true;
+        },
+
+        save() {
+            localStorage.setItem("notifSettings", JSON.stringify({
+                sound: this.sound,
+                push: this.push
+            }));
+        },
+
+        toggleSound() {
+            this.sound = !this.sound;
+            this.save();
+        },
+
+        togglePush() {
+            this.push = !this.push;
+            this.save();
+        }
+    };
+}
 </script>
