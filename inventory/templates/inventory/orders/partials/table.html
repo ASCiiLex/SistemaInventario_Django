@@ -25,20 +25,15 @@
                 <td>{{ order.location }}</td>
                 <td>
                     {% if order.status == "pending" %}
-                        <span class="badge bg-success">Pendiente</span>
-
+                        <span class="badge bg-warning">Pendiente</span>
                     {% elif order.status == "sent" %}
-                        <span class="badge bg-warning">Enviado</span>
-
+                        <span class="badge bg-success">Enviado</span>
                     {% elif order.status == "received" %}
                         <span class="badge bg-info">Recibido</span>
-
                     {% elif order.status == "cancelled" %}
                         <span class="badge bg-danger">Cancelado</span>
-
                     {% elif order.status == "partially_received" %}
                         <span class="badge bg-primary">Parcialmente recibido</span>
-
                     {% elif order.status == "backordered" %}
                         <span class="badge bg-secondary">Backorder</span>
                     {% endif %}
