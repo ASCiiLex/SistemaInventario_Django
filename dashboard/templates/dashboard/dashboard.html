@@ -5,12 +5,8 @@
 
 <div class="container-fluid">
 
-    <!-- ========================= -->
-    <!-- FILA 1: NOTIFICACIONES -->
-    <!-- ========================= -->
     <div class="row g-3">
 
-        <!-- Resumen de Notificaciones -->
         <div class="col-md-6">
             <div class="card card-section" data-section="noti-summary">
                 <div class="card-header section-header bg-info text-white">
@@ -23,7 +19,6 @@
             </div>
         </div>
 
-        <!-- Últimas Notificaciones -->
         <div class="col-md-6">
             <div class="card card-section" data-section="noti-latest">
                 <div class="card-header section-header bg-primary text-white">
@@ -33,7 +28,7 @@
                 <div class="card-body section-content compact-table"
                      style="max-height: 300px; overflow-y: auto;"
                      hx-get="{% url 'dashboard_notifications_recent' %}"
-                     hx-trigger="load, notifications-updated from:body"
+                     hx-trigger="load, notifications:updated from:body"
                      hx-target="this"
                      hx-swap="innerHTML">
                 </div>
@@ -42,12 +37,8 @@
 
     </div>
 
-    <!-- ========================= -->
-    <!-- FILA 2: KPIs + GRÁFICO -->
-    <!-- ========================= -->
     <div class="row g-3 mt-1">
 
-        <!-- KPIs -->
         <div class="col-md-6">
             <div class="card card-section" data-section="kpis">
                 <div class="card-header section-header bg-secondary text-white">
@@ -55,18 +46,16 @@
                     <span class="toggle-arrow arrow-up"></span>
                 </div>
 
-                <!-- 🔥 CONTENEDOR REACTIVO -->
                 <div id="kpis-container"
                      class="card-body section-content"
                      hx-get="{% url 'dashboard_totals' %}"
-                     hx-trigger="load, refresh from:body, movement-created from:body"
+                     hx-trigger="load, inventory:refresh from:body"
                      hx-target="this"
                      hx-swap="innerHTML">
                 </div>
             </div>
         </div>
 
-        <!-- Gráfico -->
         <div class="col-md-6">
             <div class="card card-section" data-section="chart">
                 <div class="card-header section-header bg-warning text-dark">
@@ -85,16 +74,12 @@
                     </div>
 
                     {% include "dashboard/partials/chart.html" %}
-
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- ========================= -->
-    <!-- FILA 3: BAJO MÍNIMO -->
-    <!-- ========================= -->
     <div class="row g-3 mt-1">
         <div class="col-12">
             <div class="card card-section" data-section="low-stock">
@@ -103,11 +88,10 @@
                     <span class="toggle-arrow arrow-up"></span>
                 </div>
 
-                <!-- 🔥 CONTENEDOR REACTIVO -->
                 <div id="low-stock-container"
                      class="card-body section-content compact-table"
                      hx-get="{% url 'dashboard_low_stock' %}"
-                     hx-trigger="load, refresh from:body, movement-created from:body"
+                     hx-trigger="load, inventory:refresh from:body"
                      hx-target="this"
                      hx-swap="innerHTML">
                 </div>
@@ -115,9 +99,6 @@
         </div>
     </div>
 
-    <!-- ========================= -->
-    <!-- FILA 4: REGISTRO ACTIVIDAD -->
-    <!-- ========================= -->
     <div class="row g-3 mt-1">
         <div class="col-12">
             <div class="card card-section" data-section="activity">
@@ -126,10 +107,8 @@
                     <span class="toggle-arrow arrow-up"></span>
                 </div>
 
-                <!-- 🔥 CONTENEDOR REACTIVO -->
                 <div id="activity-container" class="card-body section-content">
 
-                    <!-- Actividad Reciente -->
                     <div class="subsection" id="actividad-reciente">
                         <div class="subsection-header">
                             <span>Actividad Reciente</span>
@@ -138,13 +117,12 @@
 
                         <div class="subsection-content compact-table"
                              hx-get="{% url 'dashboard_recent_movements' %}"
-                             hx-trigger="load, refresh from:body, movement-created from:body"
+                             hx-trigger="load, inventory:refresh from:body"
                              hx-target="this"
                              hx-swap="innerHTML">
                         </div>
                     </div>
 
-                    <!-- Histórico -->
                     <div class="subsection mt-2" id="historico-movimientos">
                         <div class="subsection-header">
                             <span>Histórico de Movimientos</span>
@@ -153,7 +131,7 @@
 
                         <div class="subsection-content compact-table"
                              hx-get="{% url 'dashboard_recent_stock_movements' %}"
-                             hx-trigger="load, refresh from:body, movement-created from:body"
+                             hx-trigger="load, inventory:refresh from:body"
                              hx-target="this"
                              hx-swap="innerHTML">
                         </div>

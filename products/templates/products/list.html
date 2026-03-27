@@ -53,7 +53,7 @@
 
 <div id="products-table"
      hx-get="{% url 'product_list' %}"
-     hx-trigger="movement-created from:body"
+     hx-trigger="inventory:refresh from:body"
      hx-target="this"
      hx-swap="outerHTML">
     {% include 'products/partials/products_table.html' %}

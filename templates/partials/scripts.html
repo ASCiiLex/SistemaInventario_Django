@@ -1,6 +1,6 @@
 <script>
 // ===============================
-// EVENT BUS (🔥 CLAVE)
+// EVENT BUS
 // ===============================
 function emitEvent(name, detail = {}) {
     document.body.dispatchEvent(new CustomEvent(name, { detail }));
@@ -60,7 +60,7 @@ document.body.addEventListener('htmx:afterSwap', (e) => {
 });
 
 // ===============================
-// WEBSOCKET (🔥 ESTANDARIZADO)
+// WEBSOCKET
 // ===============================
 function connectWS() {
     const protocol = location.protocol === "https:" ? "wss://" : "ws://";
@@ -80,14 +80,14 @@ function connectWS() {
 connectWS();
 
 // ===============================
-// EVENT LISTENERS GLOBAL
+// EVENT MAP (🔥 CLAVE)
 // ===============================
 document.body.addEventListener("inventory:movement", () => {
-    htmx.trigger(document.body, "inventory:refresh");
+    emitEvent("inventory:refresh");
 });
 
 document.body.addEventListener("inventory:notification", () => {
-    htmx.trigger(document.body, "notifications:updated");
+    emitEvent("notifications:updated");
 });
 
 // ===============================
