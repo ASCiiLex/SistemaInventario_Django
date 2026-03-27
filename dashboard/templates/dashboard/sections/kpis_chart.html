@@ -1,0 +1,42 @@
+<div class="row g-3 mt-1">
+
+    <div class="col-md-6">
+        <div class="card card-section" data-section="kpis">
+            <div class="card-header section-header bg-secondary text-white">
+                <span>Indicadores Clave</span>
+                <span class="toggle-arrow arrow-up"></span>
+            </div>
+
+            <div id="kpis-container"
+                 class="card-body section-content"
+                 hx-get="{% url 'dashboard_totals' %}"
+                 hx-trigger="load, inventory:refresh from:body"
+                 hx-target="this"
+                 hx-swap="innerHTML">
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card card-section" data-section="chart">
+            <div class="card-header section-header bg-warning text-dark">
+                <span>Gráfico de Stock</span>
+                <span class="toggle-arrow arrow-up"></span>
+            </div>
+            <div class="card-body section-content">
+                <div class="d-flex justify-content-end mb-2">
+                    <select id="chartSelector" class="form-select form-select-sm chart-selector">
+                        <option value="categorias">Stock por categoría</option>
+                        <option value="proveedores">Stock por proveedor</option>
+                        <option value="almacenes">Stock por almacén</option>
+                        <option value="rotacion">Rotación por producto</option>
+                        <option value="movimientos">Movimientos por tipo</option>
+                    </select>
+                </div>
+
+                {% include "dashboard/partials/chart.html" %}
+            </div>
+        </div>
+    </div>
+
+</div>

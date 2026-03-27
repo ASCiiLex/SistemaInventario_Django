@@ -1,0 +1,31 @@
+<div class="row g-3">
+
+    <div class="col-md-6">
+        <div class="card card-section" data-section="noti-summary">
+            <div class="card-header section-header bg-info text-white">
+                <span>Resumen de Notificaciones</span>
+                <span class="toggle-arrow arrow-up"></span>
+            </div>
+            <div class="card-body section-content compact-table">
+                {% include "dashboard/partials/notifications_summary.html" %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card card-section" data-section="noti-latest">
+            <div class="card-header section-header bg-primary text-white">
+                <span>Últimas Notificaciones</span>
+                <span class="toggle-arrow arrow-up"></span>
+            </div>
+            <div class="card-body section-content compact-table"
+                 style="max-height: 300px; overflow-y: auto;"
+                 hx-get="{% url 'dashboard_notifications_recent' %}"
+                 hx-trigger="load, notifications:updated from:body"
+                 hx-target="this"
+                 hx-swap="innerHTML">
+            </div>
+        </div>
+    </div>
+
+</div>
