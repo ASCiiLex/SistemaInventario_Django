@@ -16,10 +16,10 @@
         hx-include="this"
     >
         <div class="col-md-3">
-            {{ filter_form.supplier|add_class:"select2" }}
+            {{ filter_form.supplier }}
         </div>
         <div class="col-md-3">
-            {{ filter_form.location|add_class:"select2" }}
+            {{ filter_form.location }}
         </div>
         <div class="col-md-3">
             {{ filter_form.status }}
@@ -29,7 +29,11 @@
         </div>
     </form>
 
-    <div id="orders-table">
+    <div id="orders-table"
+         hx-get="{% url 'order_list' %}"
+         hx-trigger="inventory:refresh from:body"
+         hx-target="this"
+         hx-swap="outerHTML">
         {% include "inventory/orders/partials/table.html" %}
     </div>
 </div>

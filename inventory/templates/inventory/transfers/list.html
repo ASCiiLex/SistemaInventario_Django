@@ -32,7 +32,11 @@
         </div>
     </form>
 
-    <div id="transfers-table">
+    <div id="transfers-table"
+         hx-get="{% url 'transfer_list' %}"
+         hx-trigger="inventory:movement from:body"
+         hx-target="this"
+         hx-swap="outerHTML">
         {% include "inventory/transfers/partials/table.html" %}
     </div>
 </div>
