@@ -1,0 +1,108 @@
+<script>
+// ===============================
+// EVENT BUS (🔥 CLAVE)
+// ===============================
+function emitEvent(name, detail = {}) {
+    document.body.dispatchEvent(new CustomEvent(name, { detail }));
+}
+
+// ===============================
+// THEME
+// ===============================
+(function () {
+    const saved = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", saved);
+})();
+
+// ===============================
+// SELECT2
+// ===============================
+function initSelect2(ctx) {
+    if (!window.jQuery?.fn?.select2) return;
+
+    const $ = window.jQuery;
+
+    $(ctx).find('select.select2').each(function () {
+        if (!$(this).data('select2')) {
+            $(this).select2({ width: '100%', theme: 'bootstrap-5' });
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => initSelect2(document));
+document.body.addEventListener('htmx:afterSwap', e => initSelect2(e.target));
+
+// ===============================
+// TOASTS
+// ===============================
+function showToast(message) {
+    const container = document.getElementById('toast-container');
+
+    const el = document.createElement('div');
+    el.className = "toast align-items-center border-0 mb-2 bg-dark text-white";
+    el.innerHTML = `<div class="d-flex">
+        <div class="toast-body">${message}</div>
+        <button class="btn-close btn-close-white me-2 m-auto"></button>
+    </div>`;
+
+    container.appendChild(el);
+
+    setTimeout(() => el.remove(), 3000);
+}
+
+// ===============================
+// MODAL
+// ===============================
+document.body.addEventListener('htmx:afterSwap', (e) => {
+    if (e.detail.target.id === 'mainModalContent') {
+        new bootstrap.Modal(document.getElementById('mainModal')).show();
+    }
+});
+
+// ===============================
+// WEBSOCKET (🔥 ESTANDARIZADO)
+// ===============================
+function connectWS() {
+    const protocol = location.protocol === "https:" ? "wss://" : "ws://";
+    const socket = new WebSocket(protocol + location.host + "/ws/notificaciones/");
+
+    socket.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+
+        emitEvent(`inventory:${data.type}`, data);
+
+        if (data.message) showToast(data.message);
+    };
+
+    socket.onclose = () => setTimeout(connectWS, 2000);
+}
+
+connectWS();
+
+// ===============================
+// EVENT LISTENERS GLOBAL
+// ===============================
+document.body.addEventListener("inventory:movement", () => {
+    htmx.trigger(document.body, "inventory:refresh");
+});
+
+document.body.addEventListener("inventory:notification", () => {
+    htmx.trigger(document.body, "notifications:updated");
+});
+
+// ===============================
+// LOADER
+// ===============================
+document.body.addEventListener("htmx:beforeRequest", () => {
+    const bar = document.getElementById("loader-bar");
+    if (bar) bar.style.width = "70%";
+});
+
+document.body.addEventListener("htmx:afterSwap", () => {
+    const bar = document.getElementById("loader-bar");
+    if (!bar) return;
+
+    bar.style.width = "100%";
+    setTimeout(() => bar.style.width = "0%", 300);
+});
+</script>

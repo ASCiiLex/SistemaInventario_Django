@@ -1,0 +1,42 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="/">Sistema Inventario</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                <li class="nav-item"><a href="/categorias/" class="nav-link">Categorías</a></li>
+                <li class="nav-item"><a href="/proveedores/" class="nav-link">Proveedores</a></li>
+                <li class="nav-item"><a href="/productos/" class="nav-link">Productos</a></li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        Inventario
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{% url 'stockmovement_list' %}">Movimientos</a></li>
+                        <li><a class="dropdown-item" href="{% url 'transfer_create' %}">Transferencias</a></li>
+                        <li><a class="dropdown-item" href="{% url 'location_list' %}">Almacenes</a></li>
+                        <li><a class="dropdown-item" href="{% url 'order_list' %}">Pedidos</a></li>
+                    </ul>
+                </li>
+
+            </ul>
+
+            <button id="themeToggle" class="btn btn-sm btn-outline-light me-3">🌙</button>
+
+            <div id="notifications-bell"
+                 hx-get="{% url 'notifications_counter' %}"
+                 hx-trigger="load, notifications:updated from:body"
+                 hx-target="this"
+                 hx-swap="outerHTML">
+                {% include 'notifications/partials/bell.html' %}
+            </div>
+
+        </div>
+    </div>
+</nav>

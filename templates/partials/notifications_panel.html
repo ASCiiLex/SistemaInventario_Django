@@ -1,0 +1,13 @@
+<div class="offcanvas offcanvas-end" tabindex="-1" id="notificationsPanelOffcanvas">
+    <div class="offcanvas-header">
+        <h5>Notificaciones</h5>
+        <button class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+
+    <div class="offcanvas-body"
+         hx-get="{% url 'notifications_panel' %}"
+         hx-trigger="load, notifications:updated from:body"
+         hx-target="this"
+         hx-swap="innerHTML">
+    </div>
+</div>
