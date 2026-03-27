@@ -1,4 +1,8 @@
-<div id="movements-table">
+<div id="movements-table"
+     hx-get="{% url 'stockmovement_list' %}"
+     hx-trigger="inventory:refresh from:body"
+     hx-target="this"
+     hx-swap="outerHTML">
 
 <table class="table table-striped mt-3">
     <thead>

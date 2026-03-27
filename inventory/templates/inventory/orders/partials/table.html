@@ -1,4 +1,8 @@
-<div id="orders-table">
+<div id="orders-table"
+     hx-get="{% url 'order_list' %}"
+     hx-trigger="inventory:refresh from:body"
+     hx-target="this"
+     hx-swap="outerHTML">
 
 <table class="table table-striped">
     <thead>

@@ -1,4 +1,8 @@
-<div id="locations-table">
+<div id="locations-table"
+     hx-get="{% url 'location_list' %}"
+     hx-trigger="inventory:refresh from:body"
+     hx-target="this"
+     hx-swap="outerHTML">
 
 <table class="table table-striped">
     <thead>
