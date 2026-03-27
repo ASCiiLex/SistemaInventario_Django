@@ -14,7 +14,6 @@ urlpatterns = [
     path("", dashboard_view, name="dashboard"),
 
     path("totales/", dashboard_totals, name="dashboard_totals"),
-
     path("bajo-minimo/", dashboard_low_stock, name="dashboard_low_stock"),
 
     path("notificaciones-recientes/", dashboard_notifications_recent, name="dashboard_notifications_recent"),
