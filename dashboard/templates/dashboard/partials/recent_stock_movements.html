@@ -1,20 +1,22 @@
+<div style="max-height: 300px; overflow-y: auto;">
+
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>Producto</th>
+            <th>Fecha</th>
             <th>Tipo</th>
             <th>Cantidad</th>
-            <th>Fecha</th>
+            <th>Producto</th>
         </tr>
     </thead>
     <tbody>
         {% if stock_movements %}
             {% for m in stock_movements %}
             <tr>
-                <td>{{ m.product }}</td>
+                <td>{{ m.created_at }}</td>
                 <td>{{ m.get_movement_type_display }}</td>
                 <td>{{ m.quantity }}</td>
-                <td>{{ m.created_at }}</td>
+                <td>{{ m.product }}</td>
             </tr>
             {% endfor %}
         {% else %}
@@ -24,3 +26,5 @@
         {% endif %}
     </tbody>
 </table>
+
+</div>

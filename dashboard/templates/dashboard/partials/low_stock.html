@@ -2,8 +2,8 @@
     <thead class="table-danger">
         <tr>
             <th>Producto</th>
-            <th>Stock</th>
             <th>Mínimo</th>
+            <th>Stock</th>
         </tr>
     </thead>
     <tbody>
@@ -11,8 +11,8 @@
             {% for item in low_stock %}
             <tr>
                 <td>{{ item.product.name }}</td>
-                <td>{{ item.quantity }}</td>
                 <td>{{ item.min_stock }}</td>
+                <td>{{ item.quantity }}</td>
             </tr>
             {% endfor %}
         {% else %}

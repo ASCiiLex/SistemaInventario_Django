@@ -1,24 +1,24 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>Producto</th>
+            <th>Fecha</th>
             <th>Tipo</th>
             <th>Cantidad</th>
+            <th>Producto</th>
             <th>Origen</th>
             <th>Destino</th>
-            <th>Fecha</th>
         </tr>
     </thead>
     <tbody>
         {% if movements %}
             {% for m in movements %}
             <tr>
-                <td>{{ m.product }}</td>
+                <td>{{ m.created_at }}</td>
                 <td>{{ m.get_movement_type_display }}</td>
                 <td>{{ m.quantity }}</td>
+                <td>{{ m.product }}</td>
                 <td>{{ m.origin }}</td>
                 <td>{{ m.destination }}</td>
-                <td>{{ m.created_at }}</td>
             </tr>
             {% endfor %}
         {% else %}

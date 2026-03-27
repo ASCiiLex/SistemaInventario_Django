@@ -148,7 +148,7 @@ def dashboard_recent_stock_movements(request):
     recent_stock_movements = (
         StockMovement.objects
         .select_related("product")
-        .order_by("-created_at")[:10]
+        .order_by("-created_at")
     )
 
     return render(
