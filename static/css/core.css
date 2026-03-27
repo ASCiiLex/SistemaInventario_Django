@@ -3,6 +3,12 @@
     --text: #212529;
     --card: #ffffff;
     --border: #dee2e6;
+
+
+    --bg-success { background-color: #2ecc71 !important; };
+    --bg-warning { background-color: #f39c12 !important; };
+    --bg-info    { background-color: #3498db !important; };
+    --bg-danger  { background-color: #e74c3c !important; };
 }
 
 [data-theme="dark"] {
