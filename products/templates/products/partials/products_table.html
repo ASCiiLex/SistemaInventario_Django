@@ -8,12 +8,48 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>Nombre</th>
-            <th>SKU</th>
-            <th>Categoría</th>
-            <th>Proveedor</th>
-            <th>Stock</th>
-            <th>Mínimo</th>
+            <th hx-get="?sort=name&dir={% if current_sort == 'name' and current_dir == 'asc' %}desc{% else %}asc{% endif %}"
+                hx-target="#products-table"
+                hx-swap="outerHTML"
+                hx-push-url="true">
+                Nombre
+            </th>
+
+            <th hx-get="?sort=sku&dir={% if current_sort == 'sku' and current_dir == 'asc' %}desc{% else %}asc{% endif %}"
+                hx-target="#products-table"
+                hx-swap="outerHTML"
+                hx-push-url="true">
+                SKU
+            </th>
+
+            <th hx-get="?sort=category__name&dir={% if current_sort == 'category__name' and current_dir == 'asc' %}desc{% else %}asc{% endif %}"
+                hx-target="#products-table"
+                hx-swap="outerHTML"
+                hx-push-url="true">
+                Categoría
+            </th>
+
+            <th hx-get="?sort=supplier__name&dir={% if current_sort == 'supplier__name' and current_dir == 'asc' %}desc{% else %}asc{% endif %}"
+                hx-target="#products-table"
+                hx-swap="outerHTML"
+                hx-push-url="true">
+                Proveedor
+            </th>
+
+            <th hx-get="?sort=stock&dir={% if current_sort == 'stock' and current_dir == 'asc' %}desc{% else %}asc{% endif %}"
+                hx-target="#products-table"
+                hx-swap="outerHTML"
+                hx-push-url="true">
+                Stock
+            </th>
+
+            <th hx-get="?sort=min_stock&dir={% if current_sort == 'min_stock' and current_dir == 'asc' %}desc{% else %}asc{% endif %}"
+                hx-target="#products-table"
+                hx-swap="outerHTML"
+                hx-push-url="true">
+                Mínimo
+            </th>
+
             <th></th>
         </tr>
     </thead>

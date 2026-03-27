@@ -13,6 +13,10 @@ from inventory.utils.listing import ListViewMixin
 
 def product_list(request):
     view = ListViewMixin()
+    view.allowed_sort_fields = [
+        "name", "sku", "stock", "min_stock", "category__name", "supplier__name",
+    ]
+    view.default_ordering = "name"
 
     search = request.GET.get("q", "")
     category_id = request.GET.get("category", "")
@@ -33,6 +37,9 @@ def product_list(request):
     if stock_filter == "low":
         products = products.filter(stock__lte=F("min_stock"))
 
+    # 🔥 ORDENACIÓN
+    products = view.apply_ordering(request, products)
+
     page_obj = view.paginate_queryset(request, products)
 
     categories = Category.objects.all()
@@ -47,6 +54,8 @@ def product_list(request):
         "stock_filter": stock_filter,
         "categories": categories,
         "suppliers": suppliers,
+        "current_sort": request.GET.get("sort", ""),
+        "current_dir": request.GET.get("dir", "asc"),
     }
 
     if view.is_htmx(request):
