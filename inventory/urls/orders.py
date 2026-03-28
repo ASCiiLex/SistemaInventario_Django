@@ -7,6 +7,7 @@ from ..views import (
     order_send,
     order_receive,
     order_cancel,
+    orders_counter,
 )
 
 urlpatterns = [
@@ -17,4 +18,5 @@ urlpatterns = [
     path("orders/<int:pk>/enviar/", order_send, name="order_send"),
     path("orders/<int:pk>/recibir/", order_receive, name="order_receive"),
     path("orders/<int:pk>/cancelar/", order_cancel, name="order_cancel"),
+    path("counter/", orders_counter, name="orders_counter"),
 ]

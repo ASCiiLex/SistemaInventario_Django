@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 
 from ..models import Order
 from ..forms import (
@@ -158,3 +160,14 @@ def order_cancel(request, pk):
     order.save()
     messages.success(request, "Pedido cancelado correctamente.")
     return redirect("order_detail", pk=pk)
+
+
+def orders_counter(request):
+    pending = Order.objects.filter(status="pending").count()
+
+    html = render_to_string(
+        "inventory/orders/partials/counter.html",
+        {"pending": pending}
+    )
+
+    return HttpResponse(html)

@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.db.models import F, IntegerField
 from django.db.models.functions import Cast, Substr
 from django.http import HttpResponse
+from django.template.loader import render_to_string
 import csv
 
 from .models import Product
@@ -167,3 +168,14 @@ def product_delete(request, pk):
     product = get_object_or_404(Product, pk=pk)
     product.delete()
     return redirect(reverse("product_list"))
+
+
+def lowstock_counter(request):
+    count = sum(1 for p in Product.objects.all() if p.is_below_minimum)
+
+    html = render_to_string(
+        "products/partials/lowstock_counter.html",
+        {"count": count}
+    )
+
+    return HttpResponse(html)
