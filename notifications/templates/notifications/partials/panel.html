@@ -60,28 +60,31 @@
 
         <ul class="list-group mb-3">
             {% for n in group.list %}
-                <li class="list-group-item d-flex justify-content-between align-items-start {% if not n.seen %}fw-bold{% endif %}"
-                    x-data="{show:true}"
-                    x-show="show"
-                    x-transition>
+                <li class="list-group-item d-flex justify-content-between align-items-start {% if not n.seen %}fw-bold{% endif %}">
 
                     <div>
                         {% if n.type == "movement" %}
-                            <span class="text-primary">📦</span>
-                        {% elif n.type == "stock_low" %}
-                            <span class="text-danger">🔴</span>
+                            📦
+                        {% elif n.type == "stock_item_low" %}
+                            🔴
+                        {% elif n.type == "product_risk" %}
+                            ⚠️
                         {% elif n.type == "order" %}
-                            <span class="text-secondary">🧾</span>
+                            🧾
                         {% elif n.type == "alert" %}
-                            <span class="text-warning">⚠️</span>
+                            ⚠️
                         {% else %}
-                            <span class="text-success">🔔</span>
+                            🔔
                         {% endif %}
 
                         {{ n.message }}<br>
 
                         {% if n.product %}
                             <small class="text-muted">Producto: {{ n.product }}</small><br>
+                        {% endif %}
+
+                        {% if n.location %}
+                            <small class="text-muted">Ubicación: {{ n.location }}</small><br>
                         {% endif %}
 
                         <small class="text-muted">{{ n.created_at|date:"d/m/Y H:i" }}</small>
@@ -124,8 +127,6 @@
                 hx-swap="innerHTML">
                 ← Anterior
             </button>
-        {% else %}
-            <span></span>
         {% endif %}
 
         {% if page_obj.has_next %}

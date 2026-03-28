@@ -12,7 +12,7 @@
         <p class="fs-6">
             {% if notifications_by_type %}
                 {% for t in notifications_by_type %}
-                    {{ t.type }} ({{ t.total }}){% if not forloop.last %}, {% endif %}
+                    {{ t.label }} ({{ t.total }}){% if not forloop.last %}, {% endif %}
                 {% endfor %}
             {% else %}
                 Sin datos
