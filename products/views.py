@@ -189,3 +189,19 @@ def lowstock_counter(request):
     )
 
     return HttpResponse(html)
+
+
+def stockitem_counter(request):
+    from inventory.models import StockItem
+    from django.db.models import F
+
+    count = StockItem.objects.filter(
+        quantity__lte=F("min_stock")
+    ).count()
+
+    html = render_to_string(
+        "products/partials/stockitem_counter.html",
+        {"count": count}
+    )
+
+    return HttpResponse(html)

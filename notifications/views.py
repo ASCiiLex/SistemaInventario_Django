@@ -138,11 +138,20 @@ def notification_mark_unread(request, pk):
     return response
 
 
-# CAMPANA
+# 🔥 FIX CLAVE → CAMPANA + TRIGGER CORRECTO
 
 def notifications_counter(request):
     unread = Notification.objects.filter(seen=False).count()
-    return render(request, "notifications/partials/bell.html", {"unread": unread})
+
+    response = render(
+        request,
+        "notifications/partials/bell.html",
+        {"unread": unread}
+    )
+
+    # 🔥 IMPORTANTE: mismo evento que escucha HTMX
+    response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
+    return response
 
 
 # PANEL LATERAL
@@ -194,7 +203,7 @@ def notifications_panel_mark_all(request):
     context = _panel_context(page_obj)
 
     response = render(request, "notifications/partials/panel.html", context)
-    response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificaciones actualizadas"}}'
+    response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
     return response
 
 
@@ -212,7 +221,7 @@ def notifications_panel_mark_one(request, pk):
     context = _panel_context(page_obj)
 
     response = render(request, "notifications/partials/panel.html", context)
-    response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificación marcada como leída"}}'
+    response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
     return response
 
 
@@ -230,7 +239,7 @@ def notifications_panel_mark_unread(request, pk):
     context = _panel_context(page_obj)
 
     response = render(request, "notifications/partials/panel.html", context)
-    response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificación marcada como no leída"}}'
+    response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
     return response
 
 

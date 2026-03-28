@@ -7,6 +7,7 @@ from .views import (
     product_delete,
     export_products_csv,
     lowstock_counter,
+    stockitem_counter
 )
 
 urlpatterns = [
@@ -17,4 +18,5 @@ urlpatterns = [
     path("eliminar/<int:pk>/", product_delete, name="product_delete"),
     path("exportar/", export_products_csv, name="export_products_csv"),
     path("low-stock-counter/", lowstock_counter, name="lowstock_counter"),
+    path("stockitem-counter/", stockitem_counter, name="stockitem_counter"),
 ]

@@ -46,6 +46,14 @@
                      hx-swap="outerHTML">
                 </div>
 
+                <!-- 🔥 NUEVO: incidencias por almacén -->
+                <div id="stockitem-counter"
+                    hx-get="{% url 'stockitem_counter' %}"
+                    hx-trigger="load, inventory:stock_updated from:body"
+                    hx-target="this"
+                    hx-swap="outerHTML">
+                </div>      
+
                 <!-- Notificaciones -->
                 <div id="notifications-bell"
                      hx-get="{% url 'notifications_counter' %}"

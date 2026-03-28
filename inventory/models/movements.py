@@ -1,5 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.apps import apps
+
 from products.models import Product
 from .locations import Location
 from .stock import StockItem
@@ -70,20 +72,18 @@ class StockMovement(models.Model):
                 raise ValidationError("No hay suficiente stock en el almacén de origen.")
 
     def _apply_in(self):
-        location = self.destination
         stock_item, _ = StockItem.objects.get_or_create(
             product=self.product,
-            location=location,
+            location=self.destination,
             defaults={"quantity": 0},
         )
         stock_item.quantity += self.quantity
         stock_item.save()
 
     def _apply_out(self):
-        location = self.origin
         stock_item = StockItem.objects.get(
             product=self.product,
-            location=location,
+            location=self.origin,
         )
         stock_item.quantity -= self.quantity
         stock_item.quantity = max(stock_item.quantity, 0)
@@ -114,6 +114,37 @@ class StockMovement(models.Model):
         elif self.movement_type == "TRANSFER":
             self._apply_transfer()
 
+        Notification = apps.get_model("notifications", "Notification")
+
+        # 🔥 INCIDENCIAS POR ALMACÉN
+        affected_items = StockItem.objects.filter(product=self.product)
+
+        for item in affected_items:
+            if item.quantity <= item.min_stock:
+
+                exists = Notification.objects.filter(
+                    product=self.product,
+                    location=item.location,
+                    type="stock_item_low",
+                    seen=False
+                ).exists()
+
+                if not exists:
+                    Notification.objects.create(
+                        product=self.product,
+                        location=item.location,
+                        type="stock_item_low",
+                        message=f"{self.product.name} bajo mínimo en {item.location.name}",
+                    )
+
+                    from notifications.utils import broadcast_notification
+                    broadcast_notification({
+                        "type": "stock_item_low",
+                        "message": f"{self.product.name} bajo mínimo en {item.location.name}",
+                        "product": self.product.name,
+                    })
+
+        # 🔥 PRODUCTO GLOBAL
         self.product.create_low_stock_notification()
 
     def save(self, *args, **kwargs):

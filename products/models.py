@@ -94,19 +94,19 @@ class Product(models.Model):
 
         Notification = apps.get_model("notifications", "Notification")
 
-        existing = Notification.objects.filter(
+        exists = Notification.objects.filter(
             product=self,
-            type="stock_low",
+            type="product_risk",
             seen=False
-        ).first()
+        ).exists()
 
-        if existing:
+        if exists:
             return
 
         Notification.objects.create(
             product=self,
-            type="stock_low",
-            message=f"Stock bajo para {self.name}",
+            type="product_risk",
+            message=f"Producto en riesgo: {self.name}",
             seen=False
         )
 

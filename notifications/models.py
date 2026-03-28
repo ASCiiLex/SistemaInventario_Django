@@ -1,12 +1,14 @@
 from django.db import models
 from products.models import Product
+from inventory.models import Location
 
 
 class Notification(models.Model):
 
     TYPE_CHOICES = [
         ("movement", "Movimiento"),
-        ("stock_low", "Stock bajo"),
+        ("stock_item_low", "Incidencia almacén"),
+        ("product_risk", "Producto en riesgo"),
         ("order", "Pedido"),
         ("alert", "Alerta"),
         ("info", "Información"),
@@ -20,8 +22,16 @@ class Notification(models.Model):
         blank=True,
     )
 
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="notifications",
+    )
+
     type = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=TYPE_CHOICES,
         default="info"
     )
