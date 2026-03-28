@@ -11,6 +11,16 @@ from notifications.utils import broadcast_notification
 
 
 class StockMovementListView(ListViewMixin):
+    allowed_sort_fields = [
+        "created_at",
+        "product__name",
+        "movement_type",
+        "origin__name",
+        "destination__name",
+        "quantity",
+    ]
+    default_ordering = "-created_at"
+
     def get_queryset(self, request):
         qs = StockMovement.objects.select_related(
             "product", "origin", "destination"
@@ -36,8 +46,10 @@ class StockMovementListView(ListViewMixin):
             if data.get("date_to"):
                 qs = qs.filter(created_at__date__lte=data["date_to"])
 
-        return qs, filter_form
+        # 🔥 ORDENACIÓN AQUÍ
+        qs = self.apply_ordering(request, qs)
 
+        return qs, filter_form
 
 def stockmovement_list(request):
     view = StockMovementListView()
@@ -49,13 +61,14 @@ def stockmovement_list(request):
         "movements": page_obj,
         "page_obj": page_obj,
         "filter_form": filter_form,
+        "current_sort": request.GET.get("sort", ""),
+        "current_dir": request.GET.get("dir", "asc"),
     }
 
     if view.is_htmx(request):
         return render(request, "inventory/stock/partials/table.html", context)
 
     return render(request, "inventory/stock/list.html", context)
-
 
 def stockmovement_create(request):
     if request.method == "POST":

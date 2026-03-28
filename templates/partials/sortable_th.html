@@ -1,0 +1,13 @@
+<th
+    hx-get="?{% if request.GET %}{{ request.GET.urlencode|cut:'sort='|cut:'dir='|cut:'&&' }}&{% endif %}sort={{ field }}&dir={% if current_sort == field and current_dir == 'asc' %}desc{% else %}asc{% endif %}"
+    hx-target="{{ target|default:'#table-container' }}"
+    hx-swap="outerHTML"
+    hx-push-url="true"
+    style="cursor:pointer;"
+>
+    {{ label }}
+
+    {% if current_sort == field %}
+        {% if current_dir == "asc" %} ▲ {% else %} ▼ {% endif %}
+    {% endif %}
+</th>

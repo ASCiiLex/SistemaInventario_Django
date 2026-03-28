@@ -7,14 +7,17 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>Producto</th>
-            <th>Origen</th>
-            <th>Destino</th>
-            <th>Cantidad</th>
-            <th>Estado</th>
-            <th>Fecha</th>
-            <th></th>
+
+        {% include "partials/sortable_th.html" with field="id" label="ID" target="#transfers-table" %}
+        {% include "partials/sortable_th.html" with field="product__name" label="Producto" target="#transfers-table" %}
+        {% include "partials/sortable_th.html" with field="origin__name" label="Origen" target="#transfers-table" %}
+        {% include "partials/sortable_th.html" with field="destination__name" label="Destino" target="#transfers-table" %}
+        {% include "partials/sortable_th.html" with field="quantity" label="Cantidad" target="#transfers-table" %}
+        {% include "partials/sortable_th.html" with field="status" label="Estado" target="#transfers-table" %}
+        {% include "partials/sortable_th.html" with field="created_at" label="Fecha" target="#transfers-table" %}
+
+        <th></th>
+
         </tr>
     </thead>
     <tbody>

@@ -7,14 +7,17 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>Proveedor</th>
-            <th>Almacén</th>
-            <th>Estado</th>
-            <th>Creado</th>
-            <th>Items</th>
-            <th>Coste total</th>
-            <th></th>
+
+        {% include "partials/sortable_th.html" with field="id" label="ID" target="#orders-table" %}
+        {% include "partials/sortable_th.html" with field="supplier__name" label="Proveedor" target="#orders-table" %}
+        {% include "partials/sortable_th.html" with field="location__name" label="Almacén" target="#orders-table" %}
+        {% include "partials/sortable_th.html" with field="status" label="Estado" target="#orders-table" %}
+        {% include "partials/sortable_th.html" with field="created_at" label="Creado" target="#orders-table" %}
+        {% include "partials/sortable_th.html" with field="id" label="Items" target="#orders-table" %}
+        {% include "partials/sortable_th.html" with field="id" label="Coste total" target="#orders-table" %}
+
+        <th></th>
+
         </tr>
     </thead>
     <tbody>

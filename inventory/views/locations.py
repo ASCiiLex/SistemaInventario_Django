@@ -8,6 +8,8 @@ from ..utils.listing import ListViewMixin
 
 def location_list(request):
     view = ListViewMixin()
+    view.allowed_sort_fields = ["name", "address", "is_active"]
+    view.default_ordering = "name"
 
     qs = Location.objects.all()
 
@@ -15,12 +17,17 @@ def location_list(request):
     if search:
         qs = qs.filter(name__icontains=search)
 
+    # 🔥 ORDENACIÓN
+    qs = view.apply_ordering(request, qs)
+
     page_obj = view.paginate_queryset(request, qs)
 
     context = {
         "locations": page_obj,
         "page_obj": page_obj,
         "search": search or "",
+        "current_sort": request.GET.get("sort", ""),
+        "current_dir": request.GET.get("dir", "asc"),
     }
 
     if view.is_htmx(request):

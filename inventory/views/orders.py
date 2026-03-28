@@ -14,6 +14,14 @@ from ..utils.listing import ListViewMixin
 
 def order_list(request):
     view = ListViewMixin()
+    view.allowed_sort_fields = [
+        "id",
+        "supplier__name",
+        "location__name",
+        "status",
+        "created_at",
+    ]
+    view.default_ordering = "-created_at"
 
     qs = Order.objects.select_related("supplier", "location").all()
 
@@ -29,12 +37,17 @@ def order_list(request):
         if data.get("status"):
             qs = qs.filter(status=data["status"])
 
+    # 🔥 ORDENACIÓN
+    qs = view.apply_ordering(request, qs)
+
     page_obj = view.paginate_queryset(request, qs)
 
     context = {
         "orders": page_obj,
         "page_obj": page_obj,
         "filter_form": filter_form,
+        "current_sort": request.GET.get("sort", ""),
+        "current_dir": request.GET.get("dir", "asc"),
     }
 
     if view.is_htmx(request):

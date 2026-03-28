@@ -7,10 +7,13 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>Nombre</th>
-            <th>Dirección</th>
-            <th>Activo</th>
-            <th></th>
+
+        {% include "partials/sortable_th.html" with field="name" label="Nombre" target="#locations-table" %}
+        {% include "partials/sortable_th.html" with field="address" label="Dirección" target="#locations-table" %}
+        {% include "partials/sortable_th.html" with field="is_active" label="Activo" target="#locations-table" %}
+
+        <th></th>
+
         </tr>
     </thead>
     <tbody>
