@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.db.models import F
+from django.db.models import F, IntegerField
+from django.db.models.functions import Cast, Substr
 from django.http import HttpResponse
 import csv
 
@@ -9,6 +10,7 @@ from categories.models import Category
 from suppliers.models import Supplier
 from .forms import ProductForm
 from inventory.utils.listing import ListViewMixin
+
 
 
 def product_list(request):
@@ -38,7 +40,38 @@ def product_list(request):
         products = products.filter(stock__lte=F("min_stock"))
 
     # 🔥 ORDENACIÓN
-    products = view.apply_ordering(request, products)
+    sort = request.GET.get("sort", "")
+    direction = request.GET.get("dir", "asc")
+
+    # 🔥 CASOS ESPECIALES (ordenación inteligente)
+    if sort == "sku":
+        products = products.annotate(
+            sku_number=Cast(
+                Substr("sku", 4),  # SKU1 → 1
+                IntegerField()
+            )
+        )
+        order_field = "sku_number"
+
+    elif sort == "name":
+        products = products.annotate(
+            name_number=Cast(
+                Substr("name", 9),  # Producto1 → 1 (ajusta según longitud)
+                IntegerField()
+            )
+        )
+        order_field = "name_number"
+
+    else:
+        products = view.apply_ordering(request, products)
+        order_field = None
+
+
+    if order_field:
+        if direction == "desc":
+            order_field = f"-{order_field}"
+
+        products = products.order_by(order_field)
 
     page_obj = view.paginate_queryset(request, products)
 
