@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.db.models import F, IntegerField
+from django.db.models import F, IntegerField, Sum
 from django.db.models.functions import Cast, Substr
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -13,11 +13,15 @@ from .forms import ProductForm
 from inventory.utils.listing import ListViewMixin
 
 
-
 def product_list(request):
     view = ListViewMixin()
     view.allowed_sort_fields = [
-        "name", "sku", "stock", "min_stock", "category__name", "supplier__name",
+        "name",
+        "sku",
+        "category__name",
+        "supplier__name",
+        "stock",
+        "min_stock",
     ]
     view.default_ordering = "name"
 
@@ -26,7 +30,10 @@ def product_list(request):
     supplier_id = request.GET.get("supplier", "")
     stock_filter = request.GET.get("stock", "")
 
-    products = Product.objects.select_related("category", "supplier").all()
+    products = Product.objects.select_related("category", "supplier").annotate(
+        total_stock_db=Sum("stock_items__quantity"),
+        total_min_stock_db=Sum("stock_items__min_stock"),
+    )
 
     if search:
         products = products.filter(name__icontains=search)
@@ -38,40 +45,38 @@ def product_list(request):
         products = products.filter(supplier_id=supplier_id)
 
     if stock_filter == "low":
-        products = products.filter(stock__lte=F("min_stock"))
+        products = products.filter(
+            total_stock_db__lte=F("total_min_stock_db")
+        )
 
-    # 🔥 ORDENACIÓN
     sort = request.GET.get("sort", "")
     direction = request.GET.get("dir", "asc")
 
-    # 🔥 CASOS ESPECIALES (ordenación inteligente)
     if sort == "sku":
         products = products.annotate(
-            sku_number=Cast(
-                Substr("sku", 4),  # SKU1 → 1
-                IntegerField()
-            )
+            sku_number=Cast(Substr("sku", 4), IntegerField())
         )
         order_field = "sku_number"
 
     elif sort == "name":
         products = products.annotate(
-            name_number=Cast(
-                Substr("name", 9),  # Producto1 → 1 (ajusta según longitud)
-                IntegerField()
-            )
+            name_number=Cast(Substr("name", 9), IntegerField())
         )
         order_field = "name_number"
+
+    elif sort == "stock":
+        order_field = "total_stock_db"
+
+    elif sort == "min_stock":
+        order_field = "total_min_stock_db"
 
     else:
         products = view.apply_ordering(request, products)
         order_field = None
 
-
     if order_field:
         if direction == "desc":
             order_field = f"-{order_field}"
-
         products = products.order_by(order_field)
 
     page_obj = view.paginate_queryset(request, products)
@@ -123,7 +128,7 @@ def export_products_csv(request):
             p.category.name if p.category else "",
             p.supplier.name if p.supplier else "",
             p.total_stock,
-            p.min_stock,
+            p.total_min_stock,
             f"{p.cost_price:.2f}",
             f"{p.sale_price:.2f}",
             f"{p.margin:.2f}",
@@ -171,7 +176,12 @@ def product_delete(request, pk):
 
 
 def lowstock_counter(request):
-    count = sum(1 for p in Product.objects.all() if p.is_below_minimum)
+    count = Product.objects.annotate(
+        total_stock_db=Sum("stock_items__quantity"),
+        total_min_stock_db=Sum("stock_items__min_stock"),
+    ).filter(
+        total_stock_db__lte=F("total_min_stock_db")
+    ).count()
 
     html = render_to_string(
         "products/partials/lowstock_counter.html",

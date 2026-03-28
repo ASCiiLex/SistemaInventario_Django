@@ -11,7 +11,7 @@ class LocationAdmin(admin.ModelAdmin):
 
 @admin.register(StockItem)
 class StockItemAdmin(admin.ModelAdmin):
-    list_display = ("product", "location", "quantity", "is_below_minimum")
+    list_display = ("product", "location", "quantity", "min_stock", "is_below_minimum")
     list_filter = ("location", "product")
     search_fields = ("product__name", "location__name")
     list_per_page = 20

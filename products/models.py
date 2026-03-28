@@ -30,6 +30,8 @@ class Product(models.Model):
     )
 
     stock = models.IntegerField(default=0)
+
+    # 🔥 DEPRECATED (no usar en lógica nueva)
     min_stock = models.IntegerField(default=0)
 
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -52,15 +54,19 @@ class Product(models.Model):
 
     @property
     def total_stock(self):
-        if hasattr(self, "stock_items"):
-            total = self.stock_items.aggregate(total=Sum("quantity"))["total"]
-            if total is not None:
-                return total
-        return self.stock
+        total = self.stock_items.aggregate(total=Sum("quantity"))["total"]
+        return total or 0
 
+    # 🔥 NUEVO: mínimo global = suma por almacén
+    @property
+    def total_min_stock(self):
+        total = self.stock_items.aggregate(total=Sum("min_stock"))["total"]
+        return total or 0
+
+    # 🔥 NUEVO: riesgo real
     @property
     def is_below_minimum(self):
-        return self.total_stock <= self.min_stock
+        return self.total_stock <= self.total_min_stock
 
     @property
     def margin(self):
@@ -83,7 +89,7 @@ class Product(models.Model):
         return self.movements.order_by('-created_at').first()
 
     def create_low_stock_notification(self):
-        if self.total_stock > self.min_stock:
+        if self.total_stock > self.total_min_stock:
             return
 
         Notification = apps.get_model("notifications", "Notification")

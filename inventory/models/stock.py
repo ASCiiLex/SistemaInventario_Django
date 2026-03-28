@@ -2,6 +2,7 @@ from django.db import models
 from products.models import Product
 from .locations import Location
 
+
 class StockItem(models.Model):
     product = models.ForeignKey(
         Product,
@@ -15,6 +16,9 @@ class StockItem(models.Model):
     )
     quantity = models.PositiveIntegerField(default=0)
 
+    # 🔥 NUEVO
+    min_stock = models.PositiveIntegerField(default=0)
+
     class Meta:
         unique_together = ("product", "location")
         verbose_name = "Stock Item"
@@ -25,4 +29,4 @@ class StockItem(models.Model):
 
     @property
     def is_below_minimum(self):
-        return self.quantity <= self.product.min_stock
+        return self.quantity <= self.min_stock

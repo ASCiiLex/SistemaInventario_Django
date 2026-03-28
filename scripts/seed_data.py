@@ -60,7 +60,7 @@ def run():
                 "name": f"Producto {i}",
                 "category": random.choice(categories),
                 "supplier": random.choice(suppliers),
-                "min_stock": random.randint(5, 15),
+                "min_stock": 0,  # 🔥 DEPRECATED
                 "cost_price": random.uniform(5, 50),
                 "sale_price": random.uniform(60, 120),
             }
@@ -68,12 +68,30 @@ def run():
         products.append(p)
 
     # -------------------
-    # STOCK INICIAL (CRÍTICO)
+    # STOCK INICIAL + MIN_STOCK POR ALMACÉN
     # -------------------
     for p in products:
         for loc in locations:
+
             qty = random.randint(10, 50)
 
+            # 🔥 mínimo por almacén (clave del nuevo modelo)
+            min_stock = random.randint(5, 15)
+
+            stock_item, _ = StockItem.objects.get_or_create(
+                product=p,
+                location=loc,
+                defaults={
+                    "quantity": 0,
+                    "min_stock": min_stock,
+                }
+            )
+
+            # si ya existía (reseed), actualizar mínimo
+            stock_item.min_stock = min_stock
+            stock_item.save()
+
+            # movimiento inicial
             StockMovement.objects.create(
                 product=p,
                 movement_type="IN",
@@ -141,4 +159,4 @@ def run():
                 cost_price=random.uniform(5, 50),
             )
 
-    print("✅ Seed PRO completado")
+    print("✅ Seed PRO completado (modelo nuevo)")

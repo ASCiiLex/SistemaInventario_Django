@@ -11,7 +11,7 @@ class ProductAdmin(admin.ModelAdmin):
         'category',
         'supplier',
         'total_stock',
-        'min_stock',
+        'total_min_stock',
         'cost_price',
         'sale_price',
         'margin_display',

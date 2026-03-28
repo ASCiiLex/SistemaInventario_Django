@@ -30,12 +30,12 @@
             <td>{{ p.supplier }}</td>
             <td>
                 {% if p.is_below_minimum %}
-                    <span class="text-danger fw-bold">{{ p.stock }}</span>
+                    <span class="text-danger fw-bold">{{ p.total_stock }}</span>
                 {% else %}
-                    {{ p.stock }}
+                    {{ p.total_stock }}
                 {% endif %}
             </td>
-            <td>{{ p.min_stock }}</td>
+            <td>{{ p.total_min_stock }}</td>
             <td>
                 <a href="{% url 'product_edit' p.id %}" class="btn btn-sm btn-primary">Editar</a>
                 <a href="{% url 'product_delete' p.id %}" class="btn btn-sm btn-danger">Eliminar</a>
