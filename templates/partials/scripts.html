@@ -1,13 +1,25 @@
 <script>
 // ===============================
-// EVENT BUS
+// 🔥 EVENT BUS GLOBAL (CORE)
+// ===============================
+window.EventBus = {
+    emit(name, detail = {}) {
+        document.body.dispatchEvent(new CustomEvent(name, { detail }));
+    },
+    on(name, callback) {
+        document.body.addEventListener(name, callback);
+    }
+};
+
+// ===============================
+// BACKWARD COMPAT
 // ===============================
 function emitEvent(name, detail = {}) {
-    document.body.dispatchEvent(new CustomEvent(name, { detail }));
+    window.EventBus.emit(name, detail);
 }
 
 // ===============================
-// THEME
+// THEME INIT
 // ===============================
 (function () {
     const saved = localStorage.getItem("theme") || "light";
@@ -60,7 +72,7 @@ document.body.addEventListener('htmx:afterSwap', (e) => {
 });
 
 // ===============================
-// WEBSOCKET
+// 🔥 WEBSOCKET → EVENT BUS
 // ===============================
 function connectWS() {
     const protocol = location.protocol === "https:" ? "wss://" : "ws://";
@@ -69,7 +81,21 @@ function connectWS() {
     socket.onmessage = (e) => {
         const data = JSON.parse(e.data);
 
-        emitEvent(`inventory:${data.type}`, data);
+        // 🔥 EVENTOS NORMALIZADOS
+        if (data.type === "notification") {
+            EventBus.emit("inventory:notifications_updated", data);
+        }
+
+        if (data.type === "stock_low") {
+            EventBus.emit("inventory:stock_updated", data);
+        }
+
+        if (data.type === "order") {
+            EventBus.emit("inventory:orders_updated", data);
+        }
+
+        // fallback genérico
+        EventBus.emit(`inventory:${data.type}`, data);
 
         if (data.message) showToast(data.message);
     };
@@ -80,14 +106,32 @@ function connectWS() {
 connectWS();
 
 // ===============================
-// EVENT MAP 
+// 🔥 HTMX → EVENT BUS
 // ===============================
-document.body.addEventListener("inventory:movement", () => {
-    emitEvent("inventory:refresh");
-});
+document.body.addEventListener("htmx:afterRequest", (e) => {
+    const trigger = e.detail.xhr.getResponseHeader("HX-Trigger");
 
-document.body.addEventListener("inventory:notification", () => {
-    emitEvent("notifications:updated");
+    if (!trigger) return;
+
+    try {
+        const events = JSON.parse(trigger);
+
+        Object.keys(events).forEach(name => {
+            EventBus.emit(name, events[name]);
+
+            // 🔥 NORMALIZACIÓN
+            if (name.includes("notifications")) {
+                EventBus.emit("inventory:notifications_updated");
+            }
+
+            if (name.includes("orders")) {
+                EventBus.emit("inventory:orders_updated");
+            }
+        });
+
+    } catch (err) {
+        console.warn("HX-Trigger parse error", err);
+    }
 });
 
 // ===============================

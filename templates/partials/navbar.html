@@ -27,15 +27,37 @@
 
             </ul>
 
-            <button id="themeToggle" class="btn btn-sm btn-outline-light me-3">🌙</button>
+            <!-- 🔥 CONTADORES DINÁMICOS -->
+            <div class="d-flex align-items-center gap-3 me-3">
 
-            <div id="notifications-bell"
-                 hx-get="{% url 'notifications_counter' %}"
-                 hx-trigger="load, notifications:updated from:body"
-                 hx-target="this"
-                 hx-swap="outerHTML">
-                {% include 'notifications/partials/bell.html' %}
+                <!-- Pedidos pendientes -->
+                <div id="orders-counter"
+                     hx-get="{% url 'orders_counter' %}"
+                     hx-trigger="load, inventory:orders_updated from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML">
+                </div>
+
+                <!-- Stock bajo -->
+                <div id="lowstock-counter"
+                     hx-get="{% url 'lowstock_counter' %}"
+                     hx-trigger="load, inventory:stock_updated from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML">
+                </div>
+
+                <!-- Notificaciones -->
+                <div id="notifications-bell"
+                     hx-get="{% url 'notifications_counter' %}"
+                     hx-trigger="load, inventory:notifications_updated from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML">
+                    {% include 'notifications/partials/bell.html' %}
+                </div>
+
             </div>
+
+            <button id="themeToggle" class="btn btn-sm btn-outline-light me-3">🌙</button>
 
         </div>
     </div>
