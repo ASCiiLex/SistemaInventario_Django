@@ -18,7 +18,13 @@ def _get_filtered_notifications(request):
     type_filter = request.GET.get("type", "")
     priority = request.GET.get("priority", "")
 
-    notifications = Notification.objects.select_related("product").order_by("-created_at")
+    # 🔥 SORT
+    sort = request.GET.get("sort", "created_at")
+    direction = request.GET.get("dir", "desc")
+
+    order = f"-{sort}" if direction == "desc" else sort
+
+    notifications = Notification.objects.select_related("product").order_by(order)
 
     if status == "new":
         notifications = notifications.filter(seen=False)
@@ -39,6 +45,8 @@ def _get_filtered_notifications(request):
         "product_id": product_id,
         "type": type_filter,
         "priority": priority,
+        "current_sort": sort,
+        "current_dir": direction,
     }
 
 

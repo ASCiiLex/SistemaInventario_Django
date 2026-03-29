@@ -11,7 +11,8 @@
     hx-swap="outerHTML"
     hx-push-url="true">
 
-    <div class="col-md-3">
+    <!-- STATUS -->
+    <div class="col-md-2">
         <select name="status" class="form-control">
             <option value="">Todas</option>
             <option value="new" {% if status == "new" %}selected{% endif %}>Solo nuevas</option>
@@ -19,7 +20,8 @@
         </select>
     </div>
 
-    <div class="col-md-4">
+    <!-- PRODUCT -->
+    <div class="col-md-3">
         <select name="product" class="form-control">
             <option value="">Todos los productos</option>
             {% for pid, pname in products %}
@@ -30,18 +32,45 @@
         </select>
     </div>
 
-    <!-- 🔥 NUEVO: filtro por prioridad -->
-    <div class="col-md-3">
-        <select name="priority" class="form-control">
-            <option value="">Todas prioridades</option>
-            <option value="critical">Crítica</option>
-            <option value="warning">Warning</option>
-            <option value="info">Info</option>
+    <!-- 🔥 TYPE (NUEVO) -->
+    <div class="col-md-2">
+        <select name="type" class="form-control">
+            <option value="">Todos tipos</option>
+            <option value="stock_item_low" {% if type == "stock_item_low" %}selected{% endif %}>Incidencia</option>
+            <option value="product_risk" {% if type == "product_risk" %}selected{% endif %}>Riesgo</option>
+            <option value="movement" {% if type == "movement" %}selected{% endif %}>Movimiento</option>
+            <option value="order" {% if type == "order" %}selected{% endif %}>Pedido</option>
+            <option value="alert" {% if type == "alert" %}selected{% endif %}>Alerta</option>
+            <option value="info" {% if type == "info" %}selected{% endif %}>Info</option>
         </select>
     </div>
 
+    <!-- 🔥 PRIORITY (FIXED) -->
+    <div class="col-md-2">
+        <select name="priority" class="form-control">
+            <option value="">Todas prioridades</option>
+            <option value="critical" {% if priority == "critical" %}selected{% endif %}>Crítica</option>
+            <option value="warning" {% if priority == "warning" %}selected{% endif %}>Warning</option>
+            <option value="info" {% if priority == "info" %}selected{% endif %}>Info</option>
+        </select>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="col-md-1 d-grid">
+        <button class="btn btn-primary">OK</button>
+    </div>
+
+    <!-- 🔥 RESET REAL -->
     <div class="col-md-2 d-grid">
-        <button class="btn btn-primary">Filtrar</button>
+        <button
+            type="button"
+            class="btn btn-outline-secondary"
+            hx-get="{% url 'notifications_list' %}"
+            hx-target="#notifications-table"
+            hx-swap="outerHTML"
+            hx-push-url="true">
+            Limpiar
+        </button>
     </div>
 
 </form>

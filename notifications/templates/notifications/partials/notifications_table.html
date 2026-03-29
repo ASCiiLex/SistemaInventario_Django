@@ -4,29 +4,25 @@
      hx-target="this"
      hx-swap="outerHTML">
 
-<!-- 🔥 HEADER ACCIONES -->
+<!-- HEADER -->
 <div class="d-flex justify-content-between align-items-center mb-3">
 
-    <div class="d-flex gap-2">
+    <button
+        class="btn btn-primary"
+        hx-post="{% url 'notifications_toggle_all' %}"
+        hx-target="#notifications-table"
+        hx-swap="outerHTML">
 
-        <button
-            class="btn btn-primary"
-            hx-post="{% url 'notifications_toggle_all' %}"
-            hx-target="#notifications-table"
-            hx-swap="outerHTML">
-
-            {% if has_unread %}
-                Marcar todas como leídas
-            {% else %}
-                Marcar todas como no leídas
-            {% endif %}
-        </button>
-
-    </div>
+        {% if has_unread %}
+            Marcar todas como leídas
+        {% else %}
+            Marcar todas como no leídas
+        {% endif %}
+    </button>
 
 </div>
 
-<!-- 🔥 TABLA -->
+<!-- TABLA -->
 <div class="table-responsive">
 <table class="table table-striped align-middle">
 
@@ -35,7 +31,10 @@
             {% include "partials/sortable_th.html" with field="message" label="Mensaje" target="#notifications-table" %}
             {% include "partials/sortable_th.html" with field="product__name" label="Producto" target="#notifications-table" %}
             {% include "partials/sortable_th.html" with field="created_at" label="Fecha" target="#notifications-table" %}
-            <th>Prioridad</th>
+
+            <!-- 🔥 NUEVO: SORT PRIORITY -->
+            {% include "partials/sortable_th.html" with field="priority" label="Prioridad" target="#notifications-table" %}
+
             <th>Estado</th>
             <th></th>
         </tr>
@@ -45,22 +44,12 @@
         {% for n in notifications %}
         <tr class="{% if not n.seen %}table-light{% endif %}">
 
-            <!-- MENSAJE -->
-            <td>
-                {{ n.message }}
-            </td>
+            <td>{{ n.message }}</td>
 
-            <!-- PRODUCTO -->
-            <td>
-                {{ n.product|default:"-" }}
-            </td>
+            <td>{{ n.product|default:"-" }}</td>
 
-            <!-- FECHA -->
-            <td>
-                {{ n.created_at|date:"d/m/Y H:i" }}
-            </td>
+            <td>{{ n.created_at|date:"d/m/Y H:i" }}</td>
 
-            <!-- 🔥 PRIORIDAD BADGE -->
             <td>
                 {% if n.priority == "critical" %}
                     <span class="badge bg-danger">Crítica</span>
@@ -71,7 +60,6 @@
                 {% endif %}
             </td>
 
-            <!-- ESTADO -->
             <td>
                 {% if n.seen %}
                     <span class="text-success">Leída</span>
@@ -80,7 +68,6 @@
                 {% endif %}
             </td>
 
-            <!-- ACCIONES -->
             <td>
                 {% if n.seen %}
                     <form method="post"
