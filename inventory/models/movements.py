@@ -111,13 +111,17 @@ class StockMovement(models.Model):
         elif self.movement_type == "TRANSFER":
             self._apply_transfer()
 
-        # 🔥 SOLO EVENTO (no lógica)
+        # 🔥 EVENTO
         from notifications.utils import broadcast_notification
+        from inventory.services.stock_alerts import sync_all_notifications
 
         broadcast_notification({
             "type": "stock_changed",
             "product": self.product.name,
         })
+
+        # 🔥 GENERACIÓN CONTROLADA (SINGLE SOURCE OF TRUTH)
+        sync_all_notifications()
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None

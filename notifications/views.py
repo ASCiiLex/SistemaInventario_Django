@@ -177,43 +177,65 @@ def notifications_counter(request):
 
 # PANEL LATERAL
 
+
 def _get_panel_notifications(request):
     q = request.GET.get("q", "").strip().lower()
-    page = request.GET.get("page", 1)
 
     notifications = Notification.objects.select_related("product").order_by("-created_at")
 
     if q:
         notifications = notifications.filter(message__icontains=q)
 
-    paginator = Paginator(notifications, 10)
-    page_obj = paginator.get_page(page)
-
-    return page_obj
+    return notifications
 
 
-def _panel_context(page_obj):
-    today = localdate()
-    yesterday = today - timedelta(days=1)
-    week_start = today - timedelta(days=today.weekday())
+def _group_notifications_by_product(notifications):
+    grouped = {}
 
-    notifications = page_obj.object_list
+    for n in notifications:
+        key = n.product_id or "no-product"
+
+        if key not in grouped:
+            grouped[key] = {
+                "product": n.product,
+                "items": [],
+                "count": 0,
+                "has_unread": False,
+                "icons": [],  # 🔥 NUEVO
+            }
+
+        grouped[key]["items"].append(n)
+        grouped[key]["count"] += 1
+
+        if not n.seen:
+            grouped[key]["has_unread"] = True
+
+        # 🔥 ICONOS RESUMEN
+        if n.priority == "critical":
+            grouped[key]["icons"].append("🔴")
+        elif n.priority == "warning":
+            grouped[key]["icons"].append("⚠️")
+        else:
+            grouped[key]["icons"].append("🔔")
+
+    grouped_list = list(grouped.values())
+    grouped_list.sort(key=lambda g: g["items"][0].created_at, reverse=True)
+
+    return grouped_list
+
+
+def _panel_context(notifications):
+    grouped_notifications = _group_notifications_by_product(notifications)
 
     return {
-        "page_obj": page_obj,
-        "notifications": notifications,
-        "today": today,
-        "yesterday": yesterday,
-        "week_start": week_start,
-
-        # 🔥 FIX REAL (global, no paginado)
+        "grouped_notifications": grouped_notifications,
         "has_unread": Notification.objects.filter(seen=False).exists(),
     }
 
 
 def notifications_panel(request):
-    page_obj = _get_panel_notifications(request)
-    context = _panel_context(page_obj)
+    notifications = _get_panel_notifications(request)
+    context = _panel_context(notifications)
     return render(request, "notifications/partials/panel.html", context)
 
 
@@ -225,8 +247,8 @@ def notifications_panel_mark_all(request):
         "message": "Todas las notificaciones marcadas como leídas"
     })
 
-    page_obj = _get_panel_notifications(request)
-    context = _panel_context(page_obj)
+    notifications = _get_panel_notifications(request)
+    context = _panel_context(notifications)
 
     response = render(request, "notifications/partials/panel.html", context)
     response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
@@ -243,8 +265,8 @@ def notifications_panel_mark_one(request, pk):
         "message": "Notificación marcada como leída"
     })
 
-    page_obj = _get_panel_notifications(request)
-    context = _panel_context(page_obj)
+    notifications = _get_panel_notifications(request)
+    context = _panel_context(notifications)
 
     response = render(request, "notifications/partials/panel.html", context)
     response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
@@ -261,8 +283,8 @@ def notifications_panel_mark_unread(request, pk):
         "message": "Notificación marcada como no leída"
     })
 
-    page_obj = _get_panel_notifications(request)
-    context = _panel_context(page_obj)
+    notifications = _get_panel_notifications(request)
+    context = _panel_context(notifications)
 
     response = render(request, "notifications/partials/panel.html", context)
     response["HX-Trigger"] = '{"inventory:notifications_updated": true}'

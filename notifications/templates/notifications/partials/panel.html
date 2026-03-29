@@ -5,7 +5,6 @@
         <strong>Notificaciones</strong>
 
         <div class="d-flex gap-2">
-
             <a href="{% url 'notifications_list' %}" class="btn btn-sm btn-outline-dark">
                 Ver todas
             </a>
@@ -14,7 +13,6 @@
                   hx-post="{% url 'notifications_panel_toggle_all' %}"
                   hx-target="#notificationsPanelBody"
                   hx-swap="outerHTML">
-
                 {% csrf_token %}
 
                 <button class="btn btn-sm btn-outline-primary">
@@ -25,70 +23,90 @@
                     {% endif %}
                 </button>
             </form>
-
         </div>
     </div>
 
-    <!-- 🔥 AGRUPACIÓN POR PRODUCTO -->
-    {% regroup notifications by product as grouped_products %}
+    <!-- 🔥 GRUPOS -->
+    {% for group in grouped_notifications %}
+        <div class="mb-2 border rounded">
 
-    {% for group in grouped_products %}
-        <div class="mb-3">
+            <!-- 🔥 HEADER COLAPSABLE -->
+            <div class="p-2 d-flex justify-content-between align-items-center bg-light cursor-pointer"
+                 onclick="this.nextElementSibling.classList.toggle('d-none')">
 
-            <h6 class="text-primary">
-                {{ group.grouper|default:"Sin producto" }}
-                <span class="badge bg-secondary">{{ group.list|length }}</span>
-            </h6>
+                <div>
+                    <strong>{{ group.product|default:"Sin producto" }}</strong>
 
-            <ul class="list-group">
+                    <!-- ICONOS -->
+                    <span class="ms-2">
+                        {% for icon in group.icons %}
+                            {{ icon }}
+                        {% endfor %}
+                    </span>
+                </div>
 
-                {% for n in group.list %}
-                <li class="list-group-item d-flex justify-content-between align-items-start {% if not n.seen %}fw-bold{% endif %}">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary">{{ group.count }}</span>
+                    <span>▾</span>
+                </div>
 
-                    <div>
+            </div>
 
-                        <!-- ICONO -->
-                        {% if n.priority == "critical" %}🔴
-                        {% elif n.priority == "warning" %}⚠️
-                        {% else %}🔔
-                        {% endif %}
+            <!-- 🔥 CONTENIDO -->
+            <div class="d-none">
 
-                        {{ n.message }}<br>
+                <ul class="list-group list-group-flush">
 
-                        <small class="text-muted">
-                            {{ n.created_at|date:"d/m/Y H:i" }}
-                        </small>
+                    {% for n in group.items %}
+                    <li class="list-group-item d-flex justify-content-between align-items-start {% if not n.seen %}fw-bold{% endif %}">
 
-                    </div>
+                        <div>
 
-                    <div>
+                            {% if n.priority == "critical" %}
+                                🔴
+                            {% elif n.priority == "warning" %}
+                                ⚠️
+                            {% else %}
+                                🔔
+                            {% endif %}
 
-                        {% if not n.seen %}
-                            <form method="post"
-                                  hx-post="{% url 'notifications_panel_mark_one' n.pk %}"
-                                  hx-target="#notificationsPanelBody"
-                                  hx-swap="outerHTML">
-                                {% csrf_token %}
-                                <button class="btn btn-sm btn-outline-success">✓</button>
-                            </form>
-                        {% else %}
-                            <form method="post"
-                                  hx-post="{% url 'notifications_panel_mark_unread' n.pk %}"
-                                  hx-target="#notificationsPanelBody"
-                                  hx-swap="outerHTML">
-                                {% csrf_token %}
-                                <button class="btn btn-sm btn-outline-secondary">↺</button>
-                            </form>
-                        {% endif %}
+                            {{ n.message }}<br>
 
-                    </div>
+                            <small class="text-muted">
+                                {{ n.created_at|date:"d/m/Y H:i" }}
+                            </small>
 
-                </li>
-                {% endfor %}
+                        </div>
 
-            </ul>
+                        <div>
+                            {% if not n.seen %}
+                                <form method="post"
+                                      hx-post="{% url 'notifications_panel_mark_one' n.pk %}"
+                                      hx-target="#notificationsPanelBody"
+                                      hx-swap="outerHTML">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-success">✓</button>
+                                </form>
+                            {% else %}
+                                <form method="post"
+                                      hx-post="{% url 'notifications_panel_mark_unread' n.pk %}"
+                                      hx-target="#notificationsPanelBody"
+                                      hx-swap="outerHTML">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-secondary">↺</button>
+                                </form>
+                            {% endif %}
+                        </div>
+
+                    </li>
+                    {% endfor %}
+
+                </ul>
+
+            </div>
 
         </div>
+
     {% empty %}
         <p class="text-muted text-center">No hay notificaciones.</p>
     {% endfor %}
