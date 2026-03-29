@@ -1,0 +1,90 @@
+from django.utils import timezone
+from datetime import timedelta
+
+from .models import Notification
+from .utils import broadcast_notification
+
+
+COOLDOWNS = {
+    "stock_item_low": 30,
+    "product_risk": 60,
+}
+
+
+PRIORITY_MAP = {
+    "stock_item_low": "critical",
+    "product_risk": "warning",
+    "movement": "info",
+    "order": "info",
+    "alert": "warning",
+    "info": "info",
+}
+
+
+def _get_priority(type_):
+    return PRIORITY_MAP.get(type_, "info")
+
+
+def _is_duplicate(product=None, location=None, type_=None):
+    minutes = COOLDOWNS.get(type_, 30)
+
+    since = timezone.now() - timedelta(minutes=minutes)
+
+    qs = Notification.objects.filter(
+        type=type_,
+        created_at__gte=since
+    )
+
+    if product:
+        qs = qs.filter(product=product)
+
+    if location:
+        qs = qs.filter(location=location)
+
+    return qs.exists()
+
+
+def create_notification(*, product=None, location=None, type_, message):
+    if _is_duplicate(product=product, location=location, type_=type_):
+        return None
+
+    notification = Notification.objects.create(
+        product=product,
+        location=location,
+        type=type_,
+        priority=_get_priority(type_),
+        message=message,
+    )
+
+    broadcast_notification({
+        "type": "notification",
+        "message": message
+    })
+
+    return notification
+
+
+# 🔥 AGRUPACIÓN (UI-ready)
+def get_grouped_notifications(notifications):
+    grouped = {}
+
+    for n in notifications:
+        key = (n.product_id, n.type)
+
+        if key not in grouped:
+            grouped[key] = {
+                "product": n.product,
+                "type": n.type,
+                "priority": n.priority,
+                "count": 0,
+                "latest": n,
+                "items": []
+            }
+
+        grouped[key]["count"] += 1
+        grouped[key]["items"].append(n)
+
+        if n.created_at > grouped[key]["latest"].created_at:
+            grouped[key]["latest"] = n
+
+    return list(grouped.values())

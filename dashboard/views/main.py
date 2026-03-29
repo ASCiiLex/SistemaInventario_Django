@@ -4,12 +4,12 @@ from dashboard.services.metrics import get_dashboard_metrics
 from dashboard.services.charts import get_chart_by_category
 from dashboard.services.notifications import get_notifications_summary
 
-# 🔥 NUEVO
+# 🔥 IMPORTANTE → SERVICE CENTRAL
 from inventory.services.stock_alerts import sync_all_notifications
 
 
 def dashboard_view(request):
-    # 🔥 SINCRONIZACIÓN GLOBAL
+    # 🔥 SINGLE SOURCE OF TRUTH
     sync_all_notifications()
 
     metrics = get_dashboard_metrics()

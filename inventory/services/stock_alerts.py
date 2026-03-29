@@ -1,52 +1,32 @@
-from django.apps import apps
 from inventory.models import StockItem
+from products.models import Product
+
+from notifications.services import create_notification
 
 
 def sync_stock_item_notifications():
-    Notification = apps.get_model("notifications", "Notification")
-
     items = StockItem.objects.select_related("product", "location")
 
     for item in items:
         if item.quantity <= item.min_stock:
 
-            if Notification.recently_created(
+            create_notification(
                 product=item.product,
                 location=item.location,
-                type="stock_item_low",
-                minutes=30
-            ):
-                continue
-
-            Notification.objects.create(
-                product=item.product,
-                location=item.location,
-                type="stock_item_low",
-                priority="critical",
+                type_="stock_item_low",
                 message=f"{item.product.name} bajo mínimo en {item.location.name}",
             )
 
 
 def sync_product_risk_notifications():
-    Notification = apps.get_model("notifications", "Notification")
-    from products.models import Product
-
     products = Product.objects.all()
 
     for p in products:
         if p.total_stock <= p.total_min_stock:
 
-            if Notification.recently_created(
+            create_notification(
                 product=p,
-                type="product_risk",
-                minutes=60
-            ):
-                continue
-
-            Notification.objects.create(
-                product=p,
-                type="product_risk",
-                priority="warning",
+                type_="product_risk",
                 message=f"Producto en riesgo: {p.name}",
             )
 
