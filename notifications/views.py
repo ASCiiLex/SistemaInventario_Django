@@ -44,9 +44,12 @@ def notifications_list(request):
         .distinct()
     )
 
+    has_unread = notifications.filter(seen=False).exists()
+
     context = {
         "notifications": notifications,
         "products": products,
+        "has_unread": has_unread,
         **filters_ctx,
     }
 
@@ -176,12 +179,17 @@ def _panel_context(page_obj):
     yesterday = today - timedelta(days=1)
     week_start = today - timedelta(days=today.weekday())
 
+    notifications = page_obj.object_list
+
     return {
         "page_obj": page_obj,
-        "notifications": page_obj.object_list,
+        "notifications": notifications,
         "today": today,
         "yesterday": yesterday,
         "week_start": week_start,
+
+        # 🔥 FIX REAL (global, no paginado)
+        "has_unread": Notification.objects.filter(seen=False).exists(),
     }
 
 
@@ -307,3 +315,49 @@ def notifications_recent(request):
         "dashboard/partials/notifications_recent.html",
         {"notifications": recent},
     )
+
+
+def notifications_toggle_all(request):
+    has_unread = Notification.objects.filter(seen=False).exists()
+
+    if has_unread:
+        Notification.objects.filter(seen=False).update(seen=True)
+        message = "Todas marcadas como leídas"
+    else:
+        Notification.objects.update(seen=False)
+        message = "Todas marcadas como no leídas"
+
+    broadcast_notification({
+        "type": "notification",
+        "message": message
+    })
+
+    if request.headers.get("HX-Request"):
+        # 🔥 DETECTAR SI VIENE DEL PANEL O LISTA
+        if "panel" in request.path:
+            page_obj = _get_panel_notifications(request)
+            context = _panel_context(page_obj)
+
+            response = render(request, "notifications/partials/panel.html", context)
+        else:
+            notifications, filters_ctx = _get_filtered_notifications(request)
+
+            products = (
+                Notification.objects.exclude(product__isnull=True)
+                .values_list("product_id", "product__name")
+                .distinct()
+            )
+
+            context = {
+                "notifications": notifications,
+                "products": products,
+                "has_unread": notifications.filter(seen=False).exists(),
+                **filters_ctx,
+            }
+
+            response = render(request, "notifications/partials/notifications_table.html", context)
+
+        response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
+        return response
+
+    return redirect("notifications_list")

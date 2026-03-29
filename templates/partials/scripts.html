@@ -19,6 +19,16 @@ function emitEvent(name, detail = {}) {
 }
 
 // ===============================
+// 🔥 CSRF GLOBAL (HTMX FIX)
+// ===============================
+document.body.addEventListener('htmx:configRequest', function (event) {
+    const token = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (token) {
+        event.detail.headers['X-CSRFToken'] = token.value;
+    }
+});
+
+// ===============================
 // THEME INIT
 // ===============================
 (function () {
@@ -49,6 +59,8 @@ document.body.addEventListener('htmx:afterSwap', e => initSelect2(e.target));
 // ===============================
 function showToast(message) {
     const container = document.getElementById('toast-container');
+
+    if (!container) return;
 
     const el = document.createElement('div');
     el.className = "toast align-items-center border-0 mb-2 bg-dark text-white";

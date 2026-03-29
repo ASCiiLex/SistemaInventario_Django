@@ -4,9 +4,10 @@
         <button class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
 
-    <div class="offcanvas-body"
+    <div id="notificationsPanelBody"
+         class="offcanvas-body"
          hx-get="{% url 'notifications_panel' %}"
-         hx-trigger="load, notifications:updated from:body"
+         hx-trigger="load, inventory:notifications_updated from:body"
          hx-target="this"
          hx-swap="innerHTML">
     </div>

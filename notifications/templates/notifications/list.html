@@ -46,14 +46,6 @@
     </div>
 </form>
 
-<button
-    class="btn btn-primary mb-3"
-    hx-post="{% url 'notifications_mark_all_read' %}"
-    hx-target="#notifications-table"
-    hx-swap="outerHTML">
-    Marcar todas como leídas
-</button>
-
 <div id="notifications-table"
      hx-get="{% url 'notifications_list' %}"
      hx-trigger="notifications-updated from:body"

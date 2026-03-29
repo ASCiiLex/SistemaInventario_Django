@@ -17,4 +17,6 @@ urlpatterns = [
     path("dashboard/resumen/", views.notifications_summary, name="dashboard_notifications_summary"),
     path("dashboard/graficos/", views.notifications_chart, name="dashboard_notifications_chart"),
     path("dashboard/recientes/", views.notifications_recent, name="dashboard_notifications_recent"),
+    path("toggle-all/", views.notifications_toggle_all, name="notifications_toggle_all"),
+    path("panel/toggle-all/",views.notifications_toggle_all,name="notifications_panel_toggle_all"),
 ]
