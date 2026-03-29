@@ -21,6 +21,13 @@ PRIORITY_MAP = {
 }
 
 
+ICON_MAP = {
+    "critical": "🔴",
+    "warning": "⚠️",
+    "info": "🔔",
+}
+
+
 def _get_priority(type_):
     return PRIORITY_MAP.get(type_, "info")
 
@@ -64,27 +71,30 @@ def create_notification(*, product=None, location=None, type_, message):
     return notification
 
 
-# 🔥 AGRUPACIÓN (UI-ready)
+# 🔥 AGRUPACIÓN PRO (Stripe-like)
 def get_grouped_notifications(notifications):
     grouped = {}
 
     for n in notifications:
-        key = (n.product_id, n.type)
+        key = n.product_id or "no-product"
 
         if key not in grouped:
             grouped[key] = {
                 "product": n.product,
-                "type": n.type,
-                "priority": n.priority,
                 "count": 0,
-                "latest": n,
-                "items": []
+                "items": [],
+                "icons": set(),
             }
 
         grouped[key]["count"] += 1
         grouped[key]["items"].append(n)
 
-        if n.created_at > grouped[key]["latest"].created_at:
-            grouped[key]["latest"] = n
+        icon = ICON_MAP.get(n.priority, "🔔")
+        grouped[key]["icons"].add(icon)
+
+    # ordenar items internos
+    for g in grouped.values():
+        g["items"].sort(key=lambda x: x.created_at, reverse=True)
+        g["icons"] = list(g["icons"])
 
     return list(grouped.values())

@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.timezone import localdate
-from django.core.paginator import Paginator
 from django.db.models import Count
 from datetime import timedelta
 
@@ -8,7 +7,10 @@ from .models import Notification
 from .utils import broadcast_notification
 
 
-# LISTA PRINCIPAL (tabla)
+# ================================
+# LISTA PRINCIPAL (TABLA)
+# ================================
+
 
 def _get_filtered_notifications(request):
     status = request.GET.get("status", "")
@@ -49,7 +51,6 @@ def notifications_list(request):
         .distinct()
     )
 
-    # 🔥 GLOBAL (no sobre queryset filtrado)
     has_unread = Notification.objects.filter(seen=False).exists()
 
     context = {
@@ -64,6 +65,10 @@ def notifications_list(request):
 
     return render(request, "notifications/list.html", context)
 
+
+# ================================
+# ACCIONES TABLA
+# ================================
 
 def notifications_mark_all_read(request):
     Notification.objects.filter(seen=False).update(seen=True)
@@ -106,27 +111,7 @@ def notification_mark_read(request, pk):
         "message": "Notificación marcada como leída"
     })
 
-    if request.headers.get("HX-Request"):
-        notifications, filters_ctx = _get_filtered_notifications(request)
-
-        products = (
-            Notification.objects.exclude(product__isnull=True)
-            .values_list("product_id", "product__name")
-            .distinct()
-        )
-
-        context = {
-            "notifications": notifications,
-            "products": products,
-            "has_unread": Notification.objects.filter(seen=False).exists(),
-            **filters_ctx,
-        }
-
-        response = render(request, "notifications/partials/notifications_table.html", context)
-        response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
-        return response
-
-    return redirect("notifications_list")
+    return notifications_mark_all_read(request)
 
 
 def notification_mark_unread(request, pk):
@@ -139,27 +124,12 @@ def notification_mark_unread(request, pk):
         "message": "Notificación marcada como no leída"
     })
 
-    notifications, filters_ctx = _get_filtered_notifications(request)
-
-    products = (
-        Notification.objects.exclude(product__isnull=True)
-        .values_list("product_id", "product__name")
-        .distinct()
-    )
-
-    context = {
-        "notifications": notifications,
-        "products": products,
-        "has_unread": Notification.objects.filter(seen=False).exists(),
-        **filters_ctx,
-    }
-
-    response = render(request, "notifications/partials/notifications_table.html", context)
-    response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
-    return response
+    return notifications_mark_all_read(request)
 
 
-# 🔥 FIX CLAVE → CAMPANA + TRIGGER CORRECTO
+# ================================
+# CONTADOR NAVBAR
+# ================================
 
 def notifications_counter(request):
     unread = Notification.objects.filter(seen=False).count()
@@ -170,13 +140,13 @@ def notifications_counter(request):
         {"unread": unread}
     )
 
-    # 🔥 IMPORTANTE: mismo evento que escucha HTMX
     response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
     return response
 
 
-# PANEL LATERAL
-
+# ================================
+# PANEL LATERAL (PRO)
+# ================================
 
 def _get_panel_notifications(request):
     q = request.GET.get("q", "").strip().lower()
@@ -201,7 +171,7 @@ def _group_notifications_by_product(notifications):
                 "items": [],
                 "count": 0,
                 "has_unread": False,
-                "icons": [],  # 🔥 NUEVO
+                "icons": set(),
             }
 
         grouped[key]["items"].append(n)
@@ -210,25 +180,33 @@ def _group_notifications_by_product(notifications):
         if not n.seen:
             grouped[key]["has_unread"] = True
 
-        # 🔥 ICONOS RESUMEN
+        # ICONOS ÚNICOS (no duplicados)
         if n.priority == "critical":
-            grouped[key]["icons"].append("🔴")
+            grouped[key]["icons"].add("🔴")
         elif n.priority == "warning":
-            grouped[key]["icons"].append("⚠️")
+            grouped[key]["icons"].add("⚠️")
         else:
-            grouped[key]["icons"].append("🔔")
+            grouped[key]["icons"].add("🔔")
 
     grouped_list = list(grouped.values())
-    grouped_list.sort(key=lambda g: g["items"][0].created_at, reverse=True)
+
+    # ordenar grupos por última notificación
+    grouped_list.sort(
+        key=lambda g: max(n.created_at for n in g["items"]),
+        reverse=True
+    )
+
+    # ordenar items internos
+    for g in grouped_list:
+        g["items"].sort(key=lambda x: x.created_at, reverse=True)
+        g["icons"] = list(g["icons"])
 
     return grouped_list
 
 
 def _panel_context(notifications):
-    grouped_notifications = _group_notifications_by_product(notifications)
-
     return {
-        "grouped_notifications": grouped_notifications,
+        "grouped_notifications": _group_notifications_by_product(notifications),
         "has_unread": Notification.objects.filter(seen=False).exists(),
     }
 
@@ -247,12 +225,7 @@ def notifications_panel_mark_all(request):
         "message": "Todas las notificaciones marcadas como leídas"
     })
 
-    notifications = _get_panel_notifications(request)
-    context = _panel_context(notifications)
-
-    response = render(request, "notifications/partials/panel.html", context)
-    response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
-    return response
+    return notifications_panel(request)
 
 
 def notifications_panel_mark_one(request, pk):
@@ -265,12 +238,7 @@ def notifications_panel_mark_one(request, pk):
         "message": "Notificación marcada como leída"
     })
 
-    notifications = _get_panel_notifications(request)
-    context = _panel_context(notifications)
-
-    response = render(request, "notifications/partials/panel.html", context)
-    response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
-    return response
+    return notifications_panel(request)
 
 
 def notifications_panel_mark_unread(request, pk):
@@ -283,31 +251,29 @@ def notifications_panel_mark_unread(request, pk):
         "message": "Notificación marcada como no leída"
     })
 
-    notifications = _get_panel_notifications(request)
-    context = _panel_context(notifications)
+    return notifications_panel(request)
 
-    response = render(request, "notifications/partials/panel.html", context)
-    response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
-    return response
+# ================================
+# DASHBOARD
+# ================================
 
-
-# ENDPOINTS PARA DASHBOARD DE ACTIVIDAD
 
 def notifications_summary(request):
     total = Notification.objects.count()
     unread = Notification.objects.filter(seen=False).count()
+
     by_type = (
         Notification.objects
         .values("type")
         .annotate(c=Count("id"))
         .order_by()
     )
-    context = {
+
+    return render(request, "dashboard/partials/notifications_summary.html", {
         "total_notifications": total,
         "unread_notifications": unread,
         "by_type": by_type,
-    }
-    return render(request, "dashboard/partials/notifications_summary.html", context)
+    })
 
 
 def notifications_chart(request):
@@ -325,37 +291,25 @@ def notifications_chart(request):
     labels = [row["day"].strftime("%d/%m") for row in qs]
     values = [row["c"] for row in qs]
 
-    by_type = (
-        Notification.objects
-        .values("type")
-        .annotate(c=Count("id"))
-        .order_by()
-    )
-    type_labels = [row["type"] or "info" for row in by_type]
-    type_values = [row["c"] for row in by_type]
-
-    read_count = Notification.objects.filter(seen=True).count()
-    unread_count = Notification.objects.filter(seen=False).count()
-
-    context = {
+    return render(request, "dashboard/partials/notifications_chart.html", {
         "labels": labels,
         "values": values,
-        "type_labels": type_labels,
-        "type_values": type_values,
-        "read_count": read_count,
-        "unread_count": unread_count,
-    }
-    return render(request, "dashboard/partials/notifications_chart.html", context)
+    })
 
 
 def notifications_recent(request):
     recent = Notification.objects.select_related("product").order_by("-created_at")[:20]
+
     return render(
         request,
         "dashboard/partials/notifications_recent.html",
         {"notifications": recent},
     )
 
+
+# ================================
+# TOGGLE GLOBAL
+# ================================
 
 def notifications_toggle_all(request):
     has_unread = Notification.objects.filter(seen=False).exists()
@@ -373,30 +327,26 @@ def notifications_toggle_all(request):
     })
 
     if request.headers.get("HX-Request"):
-        # 🔥 DETECTAR SI VIENE DEL PANEL O LISTA
+
         if "panel" in request.path:
-            page_obj = _get_panel_notifications(request)
-            context = _panel_context(page_obj)
+            return notifications_panel(request)
 
-            response = render(request, "notifications/partials/panel.html", context)
-        else:
-            notifications, filters_ctx = _get_filtered_notifications(request)
+        notifications, filters_ctx = _get_filtered_notifications(request)
 
-            products = (
-                Notification.objects.exclude(product__isnull=True)
-                .values_list("product_id", "product__name")
-                .distinct()
-            )
+        products = (
+            Notification.objects.exclude(product__isnull=True)
+            .values_list("product_id", "product__name")
+            .distinct()
+        )
 
-            context = {
-                "notifications": notifications,
-                "products": products,
-                "has_unread": notifications.filter(seen=False).exists(),
-                **filters_ctx,
-            }
+        context = {
+            "notifications": notifications,
+            "products": products,
+            "has_unread": notifications.filter(seen=False).exists(),
+            **filters_ctx,
+        }
 
-            response = render(request, "notifications/partials/notifications_table.html", context)
-
+        response = render(request, "notifications/partials/notifications_table.html", context)
         response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
         return response
 
