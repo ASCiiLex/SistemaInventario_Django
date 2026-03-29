@@ -30,27 +30,24 @@
         </select>
     </div>
 
+    <!-- 🔥 NUEVO: filtro por prioridad -->
+    <div class="col-md-3">
+        <select name="priority" class="form-control">
+            <option value="">Todas prioridades</option>
+            <option value="critical">Crítica</option>
+            <option value="warning">Warning</option>
+            <option value="info">Info</option>
+        </select>
+    </div>
+
     <div class="col-md-2 d-grid">
         <button class="btn btn-primary">Filtrar</button>
     </div>
 
-    <div class="col-md-3 d-grid">
-        <button
-            type="button"
-            class="btn btn-outline-secondary"
-            hx-get="{% url 'notifications_list' %}"
-            hx-target="#notifications-table"
-            hx-swap="outerHTML">
-            Limpiar filtros
-        </button>
-    </div>
 </form>
 
-<div id="notifications-table"
-     hx-get="{% url 'notifications_list' %}"
-     hx-trigger="notifications-updated from:body"
-     hx-target="this"
-     hx-swap="outerHTML">
+<div id="notifications-table">
     {% include 'notifications/partials/notifications_table.html' %}
 </div>
+
 {% endblock %}

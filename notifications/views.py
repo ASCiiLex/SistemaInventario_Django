@@ -14,6 +14,7 @@ def _get_filtered_notifications(request):
     status = request.GET.get("status", "")
     product_id = request.GET.get("product", "")
     type_filter = request.GET.get("type", "")
+    priority = request.GET.get("priority", "")
 
     notifications = Notification.objects.select_related("product").order_by("-created_at")
 
@@ -28,10 +29,14 @@ def _get_filtered_notifications(request):
     if type_filter:
         notifications = notifications.filter(type=type_filter)
 
+    if priority:
+        notifications = notifications.filter(priority=priority)
+
     return notifications, {
         "status": status,
         "product_id": product_id,
         "type": type_filter,
+        "priority": priority,
     }
 
 
@@ -44,7 +49,8 @@ def notifications_list(request):
         .distinct()
     )
 
-    has_unread = notifications.filter(seen=False).exists()
+    # 🔥 GLOBAL (no sobre queryset filtrado)
+    has_unread = Notification.objects.filter(seen=False).exists()
 
     context = {
         "notifications": notifications,
@@ -69,18 +75,22 @@ def notifications_mark_all_read(request):
 
     if request.headers.get("HX-Request"):
         notifications, filters_ctx = _get_filtered_notifications(request)
+
         products = (
             Notification.objects.exclude(product__isnull=True)
             .values_list("product_id", "product__name")
             .distinct()
         )
+
         context = {
             "notifications": notifications,
             "products": products,
+            "has_unread": Notification.objects.filter(seen=False).exists(),
             **filters_ctx,
         }
+
         response = render(request, "notifications/partials/notifications_table.html", context)
-        response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificaciones actualizadas"}}'
+        response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
         return response
 
     return redirect("notifications_list")
@@ -98,18 +108,22 @@ def notification_mark_read(request, pk):
 
     if request.headers.get("HX-Request"):
         notifications, filters_ctx = _get_filtered_notifications(request)
+
         products = (
             Notification.objects.exclude(product__isnull=True)
             .values_list("product_id", "product__name")
             .distinct()
         )
+
         context = {
             "notifications": notifications,
             "products": products,
+            "has_unread": Notification.objects.filter(seen=False).exists(),
             **filters_ctx,
         }
+
         response = render(request, "notifications/partials/notifications_table.html", context)
-        response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificación marcada como leída"}}'
+        response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
         return response
 
     return redirect("notifications_list")
@@ -126,18 +140,22 @@ def notification_mark_unread(request, pk):
     })
 
     notifications, filters_ctx = _get_filtered_notifications(request)
+
     products = (
         Notification.objects.exclude(product__isnull=True)
         .values_list("product_id", "product__name")
         .distinct()
     )
+
     context = {
         "notifications": notifications,
         "products": products,
+        "has_unread": Notification.objects.filter(seen=False).exists(),
         **filters_ctx,
     }
+
     response = render(request, "notifications/partials/notifications_table.html", context)
-    response["HX-Trigger"] = '{"notifications-updated": {"message": "Notificación marcada como no leída"}}'
+    response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
     return response
 
 

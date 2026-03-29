@@ -4,50 +4,74 @@
      hx-target="this"
      hx-swap="outerHTML">
 
-<!-- 🔥 BOTÓN DENTRO -->
-<div class="mb-3">
-    <button
-        class="btn btn-primary"
-        hx-post="{% url 'notifications_toggle_all' %}"
-        hx-target="#notifications-table"
-        hx-swap="outerHTML">
+<!-- 🔥 HEADER ACCIONES -->
+<div class="d-flex justify-content-between align-items-center mb-3">
 
-        {% if has_unread %}
-            Marcar todas como leídas
-        {% else %}
-            Marcar todas como no leídas
-        {% endif %}
-    </button>
+    <div class="d-flex gap-2">
+
+        <button
+            class="btn btn-primary"
+            hx-post="{% url 'notifications_toggle_all' %}"
+            hx-target="#notifications-table"
+            hx-swap="outerHTML">
+
+            {% if has_unread %}
+                Marcar todas como leídas
+            {% else %}
+                Marcar todas como no leídas
+            {% endif %}
+        </button>
+
+    </div>
+
 </div>
 
-<div id="notifications-table"
-     hx-get="{% url 'notifications_list' %}"
-     hx-trigger="inventory:notifications_updated from:body"
-     hx-target="this"
-     hx-swap="outerHTML">
-
+<!-- 🔥 TABLA -->
 <div class="table-responsive">
-<table class="table table-striped">
+<table class="table table-striped align-middle">
+
     <thead>
         <tr>
-
-        {% include "partials/sortable_th.html" with field="message" label="Mensaje" target="#notifications-table" %}
-        {% include "partials/sortable_th.html" with field="product__name" label="Producto" target="#notifications-table" %}
-        {% include "partials/sortable_th.html" with field="created_at" label="Fecha" target="#notifications-table" %}
-        {% include "partials/sortable_th.html" with field="seen" label="Estado" target="#notifications-table" %}
-
-        <th></th>
-
+            {% include "partials/sortable_th.html" with field="message" label="Mensaje" target="#notifications-table" %}
+            {% include "partials/sortable_th.html" with field="product__name" label="Producto" target="#notifications-table" %}
+            {% include "partials/sortable_th.html" with field="created_at" label="Fecha" target="#notifications-table" %}
+            <th>Prioridad</th>
+            <th>Estado</th>
+            <th></th>
         </tr>
     </thead>
 
     <tbody>
         {% for n in notifications %}
-        <tr>
-            <td>{{ n.message }}</td>
-            <td>{{ n.product }}</td>
-            <td>{{ n.created_at|date:"d/m/Y H:i" }}</td>
+        <tr class="{% if not n.seen %}table-light{% endif %}">
 
+            <!-- MENSAJE -->
+            <td>
+                {{ n.message }}
+            </td>
+
+            <!-- PRODUCTO -->
+            <td>
+                {{ n.product|default:"-" }}
+            </td>
+
+            <!-- FECHA -->
+            <td>
+                {{ n.created_at|date:"d/m/Y H:i" }}
+            </td>
+
+            <!-- 🔥 PRIORIDAD BADGE -->
+            <td>
+                {% if n.priority == "critical" %}
+                    <span class="badge bg-danger">Crítica</span>
+                {% elif n.priority == "warning" %}
+                    <span class="badge bg-warning text-dark">Warning</span>
+                {% else %}
+                    <span class="badge bg-secondary">Info</span>
+                {% endif %}
+            </td>
+
+            <!-- ESTADO -->
             <td>
                 {% if n.seen %}
                     <span class="text-success">Leída</span>
@@ -56,26 +80,23 @@
                 {% endif %}
             </td>
 
+            <!-- ACCIONES -->
             <td>
                 {% if n.seen %}
                     <form method="post"
-                        hx-post="{% url 'notification_mark_unread' n.id %}"
-                        hx-target="#notifications-table"
-                        hx-swap="outerHTML">
+                          hx-post="{% url 'notification_mark_unread' n.id %}"
+                          hx-target="#notifications-table"
+                          hx-swap="outerHTML">
                         {% csrf_token %}
-                        <button class="btn btn-sm btn-outline-secondary">
-                            Marcar como no leída
-                        </button>
+                        <button class="btn btn-sm btn-outline-secondary">↺</button>
                     </form>
                 {% else %}
                     <form method="post"
-                        hx-post="{% url 'notification_mark_read' n.id %}"
-                        hx-target="#notifications-table"
-                        hx-swap="outerHTML">
+                          hx-post="{% url 'notification_mark_read' n.id %}"
+                          hx-target="#notifications-table"
+                          hx-swap="outerHTML">
                         {% csrf_token %}
-                        <button class="btn btn-sm btn-outline-primary">
-                            Marcar como leída
-                        </button>
+                        <button class="btn btn-sm btn-outline-primary">✓</button>
                     </form>
                 {% endif %}
             </td>
@@ -83,10 +104,11 @@
         </tr>
         {% empty %}
         <tr>
-            <td colspan="5">No hay notificaciones.</td>
+            <td colspan="6">No hay notificaciones.</td>
         </tr>
         {% endfor %}
     </tbody>
+
 </table>
 </div>
 
