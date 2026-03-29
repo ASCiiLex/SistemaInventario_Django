@@ -4,37 +4,49 @@
      hx-target="this"
      hx-swap="outerHTML">
 
-<!-- HEADER -->
+<!-- 🔥 TOGGLE GLOBAL  -->
 <div class="d-flex justify-content-between align-items-center mb-3">
 
-    <button
-        class="btn btn-primary"
-        hx-post="{% url 'notifications_toggle_all' %}"
-        hx-target="#notifications-table"
-        hx-swap="outerHTML">
+    <div class="d-flex gap-2">
 
-        {% if has_unread %}
-            Marcar todas como leídas
-        {% else %}
-            Marcar todas como no leídas
-        {% endif %}
-    </button>
+        <button
+            class="btn btn-primary btn-sm"
+            hx-post="{% url 'notifications_toggle_all' %}"
+            hx-target="#notifications-table"
+            hx-swap="outerHTML">
+
+            {% if has_unread %}
+                Marcar todas como leídas
+            {% else %}
+                Marcar todas como no leídas
+            {% endif %}
+        </button>
+
+    </div>
 
 </div>
 
-<!-- TABLA -->
+<form
+    method="post"
+    hx-post="{% url 'notifications_bulk_action' %}"
+    hx-target="#notifications-table"
+    hx-swap="outerHTML">
+
+{% csrf_token %}
+
+
 <div class="table-responsive">
 <table class="table table-striped align-middle">
 
     <thead>
         <tr>
+            <th><input type="checkbox" id="select-all"></th>
+
             {% include "partials/sortable_th.html" with field="message" label="Mensaje" target="#notifications-table" %}
             {% include "partials/sortable_th.html" with field="product__name" label="Producto" target="#notifications-table" %}
             {% include "partials/sortable_th.html" with field="created_at" label="Fecha" target="#notifications-table" %}
 
-            <!-- 🔥 NUEVO: SORT PRIORITY -->
-            {% include "partials/sortable_th.html" with field="priority" label="Prioridad" target="#notifications-table" %}
-
+            <th>Prioridad</th>
             <th>Estado</th>
             <th></th>
         </tr>
@@ -43,11 +55,10 @@
     <tbody>
         {% for n in notifications %}
         <tr class="{% if not n.seen %}table-light{% endif %}">
+            <td><input type="checkbox" name="selected" value="{{ n.id }}"></td>
 
             <td>{{ n.message }}</td>
-
             <td>{{ n.product|default:"-" }}</td>
-
             <td>{{ n.created_at|date:"d/m/Y H:i" }}</td>
 
             <td>
@@ -87,11 +98,10 @@
                     </form>
                 {% endif %}
             </td>
-
         </tr>
         {% empty %}
         <tr>
-            <td colspan="6">No hay notificaciones.</td>
+            <td colspan="7">No hay notificaciones.</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -100,5 +110,20 @@
 </div>
 
 {% include "shared/pagination.html" %}
+
+</form>
+
+<script>
+document.addEventListener("htmx:afterSwap", () => {
+    const selectAll = document.getElementById("select-all");
+    if (!selectAll) return;
+
+    selectAll.onclick = () => {
+        document.querySelectorAll('input[name="selected"]').forEach(cb => {
+            cb.checked = selectAll.checked;
+        });
+    };
+});
+</script>
 
 </div>

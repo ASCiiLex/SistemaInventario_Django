@@ -12,7 +12,7 @@
             <form method="post"
                   hx-post="{% url 'notifications_panel_toggle_all' %}"
                   hx-target="#notificationsPanelBody"
-                  hx-swap="outerHTML">
+                  hx-swap="innerHTML">
                 {% csrf_token %}
 
                 <button class="btn btn-sm btn-outline-primary">
@@ -83,7 +83,7 @@
                                 <form method="post"
                                       hx-post="{% url 'notifications_panel_mark_one' n.pk %}"
                                       hx-target="#notificationsPanelBody"
-                                      hx-swap="outerHTML">
+                                      hx-swap="innerHTML">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-success">✓</button>
                                 </form>
@@ -91,7 +91,7 @@
                                 <form method="post"
                                       hx-post="{% url 'notifications_panel_mark_unread' n.pk %}"
                                       hx-target="#notificationsPanelBody"
-                                      hx-swap="outerHTML">
+                                      hx-swap="innerHTML">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-secondary">↺</button>
                                 </form>

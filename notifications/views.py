@@ -1,16 +1,18 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.timezone import localdate
+from django.views.decorators.http import require_POST
 from django.db.models import Count
 from datetime import timedelta
 
 from .models import Notification
 from .utils import broadcast_notification
 
+from products.models import Product
+
 
 # ================================
 # LISTA PRINCIPAL (TABLA)
 # ================================
-
 
 def _get_filtered_notifications(request):
     status = request.GET.get("status", "")
@@ -18,7 +20,6 @@ def _get_filtered_notifications(request):
     type_filter = request.GET.get("type", "")
     priority = request.GET.get("priority", "")
 
-    # 🔥 SORT
     sort = request.GET.get("sort", "created_at")
     direction = request.GET.get("dir", "desc")
 
@@ -50,14 +51,27 @@ def _get_filtered_notifications(request):
     }
 
 
+def _get_products():
+    import re
+
+    products_qs = Product.objects.all().values("id", "name")
+
+    def natural_key(item):
+        name = item["name"]
+        return [
+            int(text) if text.isdigit() else text.lower()
+            for text in re.split(r'(\d+)', name)
+        ]
+
+    products_sorted = sorted(products_qs, key=natural_key)
+
+    return [(p["id"], p["name"]) for p in products_sorted]
+
+
 def notifications_list(request):
     notifications, filters_ctx = _get_filtered_notifications(request)
 
-    products = (
-        Notification.objects.exclude(product__isnull=True)
-        .values_list("product_id", "product__name")
-        .distinct()
-    )
+    products = _get_products()
 
     has_unread = Notification.objects.filter(seen=False).exists()
 
@@ -86,27 +100,18 @@ def notifications_mark_all_read(request):
         "message": "Todas las notificaciones marcadas como leídas"
     })
 
-    if request.headers.get("HX-Request"):
-        notifications, filters_ctx = _get_filtered_notifications(request)
+    notifications, filters_ctx = _get_filtered_notifications(request)
 
-        products = (
-            Notification.objects.exclude(product__isnull=True)
-            .values_list("product_id", "product__name")
-            .distinct()
-        )
+    context = {
+        "notifications": notifications,
+        "products": _get_products(),
+        "has_unread": Notification.objects.filter(seen=False).exists(),
+        **filters_ctx,
+    }
 
-        context = {
-            "notifications": notifications,
-            "products": products,
-            "has_unread": Notification.objects.filter(seen=False).exists(),
-            **filters_ctx,
-        }
-
-        response = render(request, "notifications/partials/notifications_table.html", context)
-        response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
-        return response
-
-    return redirect("notifications_list")
+    response = render(request, "notifications/partials/notifications_table.html", context)
+    response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
+    return response
 
 
 def notification_mark_read(request, pk):
@@ -151,7 +156,6 @@ def notifications_counter(request):
     response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
     return response
 
-
 # ================================
 # PANEL LATERAL (PRO)
 # ================================
@@ -188,7 +192,6 @@ def _group_notifications_by_product(notifications):
         if not n.seen:
             grouped[key]["has_unread"] = True
 
-        # ICONOS ÚNICOS (no duplicados)
         if n.priority == "critical":
             grouped[key]["icons"].add("🔴")
         elif n.priority == "warning":
@@ -198,13 +201,11 @@ def _group_notifications_by_product(notifications):
 
     grouped_list = list(grouped.values())
 
-    # ordenar grupos por última notificación
     grouped_list.sort(
         key=lambda g: max(n.created_at for n in g["items"]),
         reverse=True
     )
 
-    # ordenar items internos
     for g in grouped_list:
         g["items"].sort(key=lambda x: x.created_at, reverse=True)
         g["icons"] = list(g["icons"])
@@ -261,10 +262,10 @@ def notifications_panel_mark_unread(request, pk):
 
     return notifications_panel(request)
 
+
 # ================================
 # DASHBOARD
 # ================================
-
 
 def notifications_summary(request):
     total = Notification.objects.count()
@@ -335,22 +336,66 @@ def notifications_toggle_all(request):
     })
 
     if request.headers.get("HX-Request"):
-
         if "panel" in request.path:
             return notifications_panel(request)
 
         notifications, filters_ctx = _get_filtered_notifications(request)
 
-        products = (
-            Notification.objects.exclude(product__isnull=True)
-            .values_list("product_id", "product__name")
-            .distinct()
-        )
+        context = {
+            "notifications": notifications,
+            "products": _get_products(),
+            "has_unread": Notification.objects.filter(seen=False).exists(),
+            **filters_ctx,
+        }
+
+        response = render(request, "notifications/partials/notifications_table.html", context)
+        response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
+        return response
+
+    return redirect("notifications_list")
+
+
+# ================================
+# BULK ACTIONS (MULTI-SELECT)
+# ================================
+
+@require_POST
+def notifications_bulk_action(request):
+    action = request.POST.get("action")
+    ids = request.POST.getlist("selected")
+
+    if not ids:
+        return notifications_list(request)
+
+    qs = Notification.objects.filter(id__in=ids)
+
+    if action == "read":
+        qs.update(seen=True)
+        message = "Notificaciones marcadas como leídas"
+
+    elif action == "unread":
+        qs.update(seen=False)
+        message = "Notificaciones marcadas como no leídas"
+
+    elif action == "delete":
+        qs.delete()
+        message = "Notificaciones eliminadas"
+
+    else:
+        return notifications_list(request)
+
+    broadcast_notification({
+        "type": "notification",
+        "message": message
+    })
+
+    if request.headers.get("HX-Request"):
+        notifications, filters_ctx = _get_filtered_notifications(request)
 
         context = {
             "notifications": notifications,
-            "products": products,
-            "has_unread": notifications.filter(seen=False).exists(),
+            "products": _get_products(),
+            "has_unread": Notification.objects.filter(seen=False).exists(),
             **filters_ctx,
         }
 
