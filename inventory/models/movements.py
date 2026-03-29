@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.apps import apps
 
 from products.models import Product
 from .locations import Location
@@ -42,8 +41,6 @@ class StockMovement(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "Stock Movement"
-        verbose_name_plural = "Stock Movements"
 
     def __str__(self):
         return f"{self.get_movement_type_display()} - {self.product.name} ({self.quantity})"
@@ -114,38 +111,13 @@ class StockMovement(models.Model):
         elif self.movement_type == "TRANSFER":
             self._apply_transfer()
 
-        Notification = apps.get_model("notifications", "Notification")
+        # 🔥 SOLO EVENTO (no lógica)
+        from notifications.utils import broadcast_notification
 
-        # 🔥 INCIDENCIAS POR ALMACÉN
-        affected_items = StockItem.objects.filter(product=self.product)
-
-        for item in affected_items:
-            if item.quantity <= item.min_stock:
-
-                exists = Notification.objects.filter(
-                    product=self.product,
-                    location=item.location,
-                    type="stock_item_low",
-                    seen=False
-                ).exists()
-
-                if not exists:
-                    Notification.objects.create(
-                        product=self.product,
-                        location=item.location,
-                        type="stock_item_low",
-                        message=f"{self.product.name} bajo mínimo en {item.location.name}",
-                    )
-
-                    from notifications.utils import broadcast_notification
-                    broadcast_notification({
-                        "type": "stock_item_low",
-                        "message": f"{self.product.name} bajo mínimo en {item.location.name}",
-                        "product": self.product.name,
-                    })
-
-        # 🔥 PRODUCTO GLOBAL
-        self.product.create_low_stock_notification()
+        broadcast_notification({
+            "type": "stock_changed",
+            "product": self.product.name,
+        })
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None

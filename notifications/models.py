@@ -1,4 +1,7 @@
 from django.db import models
+from django.utils import timezone
+from datetime import timedelta
+
 from products.models import Product
 from inventory.models import Location
 
@@ -12,6 +15,12 @@ class Notification(models.Model):
         ("order", "Pedido"),
         ("alert", "Alerta"),
         ("info", "Información"),
+    ]
+
+    PRIORITY_CHOICES = [
+        ("critical", "Crítica"),
+        ("warning", "Advertencia"),
+        ("info", "Info"),
     ]
 
     product = models.ForeignKey(
@@ -36,6 +45,12 @@ class Notification(models.Model):
         default="info"
     )
 
+    priority = models.CharField(
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default="info"
+    )
+
     message = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     seen = models.BooleanField(default=False)
@@ -45,3 +60,21 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.message
+
+    # 🔥 COOL DOWN (deduplicación inteligente)
+    @classmethod
+    def recently_created(cls, *, product=None, location=None, type=None, minutes=30):
+        since = timezone.now() - timedelta(minutes=minutes)
+
+        qs = cls.objects.filter(
+            type=type,
+            created_at__gte=since
+        )
+
+        if product:
+            qs = qs.filter(product=product)
+
+        if location:
+            qs = qs.filter(location=location)
+
+        return qs.exists()

@@ -1,5 +1,4 @@
 from django.apps import apps
-from django.db.models import F
 from inventory.models import StockItem
 
 
@@ -11,20 +10,21 @@ def sync_stock_item_notifications():
     for item in items:
         if item.quantity <= item.min_stock:
 
-            exists = Notification.objects.filter(
+            if Notification.recently_created(
                 product=item.product,
                 location=item.location,
                 type="stock_item_low",
-                seen=False
-            ).exists()
+                minutes=30
+            ):
+                continue
 
-            if not exists:
-                Notification.objects.create(
-                    product=item.product,
-                    location=item.location,
-                    type="stock_item_low",
-                    message=f"{item.product.name} bajo mínimo en {item.location.name}",
-                )
+            Notification.objects.create(
+                product=item.product,
+                location=item.location,
+                type="stock_item_low",
+                priority="critical",
+                message=f"{item.product.name} bajo mínimo en {item.location.name}",
+            )
 
 
 def sync_product_risk_notifications():
@@ -36,18 +36,19 @@ def sync_product_risk_notifications():
     for p in products:
         if p.total_stock <= p.total_min_stock:
 
-            exists = Notification.objects.filter(
+            if Notification.recently_created(
                 product=p,
                 type="product_risk",
-                seen=False
-            ).exists()
+                minutes=60
+            ):
+                continue
 
-            if not exists:
-                Notification.objects.create(
-                    product=p,
-                    type="product_risk",
-                    message=f"Producto en riesgo: {p.name}",
-                )
+            Notification.objects.create(
+                product=p,
+                type="product_risk",
+                priority="warning",
+                message=f"Producto en riesgo: {p.name}",
+            )
 
 
 def sync_all_notifications():

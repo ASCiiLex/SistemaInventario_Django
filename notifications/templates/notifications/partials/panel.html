@@ -1,24 +1,4 @@
-<div>
-
-    <div class="mb-3 p-2 border rounded bg-light"
-         x-data="notifSettings()"
-         x-init="loadSettings()">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong>Preferencias</strong>
-        </div>
-        <div class="d-flex justify-content-between">
-            <button class="btn btn-sm"
-                    :class="sound ? 'btn-success' : 'btn-outline-secondary'"
-                    @click="toggleSound()">
-                🔊 Sonido: <strong x-text="sound ? 'ON' : 'OFF'"></strong>
-            </button>
-            <button class="btn btn-sm"
-                    :class="push ? 'btn-primary' : 'btn-outline-secondary'"
-                    @click="togglePush()">
-                🖥️ Push: <strong x-text="push ? 'ON' : 'OFF'"></strong>
-            </button>
-        </div>
-    </div>
+<div id="notificationsPanelBody">
 
     <div class="mb-3">
         <input
@@ -46,32 +26,16 @@
     {% regroup notifications by created_at.date as grouped %}
 
     {% for group in grouped %}
-        {% with group_date=group.grouper %}
-            {% if group_date == today %}
-                <h6 class="text-primary mt-3">Hoy</h6>
-            {% elif group_date == yesterday %}
-                <h6 class="text-primary mt-3">Ayer</h6>
-            {% elif group_date >= week_start %}
-                <h6 class="text-primary mt-3">Esta semana</h6>
-            {% else %}
-                <h6 class="text-primary mt-3">Más antiguas</h6>
-            {% endif %}
-        {% endwith %}
+        <h6 class="text-primary mt-3">{{ group.grouper }}</h6>
 
         <ul class="list-group mb-3">
             {% for n in group.list %}
                 <li class="list-group-item d-flex justify-content-between align-items-start {% if not n.seen %}fw-bold{% endif %}">
 
                     <div>
-                        {% if n.type == "movement" %}
-                            📦
-                        {% elif n.type == "stock_item_low" %}
+                        {% if n.type == "stock_item_low" %}
                             🔴
                         {% elif n.type == "product_risk" %}
-                            ⚠️
-                        {% elif n.type == "order" %}
-                            🧾
-                        {% elif n.type == "alert" %}
                             ⚠️
                         {% else %}
                             🔔
@@ -80,17 +44,17 @@
                         {{ n.message }}<br>
 
                         {% if n.product %}
-                            <small class="text-muted">Producto: {{ n.product }}</small><br>
+                            <small class="text-muted">{{ n.product }}</small><br>
                         {% endif %}
 
                         {% if n.location %}
-                            <small class="text-muted">Ubicación: {{ n.location }}</small><br>
+                            <small class="text-muted">{{ n.location }}</small><br>
                         {% endif %}
 
                         <small class="text-muted">{{ n.created_at|date:"d/m/Y H:i" }}</small>
                     </div>
 
-                    <div class="d-flex gap-2">
+                    <div>
                         {% if not n.seen %}
                             <button
                                 class="btn btn-sm btn-outline-success"
@@ -99,23 +63,12 @@
                                 hx-swap="innerHTML">
                                 ✓
                             </button>
-                        {% else %}
-                            <button
-                                class="btn btn-sm btn-outline-secondary"
-                                hx-post="{% url 'notifications_panel_mark_unread' n.pk %}"
-                                hx-target="#notificationsPanelBody"
-                                hx-swap="innerHTML">
-                                ↺
-                            </button>
                         {% endif %}
                     </div>
 
                 </li>
             {% endfor %}
         </ul>
-
-    {% empty %}
-        <p class="text-muted text-center">No hay notificaciones.</p>
     {% endfor %}
 
     <div class="d-flex justify-content-between mt-3">

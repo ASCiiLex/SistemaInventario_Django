@@ -6,4 +6,5 @@ class ProductsConfig(AppConfig):
     name = 'products'
 
     def ready(self):
-        import products.signals
+        # 🔥 signals eliminados → no importar nada
+        pass

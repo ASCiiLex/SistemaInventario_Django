@@ -88,27 +88,3 @@ class Product(models.Model):
     def last_movement(self):
         return self.movements.order_by('-created_at').first()
 
-    def create_low_stock_notification(self):
-        if self.total_stock > self.total_min_stock:
-            return
-
-        Notification = apps.get_model("notifications", "Notification")
-
-        exists = Notification.objects.filter(
-            product=self,
-            type="product_risk",
-            seen=False
-        ).exists()
-
-        if exists:
-            return
-
-        Notification.objects.create(
-            product=self,
-            type="product_risk",
-            message=f"Producto en riesgo: {self.name}",
-            seen=False
-        )
-
-        self.last_low_stock_alert = now()
-        self.save(update_fields=["last_low_stock_alert"])
