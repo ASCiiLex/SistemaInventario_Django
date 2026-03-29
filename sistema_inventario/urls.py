@@ -17,7 +17,7 @@ urlpatterns = [
     path("movimientos/", lambda r: redirect("/stock-movements/")),
     path("stock-movements/", lambda r: redirect("/inventory/stock-movements/")),
 
-    path('notificaciones/', include('notifications.urls')),
+    path('notificaciones/', include(('notifications.urls', 'notifications'), namespace='notifications')),
 ]
 
 if settings.DEBUG:

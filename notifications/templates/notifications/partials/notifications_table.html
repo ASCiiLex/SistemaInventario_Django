@@ -1,19 +1,13 @@
-<div id="notifications-table"
-     hx-get="{% url 'notifications_list' %}"
-     hx-trigger="inventory:notifications_updated from:body"
-     hx-target="this"
-     hx-swap="outerHTML">
-
-<!-- 🔥 TOGGLE GLOBAL  -->
+<!-- 🔥 TOGGLE GLOBAL -->
 <div class="d-flex justify-content-between align-items-center mb-3">
 
     <div class="d-flex gap-2">
 
         <button
             class="btn btn-primary btn-sm"
-            hx-post="{% url 'notifications_toggle_all' %}"
+            hx-post="{% url 'notifications:notifications_toggle_all' %}"
             hx-target="#notifications-table"
-            hx-swap="outerHTML">
+            hx-swap="innerHTML">
 
             {% if has_unread %}
                 Marcar todas como leídas
@@ -28,12 +22,11 @@
 
 <form
     method="post"
-    hx-post="{% url 'notifications_bulk_action' %}"
+    hx-post="{% url 'notifications:notifications_bulk_action' %}"
     hx-target="#notifications-table"
-    hx-swap="outerHTML">
+    hx-swap="innerHTML">
 
 {% csrf_token %}
-
 
 <div class="table-responsive">
 <table class="table table-striped align-middle">
@@ -82,17 +75,17 @@
             <td>
                 {% if n.seen %}
                     <form method="post"
-                          hx-post="{% url 'notification_mark_unread' n.id %}"
+                          hx-post="{% url 'notifications:notification_mark_unread' n.id %}"
                           hx-target="#notifications-table"
-                          hx-swap="outerHTML">
+                          hx-swap="innerHTML">
                         {% csrf_token %}
                         <button class="btn btn-sm btn-outline-secondary">↺</button>
                     </form>
                 {% else %}
                     <form method="post"
-                          hx-post="{% url 'notification_mark_read' n.id %}"
+                          hx-post="{% url 'notifications:notification_mark_read' n.id %}"
                           hx-target="#notifications-table"
-                          hx-swap="outerHTML">
+                          hx-swap="innerHTML">
                         {% csrf_token %}
                         <button class="btn btn-sm btn-outline-primary">✓</button>
                     </form>
@@ -125,5 +118,3 @@ document.addEventListener("htmx:afterSwap", () => {
     };
 });
 </script>
-
-</div>

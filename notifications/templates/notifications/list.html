@@ -1,17 +1,17 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
+
 <h2 class="mb-3">Notificaciones</h2>
 
 <form
     method="GET"
     class="row g-2 mb-3"
-    hx-get="{% url 'notifications_list' %}"
+    hx-get="{% url 'notifications:notifications_list' %}"
     hx-target="#notifications-table"
-    hx-swap="outerHTML"
+    hx-swap="innerHTML"
     hx-push-url="true">
 
-    <!-- STATUS -->
     <div class="col-md-2">
         <select name="status" class="form-control">
             <option value="">Todas</option>
@@ -20,7 +20,6 @@
         </select>
     </div>
 
-    <!-- PRODUCT -->
     <div class="col-md-3">
         <select name="product" class="form-control">
             <option value="">Todos los productos</option>
@@ -32,7 +31,6 @@
         </select>
     </div>
 
-    <!-- 🔥 TYPE (NUEVO) -->
     <div class="col-md-2">
         <select name="type" class="form-control">
             <option value="">Todos tipos</option>
@@ -45,7 +43,6 @@
         </select>
     </div>
 
-    <!-- 🔥 PRIORITY (FIXED) -->
     <div class="col-md-2">
         <select name="priority" class="form-control">
             <option value="">Todas prioridades</option>
@@ -55,19 +52,17 @@
         </select>
     </div>
 
-    <!-- ACTIONS -->
     <div class="col-md-1 d-grid">
         <button class="btn btn-primary">OK</button>
     </div>
 
-    <!-- 🔥 RESET REAL -->
     <div class="col-md-2 d-grid">
         <button
             type="button"
             class="btn btn-outline-secondary"
-            hx-get="{% url 'notifications_list' %}"
+            hx-get="{% url 'notifications:notifications_list' %}"
             hx-target="#notifications-table"
-            hx-swap="outerHTML"
+            hx-swap="innerHTML"
             hx-push-url="true">
             Limpiar
         </button>
@@ -75,8 +70,14 @@
 
 </form>
 
-<div id="notifications-table">
+<div id="notifications-table"
+     hx-get="{% url 'notifications:notifications_list' %}"
+     hx-trigger="inventory:notifications_updated from:body"
+     hx-target="this"
+     hx-swap="innerHTML">
+
     {% include 'notifications/partials/notifications_table.html' %}
+
 </div>
 
 {% endblock %}

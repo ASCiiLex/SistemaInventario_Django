@@ -2,14 +2,14 @@
 <nav>
     <ul class="pagination justify-content-center mt-3">
 
-        {% with target_id=target_id|default:"this" %}
+        {% with target_id=target_id|default:"#notifications-table" %}
 
         {% if page_obj.has_previous %}
             <li class="page-item">
                 <a class="page-link"
                    hx-get="?{% if request.GET %}{{ request.GET.urlencode|cut:'page='|cut:'&&' }}&{% endif %}page={{ page_obj.previous_page_number }}"
                    hx-target="{{ target_id }}"
-                   hx-swap="outerHTML"
+                   hx-swap="innerHTML"
                    hx-push-url="true">
                     «
                 </a>
@@ -28,7 +28,7 @@
                     <a class="page-link"
                        hx-get="?{% if request.GET %}{{ request.GET.urlencode|cut:'page='|cut:'&&' }}&{% endif %}page={{ num }}"
                        hx-target="{{ target_id }}"
-                       hx-swap="outerHTML"
+                       hx-swap="innerHTML"
                        hx-push-url="true">
                         {{ num }}
                     </a>
@@ -41,7 +41,7 @@
                 <a class="page-link"
                    hx-get="?{% if request.GET %}{{ request.GET.urlencode|cut:'page='|cut:'&&' }}&{% endif %}page={{ page_obj.next_page_number }}"
                    hx-target="{{ target_id }}"
-                   hx-swap="outerHTML"
+                   hx-swap="innerHTML"
                    hx-push-url="true">
                     »
                 </a>

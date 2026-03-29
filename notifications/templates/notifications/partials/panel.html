@@ -1,16 +1,15 @@
 <div id="notificationsPanelBody">
 
-    <!-- HEADER -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <strong>Notificaciones</strong>
 
         <div class="d-flex gap-2">
-            <a href="{% url 'notifications_list' %}" class="btn btn-sm btn-outline-dark">
+            <a href="{% url 'notifications:notifications_list' %}" class="btn btn-sm btn-outline-dark">
                 Ver todas
             </a>
 
             <form method="post"
-                  hx-post="{% url 'notifications_panel_toggle_all' %}"
+                  hx-post="{% url 'notifications:notifications_panel_toggle_all' %}"
                   hx-target="#notificationsPanelBody"
                   hx-swap="innerHTML">
                 {% csrf_token %}
@@ -26,18 +25,15 @@
         </div>
     </div>
 
-    <!-- 🔥 GRUPOS -->
     {% for group in grouped_notifications %}
         <div class="mb-2 border rounded">
 
-            <!-- 🔥 HEADER COLAPSABLE -->
             <div class="p-2 d-flex justify-content-between align-items-center bg-light cursor-pointer"
                  onclick="this.nextElementSibling.classList.toggle('d-none')">
 
                 <div>
                     <strong>{{ group.product|default:"Sin producto" }}</strong>
 
-                    <!-- ICONOS -->
                     <span class="ms-2">
                         {% for icon in group.icons %}
                             {{ icon }}
@@ -52,16 +48,13 @@
 
             </div>
 
-            <!-- 🔥 CONTENIDO -->
             <div class="d-none">
-
                 <ul class="list-group list-group-flush">
 
                     {% for n in group.items %}
                     <li class="list-group-item d-flex justify-content-between align-items-start {% if not n.seen %}fw-bold{% endif %}">
 
                         <div>
-
                             {% if n.priority == "critical" %}
                                 🔴
                             {% elif n.priority == "warning" %}
@@ -75,13 +68,12 @@
                             <small class="text-muted">
                                 {{ n.created_at|date:"d/m/Y H:i" }}
                             </small>
-
                         </div>
 
                         <div>
                             {% if not n.seen %}
                                 <form method="post"
-                                      hx-post="{% url 'notifications_panel_mark_one' n.pk %}"
+                                      hx-post="{% url 'notifications:notifications_panel_mark_one' n.pk %}"
                                       hx-target="#notificationsPanelBody"
                                       hx-swap="innerHTML">
                                     {% csrf_token %}
@@ -89,7 +81,7 @@
                                 </form>
                             {% else %}
                                 <form method="post"
-                                      hx-post="{% url 'notifications_panel_mark_unread' n.pk %}"
+                                      hx-post="{% url 'notifications:notifications_panel_mark_unread' n.pk %}"
                                       hx-target="#notificationsPanelBody"
                                       hx-swap="innerHTML">
                                     {% csrf_token %}
@@ -102,11 +94,9 @@
                     {% endfor %}
 
                 </ul>
-
             </div>
 
         </div>
-
     {% empty %}
         <p class="text-muted text-center">No hay notificaciones.</p>
     {% endfor %}
