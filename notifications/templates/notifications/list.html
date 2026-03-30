@@ -10,7 +10,9 @@
     hx-get="{% url 'notifications:notifications_list' %}"
     hx-target="#notifications-table"
     hx-swap="innerHTML"
-    hx-push-url="true">
+    hx-push-url="true"
+    hx-trigger="change delay:300ms"
+>
 
     <div class="col-md-2">
         <select name="status" class="form-control">
@@ -52,18 +54,10 @@
         </select>
     </div>
 
-    <div class="col-md-1 d-grid">
-        <button class="btn btn-primary">OK</button>
-    </div>
-
-    <div class="col-md-2 d-grid">
-        <button
-            type="button"
-            class="btn btn-outline-secondary"
-            hx-get="{% url 'notifications:notifications_list' %}"
-            hx-target="#notifications-table"
-            hx-swap="innerHTML"
-            hx-push-url="true">
+    <div class="col-md-3 d-grid">
+        <button type="button"
+                class="btn btn-outline-secondary"
+                onclick="clearFilters(this)">
             Limpiar
         </button>
     </div>
@@ -72,7 +66,7 @@
 
 <div id="notifications-table"
      hx-get="{% url 'notifications:notifications_list' %}"
-     hx-trigger="inventory:notifications_updated from:body"
+     hx-trigger="load, inventory:notifications_updated from:body"
      hx-target="this"
      hx-swap="innerHTML">
 

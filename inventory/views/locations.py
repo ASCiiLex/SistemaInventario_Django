@@ -1,9 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.db.models import Count, Q, F, OuterRef, Subquery, IntegerField, Value
+from django.db.models.functions import Cast
 
-from ..models import Location
+from ..models import Location, StockItem
 from ..forms import LocationForm
 from ..utils.listing import ListViewMixin
+
+from notifications.models import Notification
+
+import re
 
 
 def location_list(request):
@@ -11,15 +17,19 @@ def location_list(request):
     view.allowed_sort_fields = ["name", "address", "is_active"]
     view.default_ordering = "name"
 
-    qs = Location.objects.all()
+    qs = Location.objects.all().annotate(
+        low_stock_count=Count(
+            "stock_items",
+            filter=Q(stock_items__quantity__lte=F("stock_items__min_stock"))
+        ),
+        total_products=Count("stock_items")
+    )
 
     search = request.GET.get("q")
     if search:
         qs = qs.filter(name__icontains=search)
 
-    # 🔥 ORDENACIÓN
     qs = view.apply_ordering(request, qs)
-
     page_obj = view.paginate_queryset(request, qs)
 
     context = {
@@ -34,6 +44,62 @@ def location_list(request):
         return render(request, "inventory/locations/partials/table.html", context)
 
     return render(request, "inventory/locations/list.html", context)
+
+
+def location_incidents(request, pk):
+    location = get_object_or_404(Location, pk=pk)
+
+    view = ListViewMixin()
+    view.allowed_sort_fields = [
+        "product__name",
+        "quantity",
+        "min_stock",
+        "last_alert",
+    ]
+    view.default_ordering = "product__name"
+
+    latest_notification = Notification.objects.filter(
+        product=OuterRef("product"),
+        location=location,
+        type="stock_item_low"
+    ).order_by("-created_at")
+
+    qs = (
+        StockItem.objects
+        .select_related("product")
+        .filter(
+            location=location,
+            quantity__lte=F("min_stock")
+        )
+        .annotate(
+            last_alert=Subquery(latest_notification.values("created_at")[:1])
+        )
+    )
+
+    # 🔥 ORDEN NATURAL SOLO CUANDO APLICA
+    sort = request.GET.get("sort")
+    direction = request.GET.get("dir", "asc")
+
+    if sort == "product__name":
+        qs = sorted(
+            qs,
+            key=lambda x: [
+                int(t) if t.isdigit() else t.lower()
+                for t in re.split(r'(\d+)', x.product.name)
+            ],
+            reverse=(direction == "desc")
+        )
+    else:
+        qs = view.apply_ordering(request, qs)
+
+    context = {
+        "items": qs,
+        "target_id": f"#expand-{pk}",
+        "base_url": request.path,
+        **view.get_ordering_context(request),
+    }
+
+    return render(request, "inventory/locations/partials/incidents.html", context)
 
 
 def location_create(request):

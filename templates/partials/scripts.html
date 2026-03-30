@@ -34,20 +34,36 @@ document.body.addEventListener('htmx:configRequest', function (event) {
 })();
 
 // ===============================
-// 🔥 CLEAR FILTERS (URL-DRIVEN)
+// CLEAR FILTERS
 // ===============================
 function clearFilters(el) {
     const form = el.closest('form');
     if (!form) return;
 
     const url = form.getAttribute("hx-get") || window.location.pathname;
-
-    // 🔥 navegación limpia (clave del sistema URL-driven)
     window.location.href = url;
 }
 
 // ===============================
-// SELECT2 (CORRECT SYNC)
+// 🔥 TOGGLE LOCATIONS
+// ===============================
+function toggleLocationRow(id) {
+    const row = document.getElementById(`expand-${id}`);
+    if (!row) return;
+
+    const isOpen = row.dataset.open === "true";
+
+    if (isOpen) {
+        row.innerHTML = '<td colspan="5"></td>';
+        row.dataset.open = "false";
+        return;
+    }
+
+    row.dataset.open = "true";
+}
+
+// ===============================
+// SELECT2
 // ===============================
 function initSelect2(ctx) {
     if (!window.jQuery?.fn?.select2) return;
@@ -93,9 +109,6 @@ function initSelect2(ctx) {
     });
 }
 
-// ===============================
-// SELECT2 SYNC
-// ===============================
 function syncSelect2(ctx) {
     if (!window.jQuery?.fn?.select2) return;
 

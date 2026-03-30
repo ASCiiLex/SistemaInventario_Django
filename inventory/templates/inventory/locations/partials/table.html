@@ -5,15 +5,31 @@
             {% include "partials/sortable_th.html" with field="name" label="Nombre" target="#locations-table" %}
             {% include "partials/sortable_th.html" with field="address" label="Dirección" target="#locations-table" %}
             {% include "partials/sortable_th.html" with field="is_active" label="Activo" target="#locations-table" %}
+            <th>Incidencias</th>
             <th></th>
         </tr>
     </thead>
 
     <tbody>
         {% for location in locations %}
-        <tr>
+
+        <!-- MAIN ROW -->
+        <tr 
+            hx-get="{% url 'location_incidents' location.id %}"
+            hx-target="#expand-{{ location.id }}"
+            hx-swap="innerHTML"
+            hx-trigger="click"
+            hx-on::before-request="
+                if (document.getElementById('expand-{{ location.id }}').innerHTML.trim() !== '') {
+                    document.getElementById('expand-{{ location.id }}').innerHTML = '';
+                    event.preventDefault();
+                }
+            "
+            style="cursor:pointer"
+        >
             <td>{{ location.name }}</td>
             <td>{{ location.address|default:"-" }}</td>
+
             <td>
                 {% if location.is_active %}
                     <span class="badge bg-success">Sí</span>
@@ -21,6 +37,17 @@
                     <span class="badge bg-secondary">No</span>
                 {% endif %}
             </td>
+
+            <td>
+                {% if location.low_stock_count > 0 %}
+                    <span class="badge bg-danger">
+                        🔴 {{ location.low_stock_count }}
+                    </span>
+                {% else %}
+                    <span class="text-muted">—</span>
+                {% endif %}
+            </td>
+
             <td class="text-end">
                 <a href="{% url 'location_edit' location.id %}" class="btn btn-sm btn-primary">Editar</a>
                 <a href="{% url 'location_toggle_active' location.id %}" class="btn btn-sm btn-warning">
@@ -29,9 +56,17 @@
                 <a href="{% url 'location_delete' location.id %}" class="btn btn-sm btn-danger">Eliminar</a>
             </td>
         </tr>
+
+        <!-- EXPAND (FULL WIDTH) -->
+        <tr>
+            <td colspan="5" class="p-0">
+                <div id="expand-{{ location.id }}"></div>
+            </td>
+        </tr>
+
         {% empty %}
         <tr>
-            <td colspan="4" class="text-center">No hay almacenes.</td>
+            <td colspan="5" class="text-center">No hay almacenes.</td>
         </tr>
         {% endfor %}
     </tbody>
