@@ -2,7 +2,7 @@
 <nav>
     <ul class="pagination justify-content-center mt-3">
 
-        {% with target_id=target_id|default:"#notifications-table" %}
+        {% with target_id=target_id|default:"#table" %}
 
         {% if page_obj.has_previous %}
             <li class="page-item">
