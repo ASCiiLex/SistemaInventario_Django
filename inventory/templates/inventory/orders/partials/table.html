@@ -1,61 +1,53 @@
-<div id="orders-table"
-     hx-get="{% url 'order_list' %}"
-     hx-trigger="inventory:refresh from:body"
-     hx-target="this"
-     hx-swap="outerHTML">
-
-<table class="table table-striped">
+<div class="table-responsive">
+<table class="table table-striped align-middle">
     <thead>
         <tr>
-
-        {% include "partials/sortable_th.html" with field="id" label="ID" target="#orders-table" %}
-        {% include "partials/sortable_th.html" with field="supplier__name" label="Proveedor" target="#orders-table" %}
-        {% include "partials/sortable_th.html" with field="location__name" label="Almacén" target="#orders-table" %}
-        {% include "partials/sortable_th.html" with field="status" label="Estado" target="#orders-table" %}
-        {% include "partials/sortable_th.html" with field="created_at" label="Creado" target="#orders-table" %}
-        {% include "partials/sortable_th.html" with field="id" label="Items" target="#orders-table" %}
-        {% include "partials/sortable_th.html" with field="id" label="Coste total" target="#orders-table" %}
-
-        <th></th>
-
+            {% include "partials/sortable_th.html" with field="id" label="ID" target="#orders-table" %}
+            {% include "partials/sortable_th.html" with field="supplier__name" label="Proveedor" target="#orders-table" %}
+            {% include "partials/sortable_th.html" with field="location__name" label="Almacén" target="#orders-table" %}
+            {% include "partials/sortable_th.html" with field="status" label="Estado" target="#orders-table" %}
+            {% include "partials/sortable_th.html" with field="created_at" label="Creado" target="#orders-table" %}
+            {% include "partials/sortable_th.html" with field="id" label="Items" target="#orders-table" %}
+            {% include "partials/sortable_th.html" with field="id" label="Coste total" target="#orders-table" %}
+            <th></th>
         </tr>
     </thead>
+
     <tbody>
         {% for order in orders %}
-            <tr>
-                <td>{{ order.id }}</td>
-                <td>{{ order.supplier }}</td>
-                <td>{{ order.location }}</td>
-                <td>
-                    {% if order.status == "pending" %}
-                        <span class="badge bg-warning">Pendiente</span>
-                    {% elif order.status == "sent" %}
-                        <span class="badge bg-success">Enviado</span>
-                    {% elif order.status == "received" %}
-                        <span class="badge bg-info">Recibido</span>
-                    {% elif order.status == "cancelled" %}
-                        <span class="badge bg-danger">Cancelado</span>
-                    {% elif order.status == "partially_received" %}
-                        <span class="badge bg-primary">Parcialmente recibido</span>
-                    {% elif order.status == "backordered" %}
-                        <span class="badge bg-secondary">Backorder</span>
-                    {% endif %}
-                </td>
-                <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
-                <td>{{ order.total_items }}</td>
-                <td>{{ order.total_cost }}</td>
-                <td class="text-end">
-                    <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-primary">Ver</a>
-                </td>
-            </tr>
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.supplier }}</td>
+            <td>{{ order.location }}</td>
+            <td>
+                {% if order.status == "pending" %}
+                    <span class="badge bg-warning">Pendiente</span>
+                {% elif order.status == "sent" %}
+                    <span class="badge bg-success">Enviado</span>
+                {% elif order.status == "received" %}
+                    <span class="badge bg-info">Recibido</span>
+                {% elif order.status == "cancelled" %}
+                    <span class="badge bg-danger">Cancelado</span>
+                {% elif order.status == "partially_received" %}
+                    <span class="badge bg-primary">Parcialmente recibido</span>
+                {% elif order.status == "backordered" %}
+                    <span class="badge bg-secondary">Backorder</span>
+                {% endif %}
+            </td>
+            <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
+            <td>{{ order.total_items }}</td>
+            <td>{{ order.total_cost }}</td>
+            <td class="text-end">
+                <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-primary">Ver</a>
+            </td>
+        </tr>
         {% empty %}
-            <tr>
-                <td colspan="8" class="text-center">No hay pedidos registrados.</td>
-            </tr>
+        <tr>
+            <td colspan="8" class="text-center">No hay pedidos registrados.</td>
+        </tr>
         {% endfor %}
     </tbody>
 </table>
-
-{% include "shared/pagination.html" %}
-
 </div>
+
+{% include "shared/pagination.html" %}ks

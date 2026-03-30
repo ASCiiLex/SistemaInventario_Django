@@ -12,8 +12,8 @@
         class="row g-2 mb-3"
         hx-get="{% url 'order_list' %}"
         hx-target="#orders-table"
+        hx-swap="innerHTML"
         hx-push-url="true"
-        hx-include="this"
     >
         <div class="col-md-3">
             {{ filter_form.supplier }}
@@ -29,11 +29,7 @@
         </div>
     </form>
 
-    <div id="orders-table"
-         hx-get="{% url 'order_list' %}"
-         hx-trigger="inventory:refresh from:body"
-         hx-target="this"
-         hx-swap="outerHTML">
+    <div id="orders-table">
         {% include "inventory/orders/partials/table.html" %}
     </div>
 </div>

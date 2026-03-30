@@ -39,17 +39,14 @@ def order_list(request):
         if data.get("status"):
             qs = qs.filter(status=data["status"])
 
-    # 🔥 ORDENACIÓN
     qs = view.apply_ordering(request, qs)
-
     page_obj = view.paginate_queryset(request, qs)
 
     context = {
         "orders": page_obj,
         "page_obj": page_obj,
         "filter_form": filter_form,
-        "current_sort": request.GET.get("sort", ""),
-        "current_dir": request.GET.get("dir", "asc"),
+        **view.get_ordering_context(request),
     }
 
     if view.is_htmx(request):
