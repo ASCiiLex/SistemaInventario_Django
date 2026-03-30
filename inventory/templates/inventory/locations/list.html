@@ -7,11 +7,7 @@
         <a href="{% url 'location_create' %}" class="btn btn-success">Nuevo almacén</a>
     </div>
 
-    <div id="locations-table"
-         hx-get="{% url 'location_list' %}"
-         hx-trigger="inventory:refresh from:body"
-         hx-target="this"
-         hx-swap="outerHTML">
+    <div id="locations-table">
         {% include "inventory/locations/partials/table.html" %}
     </div>
 </div>

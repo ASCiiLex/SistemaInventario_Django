@@ -1,43 +1,35 @@
-<div id="movements-table"
-     hx-get="{% url 'stockmovement_list' %}"
-     hx-trigger="inventory:refresh from:body"
-     hx-target="this"
-     hx-swap="outerHTML">
-
-<table class="table table-striped mt-3">
+<div class="table-responsive">
+<table class="table table-striped align-middle">
     <thead>
         <tr>
-
-        {% include "partials/sortable_th.html" with field="created_at" label="Fecha" target="#movements-table" %}
-        {% include "partials/sortable_th.html" with field="product__name" label="Producto" target="#movements-table" %}
-        {% include "partials/sortable_th.html" with field="movement_type" label="Tipo" target="#movements-table" %}
-        {% include "partials/sortable_th.html" with field="origin__name" label="Origen" target="#movements-table" %}
-        {% include "partials/sortable_th.html" with field="destination__name" label="Destino" target="#movements-table" %}
-        {% include "partials/sortable_th.html" with field="quantity" label="Cantidad" target="#movements-table" %}
-
-        <th>Nota</th>
-
+            {% include "partials/sortable_th.html" with field="created_at" label="Fecha" target="#movements-table" %}
+            {% include "partials/sortable_th.html" with field="product__name" label="Producto" target="#movements-table" %}
+            {% include "partials/sortable_th.html" with field="movement_type" label="Tipo" target="#movements-table" %}
+            {% include "partials/sortable_th.html" with field="origin__name" label="Origen" target="#movements-table" %}
+            {% include "partials/sortable_th.html" with field="destination__name" label="Destino" target="#movements-table" %}
+            {% include "partials/sortable_th.html" with field="quantity" label="Cantidad" target="#movements-table" %}
+            <th>Nota</th>
         </tr>
     </thead>
+
     <tbody>
         {% for m in movements %}
-            <tr>
-                <td>{{ m.created_at|date:"d/m/Y H:i" }}</td>
-                <td>{{ m.product }}</td>
-                <td>{{ m.get_movement_type_display }}</td>
-                <td>{{ m.origin|default:"-" }}</td>
-                <td>{{ m.destination|default:"-" }}</td>
-                <td>{{ m.quantity }}</td>
-                <td>{{ m.note|default:"-" }}</td>
-            </tr>
+        <tr>
+            <td>{{ m.created_at|date:"d/m/Y H:i" }}</td>
+            <td>{{ m.product }}</td>
+            <td>{{ m.get_movement_type_display }}</td>
+            <td>{{ m.origin|default:"-" }}</td>
+            <td>{{ m.destination|default:"-" }}</td>
+            <td>{{ m.quantity }}</td>
+            <td>{{ m.note|default:"-" }}</td>
+        </tr>
         {% empty %}
-            <tr>
-                <td colspan="7" class="text-center">No hay movimientos de stock registrados.</td>
-            </tr>
+        <tr>
+            <td colspan="7" class="text-center">No hay movimientos.</td>
+        </tr>
         {% endfor %}
     </tbody>
 </table>
-
-{% include "shared/pagination.html" %}
-
 </div>
+
+{% include "shared/pagination.html" with target_id="#movements-table" %}

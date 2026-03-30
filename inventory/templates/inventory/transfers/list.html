@@ -12,8 +12,9 @@
         class="row g-2 mb-3"
         hx-get="{% url 'transfer_list' %}"
         hx-target="#transfers-table"
+        hx-swap="innerHTML"
         hx-push-url="true"
-        hx-include="this"
+        hx-trigger="change delay:300ms"
     >
         <div class="col-md-3">
             {{ filter_form.product }}
@@ -27,16 +28,17 @@
         <div class="col-md-2">
             {{ filter_form.status }}
         </div>
-        <div class="col-md-1 d-flex align-items-end">
-            <button type="submit" class="btn btn-outline-primary w-100">Filtrar</button>
+
+        <div class="col-md-1 d-grid">
+            <button type="button"
+                    class="btn btn-outline-secondary"
+                    onclick="clearFilters(this)">
+                Limpiar
+            </button>
         </div>
     </form>
 
-    <div id="transfers-table"
-         hx-get="{% url 'transfer_list' %}"
-         hx-trigger="inventory:movement from:body"
-         hx-target="this"
-         hx-swap="outerHTML">
+    <div id="transfers-table">
         {% include "inventory/transfers/partials/table.html" %}
     </div>
 </div>

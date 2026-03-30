@@ -6,7 +6,7 @@
         <h1>Movimientos de stock</h1>
         <div>
             <a href="{% url 'stockmovement_create' %}" class="btn btn-primary me-2">Nuevo movimiento</a>
-            <a href="{% url 'transfer_create' %}" class="btn btn-secondary">Transferencia entre almacenes</a>
+            <a href="{% url 'transfer_create' %}" class="btn btn-secondary">Transferencia</a>
         </div>
     </div>
 
@@ -15,35 +15,33 @@
         class="row g-2 mb-3"
         hx-get="{% url 'stockmovement_list' %}"
         hx-target="#movements-table"
+        hx-swap="innerHTML"
         hx-push-url="true"
-        hx-include="this"
+        hx-trigger="change delay:300ms"
     >
         <div class="col-md-3">
-            {{ filter_form.product.label_tag }}
             {{ filter_form.product }}
         </div>
         <div class="col-md-2">
-            {{ filter_form.movement_type.label_tag }}
             {{ filter_form.movement_type }}
         </div>
         <div class="col-md-3">
-            {{ filter_form.origin.label_tag }}
             {{ filter_form.origin }}
         </div>
         <div class="col-md-3">
-            {{ filter_form.destination.label_tag }}
             {{ filter_form.destination }}
         </div>
-        <div class="col-md-1 d-flex align-items-end">
-            <button type="submit" class="btn btn-outline-primary w-100">Filtrar</button>
+
+        <div class="col-md-1 d-grid">
+            <button type="button"
+                    class="btn btn-outline-secondary"
+                    onclick="clearFilters(this)">
+                Limpiar
+            </button>
         </div>
     </form>
 
-    <div id="movements-table"
-         hx-get="{% url 'stockmovement_list' %}"
-         hx-trigger="inventory:movement from:body"
-         hx-target="this"
-         hx-swap="outerHTML">
+    <div id="movements-table">
         {% include "inventory/stock/partials/table.html" %}
     </div>
 </div>
