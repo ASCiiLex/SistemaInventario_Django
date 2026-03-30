@@ -1,6 +1,6 @@
 <script>
 // ===============================
-// 🔥 EVENT BUS GLOBAL (CORE)
+// EVENT BUS GLOBAL (CORE)
 // ===============================
 window.EventBus = {
     emit(name, detail = {}) {
@@ -16,7 +16,7 @@ function emitEvent(name, detail = {}) {
 }
 
 // ===============================
-// 🔥 CSRF GLOBAL (HTMX FIX)
+// CSRF GLOBAL (HTMX FIX)
 // ===============================
 document.body.addEventListener('htmx:configRequest', function (event) {
     const token = document.querySelector('[name=csrfmiddlewaretoken]');
@@ -34,7 +34,7 @@ document.body.addEventListener('htmx:configRequest', function (event) {
 })();
 
 // ===============================
-// 🔥 FILTER STATE (INPUT ONLY)
+// FILTER STATE
 // ===============================
 function getFormKey(form) {
     return "filters:" + (form.getAttribute("hx-get") || window.location.pathname);
@@ -70,29 +70,29 @@ function restoreFilters(form) {
 }
 
 // ===============================
-// 🔥 RESET FILTERS (NEW)
+// CLEAR FILTERS
 // ===============================
-function resetFilters(form) {
-    // inputs
-    form.querySelectorAll("input").forEach(input => {
-        input.value = "";
-    });
+function clearFilters(el) {
+    const form = el.closest('form');
+    if (!form) return;
 
-    // selects normales
-    form.querySelectorAll("select:not(.select2)").forEach(select => {
-        select.value = "";
-    });
+    // reset inputs nativo
+    form.reset();
 
-    // select2
-    if (window.jQuery) {
-        window.jQuery(form).find('select.select2').val(null).trigger('change');
+    // limpiar select2 correctamente
+    if (window.jQuery?.fn?.select2) {
+        const $ = window.jQuery;
+
+        $(form).find('select.select2').each(function () {
+            $(this).val(null).trigger('change');
+        });
     }
 
-    // limpiar storage
+    // limpiar localStorage
     localStorage.removeItem(getFormKey(form));
 
-    // trigger HTMX
-    form.dispatchEvent(new Event("change", { bubbles: true }));
+    // trigger HTMX limpio
+    form.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 // ===============================
@@ -135,6 +135,7 @@ function initSelect2(ctx) {
 
         $(this).select2(config);
 
+        // 🔥 trigger HTMX
         $(this).on('select2:select select2:unselect', function () {
             if (!form) return;
             form.dispatchEvent(new Event('change', { bubbles: true }));
@@ -143,7 +144,7 @@ function initSelect2(ctx) {
 }
 
 // ===============================
-// 🔥 SELECT2 SYNC AFTER RENDER
+// SELECT2 SYNC
 // ===============================
 function syncSelect2(ctx) {
     if (!window.jQuery?.fn?.select2) return;
@@ -212,7 +213,7 @@ document.body.addEventListener('htmx:afterSwap', (e) => {
 });
 
 // ===============================
-// 🔥 WEBSOCKET → EVENT BUS
+// WEBSOCKET → EVENT BUS
 // ===============================
 function connectWS() {
     const protocol = location.protocol === "https:" ? "wss://" : "ws://";

@@ -11,6 +11,8 @@
     </div>
 </div>
 
+{% include "partials/filters_active.html" %}
+
 <form method="GET"
       class="mb-3 row g-2"
       hx-get="{% url 'product_list' %}"
@@ -19,7 +21,6 @@
       hx-push-url="true"
       hx-trigger="change delay:300ms, keyup changed delay:500ms from:input[name='q']">
 
-    <!-- 🔍 SEARCH -->
     <div class="col-md-3">
         <input type="text"
                name="q"
@@ -28,7 +29,6 @@
                placeholder="Buscar producto...">
     </div>
 
-    <!-- 🧩 CATEGORY -->
     <div class="col-md-3">
         <select name="category"
                 class="form-control select2"
@@ -42,7 +42,6 @@
         </select>
     </div>
 
-    <!-- 🧩 SUPPLIER -->
     <div class="col-md-3">
         <select name="supplier"
                 class="form-control select2"
@@ -56,7 +55,6 @@
         </select>
     </div>
 
-    <!-- 📉 STOCK -->
     <div class="col-md-2">
         <select name="stock" class="form-control">
             <option value="">Stock: todos</option>
@@ -66,7 +64,6 @@
         </select>
     </div>
 
-    <!-- 🧹 RESET -->
     <div class="col-md-1 d-grid">
         <button type="button"
                 class="btn btn-outline-secondary"

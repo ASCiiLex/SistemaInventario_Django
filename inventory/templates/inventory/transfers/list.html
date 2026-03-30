@@ -7,6 +7,8 @@
         <a href="{% url 'transfer_create' %}" class="btn btn-success">Nueva transferencia</a>
     </div>
 
+    {% include "partials/filters_active.html" %}
+
     <form
         method="get"
         class="row g-2 mb-3"

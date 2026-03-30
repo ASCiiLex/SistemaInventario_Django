@@ -1,0 +1,13 @@
+{% if request.GET %}
+<div class="mb-2 d-flex flex-wrap gap-2">
+
+    {% for key, value in request.GET.items %}
+        {% if value and key != "page" %}
+            <span class="badge bg-light text-dark border">
+                {{ key|capfirst }}: {{ value }}
+            </span>
+        {% endif %}
+    {% endfor %}
+
+</div>
+{% endif %}

@@ -8,7 +8,8 @@
         <a href="{% url 'order_create' %}" class="btn btn-success">Nuevo pedido</a>
     </div>
 
-    <!-- 🔥 FILTERS -->
+    {% include "partials/filters_active.html" %}
+
     <form
         method="get"
         class="row g-2 mb-3"
@@ -30,17 +31,15 @@
             {{ filter_form.status }}
         </div>
 
-        <!-- 🧹 RESET -->
         <div class="col-md-3 d-grid">
             <button type="button"
                     class="btn btn-outline-secondary"
-                    onclick="resetFilters(this.form)">
+                    onclick="clearFilters(this)">
                 Limpiar
             </button>
         </div>
     </form>
 
-    <!-- 🔥 TABLE CONTAINER (STANDARD) -->
     <div id="orders-table"
          hx-get="{% url 'order_list' %}"
          hx-trigger="load, inventory:orders_updated from:body"
