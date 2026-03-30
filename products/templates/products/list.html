@@ -7,8 +7,8 @@
       class="mb-3 row g-2"
       hx-get="{% url 'product_list' %}"
       hx-target="#products-table"
-      hx-push-url="true"
-      hx-include="this">
+      hx-swap="innerHTML"
+      hx-push-url="true">
 
     <div class="col-md-3">
         <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Buscar producto...">
@@ -51,11 +51,7 @@
 <a href="{% url 'product_create' %}" class="btn btn-success mb-3">Nuevo Producto</a>
 <a href="{% url 'export_products_csv' %}" class="btn btn-outline-secondary mb-3">Exportar CSV</a>
 
-<div id="products-table"
-     hx-get="{% url 'product_list' %}"
-     hx-trigger="inventory:refresh from:body"
-     hx-target="this"
-     hx-swap="outerHTML">
+<div id="products-table">
     {% include 'products/partials/products_table.html' %}
 </div>
 {% endblock %}

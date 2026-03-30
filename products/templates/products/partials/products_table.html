@@ -1,23 +1,14 @@
-<div id="products-table"
-     hx-get="{% url 'product_list' %}"
-     hx-trigger="inventory:refresh from:body"
-     hx-target="this"
-     hx-swap="outerHTML">
-
 <div class="table-responsive">
-<table class="table table-striped">
+<table class="table table-striped align-middle">
     <thead>
         <tr>
-
-        {% include "partials/sortable_th.html" with field="name" label="Nombre" target="#products-table" %}
-        {% include "partials/sortable_th.html" with field="sku" label="SKU" target="#products-table" %}
-        {% include "partials/sortable_th.html" with field="category__name" label="Categoría" target="#products-table" %}
-        {% include "partials/sortable_th.html" with field="supplier__name" label="Proveedor" target="#products-table" %}
-        {% include "partials/sortable_th.html" with field="stock" label="Stock" target="#products-table" %}
-        {% include "partials/sortable_th.html" with field="min_stock" label="Mínimo" target="#products-table" %}
-
-        <th></th>
-
+            {% include "partials/sortable_th.html" with field="name" label="Nombre" target="#products-table" %}
+            {% include "partials/sortable_th.html" with field="sku" label="SKU" target="#products-table" %}
+            {% include "partials/sortable_th.html" with field="category__name" label="Categoría" target="#products-table" %}
+            {% include "partials/sortable_th.html" with field="supplier__name" label="Proveedor" target="#products-table" %}
+            {% include "partials/sortable_th.html" with field="total_stock_db" label="Stock" target="#products-table" %}
+            {% include "partials/sortable_th.html" with field="total_min_stock_db" label="Mínimo" target="#products-table" %}
+            <th></th>
         </tr>
     </thead>
 
@@ -29,25 +20,23 @@
             <td>{{ p.category }}</td>
             <td>{{ p.supplier }}</td>
             <td>
-                {% if p.is_below_minimum %}
-                    <span class="text-danger fw-bold">{{ p.total_stock }}</span>
+                {% if p.total_stock_db <= p.total_min_stock_db %}
+                    <span class="text-danger fw-bold">{{ p.total_stock_db }}</span>
                 {% else %}
-                    {{ p.total_stock }}
+                    {{ p.total_stock_db }}
                 {% endif %}
             </td>
-            <td>{{ p.total_min_stock }}</td>
+            <td>{{ p.total_min_stock_db }}</td>
             <td>
                 <a href="{% url 'product_edit' p.id %}" class="btn btn-sm btn-primary">Editar</a>
                 <a href="{% url 'product_delete' p.id %}" class="btn btn-sm btn-danger">Eliminar</a>
             </td>
         </tr>
         {% empty %}
-        <tr><td colspan="7">No hay productos.</td></tr>
+        <tr><td colspan="7" class="text-center">No hay productos.</td></tr>
         {% endfor %}
     </tbody>
 </table>
 </div>
 
 {% include "shared/pagination.html" %}
-
-</div>

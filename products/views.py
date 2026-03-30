@@ -20,8 +20,8 @@ def product_list(request):
         "sku",
         "category__name",
         "supplier__name",
-        "stock",
-        "min_stock",
+        "total_stock_db",
+        "total_min_stock_db",
     ]
     view.default_ordering = "name"
 
@@ -49,7 +49,8 @@ def product_list(request):
             total_stock_db__lte=F("total_min_stock_db")
         )
 
-    sort = request.GET.get("sort", "")
+    # 🔥 ORDENACIÓN UNIFICADA
+    sort = request.GET.get("sort")
     direction = request.GET.get("dir", "asc")
 
     if sort == "sku":
@@ -64,11 +65,8 @@ def product_list(request):
         )
         order_field = "name_number"
 
-    elif sort == "stock":
-        order_field = "total_stock_db"
-
-    elif sort == "min_stock":
-        order_field = "total_min_stock_db"
+    elif sort in ["total_stock_db", "total_min_stock_db"]:
+        order_field = sort
 
     else:
         products = view.apply_ordering(request, products)
@@ -93,8 +91,7 @@ def product_list(request):
         "stock_filter": stock_filter,
         "categories": categories,
         "suppliers": suppliers,
-        "current_sort": request.GET.get("sort", ""),
-        "current_dir": request.GET.get("dir", "asc"),
+        **view.get_ordering_context(request),
     }
 
     if view.is_htmx(request):
