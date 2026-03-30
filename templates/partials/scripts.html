@@ -37,7 +37,7 @@ document.body.addEventListener('htmx:configRequest', function (event) {
 })();
 
 // ===============================
-// SELECT2
+// SELECT2 (AJAX READY)
 // ===============================
 function initSelect2(ctx) {
     if (!window.jQuery?.fn?.select2) return;
@@ -121,7 +121,6 @@ function connectWS() {
     socket.onmessage = (e) => {
         const data = JSON.parse(e.data);
 
-        // 🔥 EVENTOS NORMALIZADOS
         if (data.type === "notification") {
             EventBus.emit("inventory:notifications_updated", data);
         }
@@ -134,7 +133,6 @@ function connectWS() {
             EventBus.emit("inventory:orders_updated", data);
         }
 
-        // fallback genérico
         EventBus.emit(`inventory:${data.type}`, data);
 
         if (data.message) showToast(data.message);
@@ -159,7 +157,6 @@ document.body.addEventListener("htmx:afterRequest", (e) => {
         Object.keys(events).forEach(name => {
             EventBus.emit(name, events[name]);
 
-            // 🔥 NORMALIZACIÓN
             if (name.includes("notifications")) {
                 EventBus.emit("inventory:notifications_updated");
             }

@@ -8,7 +8,8 @@
       hx-get="{% url 'product_list' %}"
       hx-target="#products-table"
       hx-swap="innerHTML"
-      hx-push-url="true">
+      hx-push-url="true"
+      hx-trigger="change delay:300ms, keyup changed delay:500ms from:input[name='q']">
 
     <!-- 🔍 SEARCH -->
     <div class="col-md-3">
@@ -55,11 +56,6 @@
                 Solo bajo mínimo
             </option>
         </select>
-    </div>
-
-    <!-- 🔘 SUBMIT -->
-    <div class="col-md-1 d-grid">
-        <button class="btn btn-primary">Filtrar</button>
     </div>
 
 </form>
