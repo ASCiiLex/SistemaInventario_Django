@@ -49,19 +49,22 @@ class StockTransferFilterForm(forms.Form):
     product = forms.ModelChoiceField(
         queryset=Product.objects.all(),
         required=False,
-        widget=forms.Select(attrs={"class": "form-select select2"}),
+        widget=forms.Select(attrs={"class": "form-select select2",
+            "data-placeholder": "Producto"}),
         label="Producto",
     )
     origin = forms.ModelChoiceField(
         queryset=Location.objects.all(),
         required=False,
-        widget=forms.Select(attrs={"class": "form-select select2"}),
+        widget=forms.Select(attrs={"class": "form-select select2",
+            "data-placeholder": "Origen"}),
         label="Origen",
     )
     destination = forms.ModelChoiceField(
         queryset=Location.objects.all(),
         required=False,
-        widget=forms.Select(attrs={"class": "form-select select2"}),
+        widget=forms.Select(attrs={"class": "form-select select2",
+            "data-placeholder": "Destino"}),
         label="Destino",
     )
     status = forms.ChoiceField(

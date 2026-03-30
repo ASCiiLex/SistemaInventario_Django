@@ -51,13 +51,15 @@ class OrderFilterForm(forms.Form):
     supplier = forms.ModelChoiceField(
         queryset=Supplier.objects.all(),
         required=False,
-        widget=forms.Select(attrs={"class": "form-select select2"}),
+        widget=forms.Select(attrs={"class": "form-select select2",
+            "data-placeholder": "Proveedor"}),
         label="Proveedor",
     )
     location = forms.ModelChoiceField(
         queryset=Location.objects.all(),
         required=False,
-        widget=forms.Select(attrs={"class": "form-select select2"}),
+        widget=forms.Select(attrs={"class": "form-select select2",
+            "data-placeholder": "Almacén"}),
         label="Almacén",
     )
     status = forms.ChoiceField(
