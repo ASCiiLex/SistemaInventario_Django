@@ -20,7 +20,7 @@
                placeholder="Buscar producto...">
     </div>
 
-    <!-- 🧩 CATEGORY (AJAX SELECT2) -->
+    <!-- 🧩 CATEGORY -->
     <div class="col-md-3">
         <select name="category"
                 class="form-control select2"
@@ -34,7 +34,7 @@
         </select>
     </div>
 
-    <!-- 🧩 SUPPLIER (AJAX SELECT2) -->
+    <!-- 🧩 SUPPLIER -->
     <div class="col-md-3">
         <select name="supplier"
                 class="form-control select2"
@@ -48,7 +48,7 @@
         </select>
     </div>
 
-    <!-- 📉 STOCK FILTER -->
+    <!-- 📉 STOCK -->
     <div class="col-md-2">
         <select name="stock" class="form-control">
             <option value="">Stock: todos</option>
@@ -56,6 +56,15 @@
                 Solo bajo mínimo
             </option>
         </select>
+    </div>
+
+    <!-- 🧹 RESET -->
+    <div class="col-md-1 d-grid">
+        <button type="button"
+                class="btn btn-outline-secondary"
+                onclick="resetFilters(this.form)">
+            Limpiar
+        </button>
     </div>
 
 </form>

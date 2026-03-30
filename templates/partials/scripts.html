@@ -11,9 +11,6 @@ window.EventBus = {
     }
 };
 
-// ===============================
-// BACKWARD COMPAT
-// ===============================
 function emitEvent(name, detail = {}) {
     window.EventBus.emit(name, detail);
 }
@@ -37,7 +34,69 @@ document.body.addEventListener('htmx:configRequest', function (event) {
 })();
 
 // ===============================
-// SELECT2 (AJAX READY)
+// 🔥 FILTER STATE (INPUT ONLY)
+// ===============================
+function getFormKey(form) {
+    return "filters:" + (form.getAttribute("hx-get") || window.location.pathname);
+}
+
+function saveFilters(form) {
+    const data = {};
+    new FormData(form).forEach((value, key) => {
+        if (value !== "" && value !== null) data[key] = value;
+    });
+    localStorage.setItem(getFormKey(form), JSON.stringify(data));
+}
+
+function restoreFilters(form) {
+    const raw = localStorage.getItem(getFormKey(form));
+    if (!raw) return;
+
+    try {
+        const data = JSON.parse(raw);
+
+        Object.entries(data).forEach(([key, value]) => {
+            const field = form.querySelector(`[name="${key}"]`);
+            if (!field) return;
+
+            if (field.tagName === "INPUT") {
+                field.value = value;
+            }
+        });
+
+    } catch (e) {
+        console.warn("Filter restore error", e);
+    }
+}
+
+// ===============================
+// 🔥 RESET FILTERS (NEW)
+// ===============================
+function resetFilters(form) {
+    // inputs
+    form.querySelectorAll("input").forEach(input => {
+        input.value = "";
+    });
+
+    // selects normales
+    form.querySelectorAll("select:not(.select2)").forEach(select => {
+        select.value = "";
+    });
+
+    // select2
+    if (window.jQuery) {
+        window.jQuery(form).find('select.select2').val(null).trigger('change');
+    }
+
+    // limpiar storage
+    localStorage.removeItem(getFormKey(form));
+
+    // trigger HTMX
+    form.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+// ===============================
+// SELECT2 (CORRECT SYNC)
 // ===============================
 function initSelect2(ctx) {
     if (!window.jQuery?.fn?.select2) return;
@@ -48,6 +107,7 @@ function initSelect2(ctx) {
         if ($(this).data('select2')) return;
 
         const url = $(this).data('ajax--url');
+        const form = this.closest('form');
 
         const baseConfig = {
             width: '100%',
@@ -56,38 +116,79 @@ function initSelect2(ctx) {
             placeholder: $(this).data('placeholder') || 'Seleccionar...'
         };
 
-        if (url) {
-            $(this).select2({
-                ...baseConfig,
-                minimumInputLength: 1,
-                ajax: {
-                    url: url,
-                    dataType: 'json',
-                    delay: 300,
-                    cache: true,
-                    data: params => ({
-                        q: params.term || ''
-                    }),
-                    processResults: data => ({
-                        results: data.results
-                    })
-                }
-            });
-        } else {
-            $(this).select2(baseConfig);
+        const config = url ? {
+            ...baseConfig,
+            minimumInputLength: 1,
+            ajax: {
+                url: url,
+                dataType: 'json',
+                delay: 300,
+                cache: true,
+                data: params => ({
+                    q: params.term || ''
+                }),
+                processResults: data => ({
+                    results: data.results
+                })
+            }
+        } : baseConfig;
+
+        $(this).select2(config);
+
+        $(this).on('select2:select select2:unselect', function () {
+            if (!form) return;
+            form.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+}
+
+// ===============================
+// 🔥 SELECT2 SYNC AFTER RENDER
+// ===============================
+function syncSelect2(ctx) {
+    if (!window.jQuery?.fn?.select2) return;
+
+    const $ = window.jQuery;
+
+    $(ctx).find('select.select2').each(function () {
+        const value = $(this).val();
+        if (value) {
+            $(this).trigger('change.select2');
         }
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => initSelect2(document));
-document.body.addEventListener('htmx:afterSwap', e => initSelect2(e.target));
+// ===============================
+// INIT
+// ===============================
+function initForms(ctx) {
+    const forms = ctx.querySelectorAll('form[hx-get]');
+
+    forms.forEach(form => {
+        restoreFilters(form);
+
+        form.addEventListener("change", () => saveFilters(form));
+        form.addEventListener("keyup", () => saveFilters(form));
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initForms(document);
+    initSelect2(document);
+    syncSelect2(document);
+});
+
+document.body.addEventListener('htmx:afterSwap', e => {
+    initForms(e.target);
+    initSelect2(e.target);
+    syncSelect2(e.target);
+});
 
 // ===============================
 // TOASTS
 // ===============================
 function showToast(message) {
     const container = document.getElementById('toast-container');
-
     if (!container) return;
 
     const el = document.createElement('div');
@@ -98,7 +199,6 @@ function showToast(message) {
     </div>`;
 
     container.appendChild(el);
-
     setTimeout(() => el.remove(), 3000);
 }
 
@@ -144,7 +244,7 @@ function connectWS() {
 connectWS();
 
 // ===============================
-// 🔥 HTMX → EVENT BUS
+// HTMX → EVENT BUS
 // ===============================
 document.body.addEventListener("htmx:afterRequest", (e) => {
     const trigger = e.detail.xhr.getResponseHeader("HX-Trigger");
@@ -186,40 +286,4 @@ document.body.addEventListener("htmx:afterSwap", () => {
     bar.style.width = "100%";
     setTimeout(() => bar.style.width = "0%", 300);
 });
-</script>
-
-<script>
-// ===============================
-// ALPINE: NOTIFICATION SETTINGS
-// ===============================
-function notifSettings() {
-    return {
-        sound: true,
-        push: true,
-
-        loadSettings() {
-            const saved = JSON.parse(localStorage.getItem("notifSettings") || "{}");
-
-            this.sound = saved.sound ?? true;
-            this.push = saved.push ?? true;
-        },
-
-        save() {
-            localStorage.setItem("notifSettings", JSON.stringify({
-                sound: this.sound,
-                push: this.push
-            }));
-        },
-
-        toggleSound() {
-            this.sound = !this.sound;
-            this.save();
-        },
-
-        togglePush() {
-            this.push = !this.push;
-            this.save();
-        }
-    };
-}
 </script>
