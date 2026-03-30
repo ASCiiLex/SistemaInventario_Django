@@ -34,65 +34,16 @@ document.body.addEventListener('htmx:configRequest', function (event) {
 })();
 
 // ===============================
-// FILTER STATE
-// ===============================
-function getFormKey(form) {
-    return "filters:" + (form.getAttribute("hx-get") || window.location.pathname);
-}
-
-function saveFilters(form) {
-    const data = {};
-    new FormData(form).forEach((value, key) => {
-        if (value !== "" && value !== null) data[key] = value;
-    });
-    localStorage.setItem(getFormKey(form), JSON.stringify(data));
-}
-
-function restoreFilters(form) {
-    const raw = localStorage.getItem(getFormKey(form));
-    if (!raw) return;
-
-    try {
-        const data = JSON.parse(raw);
-
-        Object.entries(data).forEach(([key, value]) => {
-            const field = form.querySelector(`[name="${key}"]`);
-            if (!field) return;
-
-            if (field.tagName === "INPUT") {
-                field.value = value;
-            }
-        });
-
-    } catch (e) {
-        console.warn("Filter restore error", e);
-    }
-}
-
-// ===============================
-// CLEAR FILTERS
+// 🔥 CLEAR FILTERS (URL-DRIVEN)
 // ===============================
 function clearFilters(el) {
     const form = el.closest('form');
     if (!form) return;
 
-    // reset inputs nativo
-    form.reset();
+    const url = form.getAttribute("hx-get") || window.location.pathname;
 
-    // limpiar select2 correctamente
-    if (window.jQuery?.fn?.select2) {
-        const $ = window.jQuery;
-
-        $(form).find('select.select2').each(function () {
-            $(this).val(null).trigger('change');
-        });
-    }
-
-    // limpiar localStorage
-    localStorage.removeItem(getFormKey(form));
-
-    // trigger HTMX limpio
-    form.dispatchEvent(new Event('change', { bubbles: true }));
+    // 🔥 navegación limpia (clave del sistema URL-driven)
+    window.location.href = url;
 }
 
 // ===============================
@@ -135,7 +86,6 @@ function initSelect2(ctx) {
 
         $(this).select2(config);
 
-        // 🔥 trigger HTMX
         $(this).on('select2:select select2:unselect', function () {
             if (!form) return;
             form.dispatchEvent(new Event('change', { bubbles: true }));
@@ -162,25 +112,12 @@ function syncSelect2(ctx) {
 // ===============================
 // INIT
 // ===============================
-function initForms(ctx) {
-    const forms = ctx.querySelectorAll('form[hx-get]');
-
-    forms.forEach(form => {
-        restoreFilters(form);
-
-        form.addEventListener("change", () => saveFilters(form));
-        form.addEventListener("keyup", () => saveFilters(form));
-    });
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-    initForms(document);
     initSelect2(document);
     syncSelect2(document);
 });
 
 document.body.addEventListener('htmx:afterSwap', e => {
-    initForms(e.target);
     initSelect2(e.target);
     syncSelect2(e.target);
 });
