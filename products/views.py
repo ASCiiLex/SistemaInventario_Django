@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.db.models import F, IntegerField, Sum
 from django.db.models.functions import Cast, Substr
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 import csv
 
@@ -25,16 +25,19 @@ def product_list(request):
     ]
     view.default_ordering = "name"
 
+    # 🔎 PARAMS
     search = request.GET.get("q", "")
     category_id = request.GET.get("category", "")
     supplier_id = request.GET.get("supplier", "")
     stock_filter = request.GET.get("stock", "")
 
+    # 🧱 BASE QUERY
     products = Product.objects.select_related("category", "supplier").annotate(
         total_stock_db=Sum("stock_items__quantity"),
         total_min_stock_db=Sum("stock_items__min_stock"),
     )
 
+    # 🔍 FILTROS
     if search:
         products = products.filter(name__icontains=search)
 
@@ -49,7 +52,7 @@ def product_list(request):
             total_stock_db__lte=F("total_min_stock_db")
         )
 
-    # 🔥 ORDENACIÓN UNIFICADA
+    # 🔥 ORDENACIÓN
     sort = request.GET.get("sort")
     direction = request.GET.get("dir", "asc")
 
@@ -77,11 +80,24 @@ def product_list(request):
             order_field = f"-{order_field}"
         products = products.order_by(order_field)
 
+    # 📄 PAGINACIÓN
     page_obj = view.paginate_queryset(request, products)
 
-    categories = Category.objects.all()
-    suppliers = Supplier.objects.all()
+    # 🔥 SELECT2 LABELS (CRÍTICO)
+    category_name = None
+    supplier_name = None
 
+    if category_id:
+        category = Category.objects.filter(id=category_id).first()
+        if category:
+            category_name = category.name
+
+    if supplier_id:
+        supplier = Supplier.objects.filter(id=supplier_id).first()
+        if supplier:
+            supplier_name = supplier.name
+
+    # 📦 CONTEXTO
     context = {
         "products": page_obj,
         "page_obj": page_obj,
@@ -89,11 +105,12 @@ def product_list(request):
         "category_id": category_id,
         "supplier_id": supplier_id,
         "stock_filter": stock_filter,
-        "categories": categories,
-        "suppliers": suppliers,
+        "category_name": category_name,
+        "supplier_name": supplier_name,
         **view.get_ordering_context(request),
     }
 
+    # ⚡ HTMX
     if view.is_htmx(request):
         return render(request, "products/partials/products_table.html", context)
 
@@ -202,3 +219,35 @@ def stockitem_counter(request):
     )
 
     return HttpResponse(html)
+
+
+def ajax_categories(request):
+    q = request.GET.get("q", "")
+
+    qs = Category.objects.all()
+
+    if q:
+        qs = qs.filter(name__icontains=q)
+
+    data = [
+        {"id": c.id, "text": c.name}
+        for c in qs.order_by("name")[:20]
+    ]
+
+    return JsonResponse({"results": data})
+
+
+def ajax_suppliers(request):
+    q = request.GET.get("q", "")
+
+    qs = Supplier.objects.all()
+
+    if q:
+        qs = qs.filter(name__icontains=q)
+
+    data = [
+        {"id": s.id, "text": s.name}
+        for s in qs.order_by("name")[:20]
+    ]
+
+    return JsonResponse({"results": data})

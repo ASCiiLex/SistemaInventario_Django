@@ -7,7 +7,9 @@ from .views import (
     product_delete,
     export_products_csv,
     lowstock_counter,
-    stockitem_counter
+    stockitem_counter,
+    ajax_categories,
+    ajax_suppliers
 )
 
 urlpatterns = [
@@ -19,4 +21,6 @@ urlpatterns = [
     path("exportar/", export_products_csv, name="export_products_csv"),
     path("low-stock-counter/", lowstock_counter, name="lowstock_counter"),
     path("stockitem-counter/", stockitem_counter, name="stockitem_counter"),
+    path("ajax/categories/", ajax_categories, name="ajax_categories"),
+    path("ajax/suppliers/", ajax_suppliers, name="ajax_suppliers"),
 ]

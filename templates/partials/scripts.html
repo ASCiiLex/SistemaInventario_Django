@@ -45,8 +45,36 @@ function initSelect2(ctx) {
     const $ = window.jQuery;
 
     $(ctx).find('select.select2').each(function () {
-        if (!$(this).data('select2')) {
-            $(this).select2({ width: '100%', theme: 'bootstrap-5' });
+        if ($(this).data('select2')) return;
+
+        const url = $(this).data('ajax--url');
+
+        const baseConfig = {
+            width: '100%',
+            theme: 'bootstrap-5',
+            allowClear: true,
+            placeholder: $(this).data('placeholder') || 'Seleccionar...'
+        };
+
+        if (url) {
+            $(this).select2({
+                ...baseConfig,
+                minimumInputLength: 1,
+                ajax: {
+                    url: url,
+                    dataType: 'json',
+                    delay: 300,
+                    cache: true,
+                    data: params => ({
+                        q: params.term || ''
+                    }),
+                    processResults: data => ({
+                        results: data.results
+                    })
+                }
+            });
+        } else {
+            $(this).select2(baseConfig);
         }
     });
 }

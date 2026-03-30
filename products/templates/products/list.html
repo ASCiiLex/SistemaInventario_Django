@@ -10,48 +10,67 @@
       hx-swap="innerHTML"
       hx-push-url="true">
 
+    <!-- 🔍 SEARCH -->
     <div class="col-md-3">
-        <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Buscar producto...">
+        <input type="text"
+               name="q"
+               value="{{ search }}"
+               class="form-control"
+               placeholder="Buscar producto...">
     </div>
 
+    <!-- 🧩 CATEGORY (AJAX SELECT2) -->
     <div class="col-md-3">
-        <select name="category" class="form-control select2">
-            <option value="">Todas las categorías</option>
-            {% for c in categories %}
-                <option value="{{ c.id }}" {% if category_id|default:'' == c.id|stringformat:'s' %}selected{% endif %}>
-                    {{ c.name }}
+        <select name="category"
+                class="form-control select2"
+                data-ajax--url="{% url 'ajax_categories' %}"
+                data-placeholder="Categoría">
+            {% if category_id %}
+                <option value="{{ category_id }}" selected>
+                    {{ category_name }}
                 </option>
-            {% endfor %}
+            {% endif %}
         </select>
     </div>
 
+    <!-- 🧩 SUPPLIER (AJAX SELECT2) -->
     <div class="col-md-3">
-        <select name="supplier" class="form-control select2">
-            <option value="">Todos los proveedores</option>
-            {% for s in suppliers %}
-                <option value="{{ s.id }}" {% if supplier_id|default:'' == s.id|stringformat:'s' %}selected{% endif %}>
-                    {{ s.name }}
+        <select name="supplier"
+                class="form-control select2"
+                data-ajax--url="{% url 'ajax_suppliers' %}"
+                data-placeholder="Proveedor">
+            {% if supplier_id %}
+                <option value="{{ supplier_id }}" selected>
+                    {{ supplier_name }}
                 </option>
-            {% endfor %}
+            {% endif %}
         </select>
     </div>
 
+    <!-- 📉 STOCK FILTER -->
     <div class="col-md-2">
         <select name="stock" class="form-control">
             <option value="">Stock: todos</option>
-            <option value="low" {% if stock_filter == "low" %}selected{% endif %}>Solo bajo mínimo</option>
+            <option value="low" {% if stock_filter == "low" %}selected{% endif %}>
+                Solo bajo mínimo
+            </option>
         </select>
     </div>
 
+    <!-- 🔘 SUBMIT -->
     <div class="col-md-1 d-grid">
         <button class="btn btn-primary">Filtrar</button>
     </div>
+
 </form>
 
+<!-- ACTIONS -->
 <a href="{% url 'product_create' %}" class="btn btn-success mb-3">Nuevo Producto</a>
 <a href="{% url 'export_products_csv' %}" class="btn btn-outline-secondary mb-3">Exportar CSV</a>
 
+<!-- TABLE -->
 <div id="products-table">
     {% include 'products/partials/products_table.html' %}
 </div>
+
 {% endblock %}
