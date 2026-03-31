@@ -4,16 +4,26 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect
 
+from django.contrib.auth.views import LoginView, LogoutView
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    path('', include('dashboard.urls')),
+    # 🔐 AUTH
+    path('login/', LoginView.as_view(template_name='auth/login.html'), name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+
+    # 👉 ROOT protegido → redirige según auth
+    path('', lambda request: redirect('product_list') if request.user.is_authenticated else redirect('login')),
+
+    path('dashboard/', include('dashboard.urls')),
 
     path('inventory/', include('inventory.urls')),
     path('categorias/', include('categories.urls')),
     path('proveedores/', include('suppliers.urls')),
     path('productos/', include('products.urls')),
+
     path("movimientos/", lambda r: redirect("/stock-movements/")),
     path("stock-movements/", lambda r: redirect("/inventory/stock-movements/")),
 
