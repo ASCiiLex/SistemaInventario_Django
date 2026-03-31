@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from ..models.audit import AuditLog
 from ..utils.listing import ListViewMixin
 from ..forms.audit import AuditFilterForm
+from inventory.services.audit import format_changes
 
 
 @login_required
@@ -43,8 +44,14 @@ def audit_list(request):
     qs = view.apply_ordering(request, qs)
     page_obj = view.paginate_queryset(request, qs)
 
+    # 🔥 FORMATEO PRO
+    logs = []
+    for log in page_obj:
+        log.formatted_changes = format_changes(log.changes)
+        logs.append(log)
+
     context = {
-        "logs": page_obj,
+        "logs": logs,
         "page_obj": page_obj,
         "filter_form": filter_form,
         **view.get_ordering_context(request),

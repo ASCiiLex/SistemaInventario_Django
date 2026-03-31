@@ -38,7 +38,32 @@ def log_action(user, action, instance, changes=None):
     AuditLog.objects.create(
         user=user if user and user.is_authenticated else None,
         action=action,
-        model_name=instance.__class__.__name__,
-        object_id=instance.pk,
+        model_name=instance.__class__.__name__ if instance else "System",
+        object_id=instance.pk if instance else 0,
         changes=changes,
     )
+
+
+# 🔥 NUEVO → render limpio para UI
+def format_changes(changes: dict):
+    if not changes:
+        return []
+
+    formatted = []
+
+    for field, values in changes.items():
+        if isinstance(values, dict) and "old" in values and "new" in values:
+            formatted.append({
+                "field": field,
+                "old": values["old"],
+                "new": values["new"],
+            })
+        else:
+            # fallback (CREATE / IMPORT planos)
+            formatted.append({
+                "field": field,
+                "old": None,
+                "new": values,
+            })
+
+    return formatted

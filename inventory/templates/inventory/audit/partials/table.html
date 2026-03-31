@@ -19,8 +19,24 @@
             <td>{{ log.get_action_display }}</td>
             <td>{{ log.model_name }}</td>
             <td>{{ log.object_id }}</td>
-            <td>
-                <pre class="mb-0 small">{{ log.changes|safe }}</pre>
+
+            <td style="min-width: 280px;">
+                {% if log.formatted_changes %}
+                    <ul class="list-unstyled mb-0 small">
+                        {% for change in log.formatted_changes %}
+                            <li>
+                                <strong>{{ change.field }}</strong>:
+                                {% if change.old is not None %}
+                                    <span class="text-danger">{{ change.old }}</span>
+                                    →
+                                {% endif %}
+                                <span class="text-success">{{ change.new }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <span class="text-muted">-</span>
+                {% endif %}
             </td>
         </tr>
         {% empty %}
