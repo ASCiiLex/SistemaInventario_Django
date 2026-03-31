@@ -1,4 +1,4 @@
-from django.core.cache import cache 
+from django.core.cache import cache
 from django.conf import settings
 from django.db.models import Count, Q
 from notifications.models import Notification
@@ -15,7 +15,6 @@ def get_notifications_summary():
     if cached:
         return cached
 
-    # 🔥 Query optimizada (solo campos necesarios)
     qs = Notification.objects.only("id", "type", "seen")
 
     aggregated = qs.aggregate(
@@ -46,7 +45,12 @@ def get_notifications_summary():
 
 
 def get_recent_notifications(limit=10):
-    return (
+    cache_key = f"dashboard:notifications:recent:{limit}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    qs = list(
         Notification.objects
         .select_related("product", "location")
         .only(
@@ -60,3 +64,6 @@ def get_recent_notifications(limit=10):
         )
         .order_by("-created_at")[:limit]
     )
+
+    cache.set(cache_key, qs, settings.CACHE_TTL["notifications"])
+    return qs
