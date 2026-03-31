@@ -9,8 +9,16 @@ DEFAULT_EVENTS = [
 ]
 
 
+EVENT_LABELS = {
+    "stock_item_low": "Stock bajo por ubicación",
+    "product_risk": "Producto en riesgo",
+    "order_created": "Nuevo pedido",
+    "movement": "Movimiento de stock",
+}
+
+
 def _get_model():
-    return apps.get_model("notifications", "UserNotificationPreference")
+    return apps.get_model("accounts.UserNotificationPreference")
 
 
 def ensure_user_preferences(user: User):

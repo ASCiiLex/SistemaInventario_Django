@@ -60,7 +60,16 @@
                     {% include 'notifications/partials/bell.html' %}
                 </div>
 
+
+                <a href="{% url 'notification_preferences' %}"
+                    class="btn btn-sm btn-outline-light"
+                    title="Configurar notificaciones">
+                    ⚙️
+                </a>
+
             </div>
+
+           
 
             <button id="themeToggle" class="btn btn-sm btn-outline-light me-3">🌙</button>
 

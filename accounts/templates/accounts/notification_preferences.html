@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Preferencias de notificaciones</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="space-y-2">
+            {% for field in form %}
+                <label style="display: block;">
+                    {{ field }} {{ field.label }}
+                </label>
+            {% endfor %}
+        </div>
+
+        <button type="submit">
+            Guardar
+        </button>
+    </form>
+</div>
+{% endblock %}

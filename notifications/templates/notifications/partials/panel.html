@@ -4,14 +4,19 @@
         <strong>Notificaciones</strong>
 
         <div class="d-flex gap-2">
+
+            <a href="{% url 'notification_preferences' %}" class="btn btn-sm btn-outline-secondary">
+                ⚙️ Configurar
+            </a>
+
             <a href="{% url 'notifications:notifications_list' %}" class="btn btn-sm btn-outline-dark">
                 Ver todas
             </a>
 
             <form method="post"
-                  hx-post="{% url 'notifications:notifications_panel_toggle_all' %}"
-                  hx-target="#notificationsPanelBody"
-                  hx-swap="innerHTML">
+                hx-post="{% url 'notifications:notifications_panel_toggle_all' %}"
+                hx-target="#notificationsPanelBody"
+                hx-swap="innerHTML">
                 {% csrf_token %}
 
                 <button class="btn btn-sm btn-outline-primary">
