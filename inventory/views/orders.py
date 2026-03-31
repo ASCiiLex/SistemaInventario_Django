@@ -20,6 +20,8 @@ from accounts.permissions import (
 )
 from accounts.decorators import permission_required_custom
 
+from inventory.services.audit import log_action
+
 
 def order_list(request):
     view = ListViewMixin()
@@ -71,6 +73,9 @@ def order_create(request):
             order = form.save()
             formset.instance = order
             formset.save()
+
+            log_action(request.user, "CREATE", order)
+
             messages.success(request, "Pedido creado correctamente.")
             return redirect("order_detail", pk=order.pk)
     else:
@@ -95,7 +100,6 @@ def order_detail(request, pk):
     can_edit = can_edit_inventory(request.user)
     can_confirm = can_confirm_inventory(request.user)
 
-    # 🔒 Lógica de estado centralizada (sin lógica en template)
     can_receive = order.status in ("sent", "partially_received", "backordered")
     can_cancel = order.status not in ("received", "cancelled")
 
@@ -126,6 +130,9 @@ def order_edit(request, pk):
         if form.is_valid() and formset.is_valid():
             form.save()
             formset.save()
+
+            log_action(request.user, "UPDATE", order)
+
             messages.success(request, "Pedido actualizado correctamente.")
             return redirect("order_detail", pk=order.pk)
     else:
@@ -150,6 +157,9 @@ def order_send(request, pk):
     order.status = "sent"
     order.sent_at = timezone.now()
     order.save()
+
+    log_action(request.user, "STATUS_CHANGE", order, {"status": "sent"})
+
     messages.success(request, "Pedido marcado como enviado.")
     return redirect("order_detail", pk=pk)
 
@@ -168,6 +178,9 @@ def order_receive(request, pk):
             order.status = "received"
             order.received_at = timezone.now()
             order.save()
+
+            log_action(request.user, "STATUS_CHANGE", order, {"status": "received"})
+
             messages.success(request, "Pedido marcado como recibido.")
             return redirect("order_detail", pk=pk)
     else:
@@ -190,6 +203,9 @@ def order_cancel(request, pk):
 
     order.status = "cancelled"
     order.save()
+
+    log_action(request.user, "STATUS_CHANGE", order, {"status": "cancelled"})
+
     messages.success(request, "Pedido cancelado correctamente.")
     return redirect("order_detail", pk=pk)
 

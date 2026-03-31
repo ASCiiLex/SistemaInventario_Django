@@ -6,6 +6,8 @@ from ..utils.csv_importer import read_csv
 from ..models import StockItem, Location
 from products.models import Product
 
+from inventory.services.audit import log_action
+
 
 def import_stock_view(request):
     if request.method == "POST":
@@ -52,6 +54,17 @@ def import_stock_confirm_view(request):
         if not created:
             stock_item.quantity = quantity
             stock_item.save()
+
+        log_action(
+            request.user,
+            "IMPORT",
+            stock_item,
+            {
+                "product": product.code,
+                "location": location.code,
+                "quantity": quantity,
+            },
+        )
 
     messages.success(request, "Stock importado correctamente.")
     return redirect("import_stock")

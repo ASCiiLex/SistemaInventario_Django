@@ -9,6 +9,8 @@ from ..forms import StockMovementForm, StockMovementFilterForm
 from ..utils.listing import ListViewMixin
 from notifications.utils import broadcast_notification
 
+from inventory.services.audit import log_action
+
 
 class StockMovementListView(ListViewMixin):
     allowed_sort_fields = [
@@ -77,6 +79,8 @@ def stockmovement_create(request):
         if form.is_valid():
             movement = form.save()
             product = movement.product
+
+            log_action(request.user, "CREATE", movement)
 
             broadcast_notification(
                 {

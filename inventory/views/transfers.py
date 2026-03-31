@@ -15,6 +15,8 @@ from accounts.permissions import (
 )
 from accounts.decorators import permission_required_custom
 
+from inventory.services.audit import log_action
+
 
 def transfer_list(request):
     view = ListViewMixin()
@@ -72,6 +74,9 @@ def transfer_create(request):
             transfer = form.save(commit=False)
             transfer.created_by = request.user
             transfer.save()
+
+            log_action(request.user, "CREATE", transfer)
+
             messages.success(request, "Transferencia creada correctamente.")
             return redirect("transfer_list")
     else:
@@ -102,6 +107,9 @@ def transfer_confirm(request, pk):
         if form.is_valid():
             try:
                 transfer.confirm(request.user)
+
+                log_action(request.user, "STATUS_CHANGE", transfer, {"status": "received"})
+
                 messages.success(request, "Transferencia confirmada correctamente.")
             except Exception as e:
                 messages.error(request, str(e))
@@ -125,5 +133,8 @@ def transfer_cancel(request, pk):
         return redirect("transfer_detail", pk=pk)
 
     transfer.cancel(request.user)
+
+    log_action(request.user, "STATUS_CHANGE", transfer, {"status": "cancelled"})
+
     messages.success(request, "Transferencia cancelada correctamente.")
     return redirect("transfer_detail", pk=pk)
