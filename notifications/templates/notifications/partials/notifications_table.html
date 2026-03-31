@@ -46,18 +46,18 @@
     </thead>
 
     <tbody>
-        {% for n in notifications %}
-        <tr class="{% if not n.seen %}table-light{% endif %}">
-            <td><input type="checkbox" name="selected" value="{{ n.id }}"></td>
+        {% for un in user_notifications %}
+        <tr class="{% if not un.seen %}table-light{% endif %}">
+            <td><input type="checkbox" name="selected" value="{{ un.id }}"></td>
 
-            <td>{{ n.message }}</td>
-            <td>{{ n.product|default:"-" }}</td>
-            <td>{{ n.created_at|date:"d/m/Y H:i" }}</td>
+            <td>{{ un.notification.message }}</td>
+            <td>{{ un.notification.product|default:"-" }}</td>
+            <td>{{ un.notification.created_at|date:"d/m/Y H:i" }}</td>
 
             <td>
-                {% if n.priority == "critical" %}
+                {% if un.notification.priority == "critical" %}
                     <span class="badge bg-danger">Crítica</span>
-                {% elif n.priority == "warning" %}
+                {% elif un.notification.priority == "warning" %}
                     <span class="badge bg-warning text-dark">Warning</span>
                 {% else %}
                     <span class="badge bg-secondary">Info</span>
@@ -65,7 +65,7 @@
             </td>
 
             <td>
-                {% if n.seen %}
+                {% if un.seen %}
                     <span class="text-success">Leída</span>
                 {% else %}
                     <span class="text-danger fw-bold">Nueva</span>
@@ -73,9 +73,9 @@
             </td>
 
             <td>
-                {% if n.seen %}
+                {% if un.seen %}
                     <form method="post"
-                          hx-post="{% url 'notifications:notification_mark_unread' n.id %}"
+                          hx-post="{% url 'notifications:notification_mark_unread' un.id %}"
                           hx-target="#notifications-table"
                           hx-swap="innerHTML">
                         {% csrf_token %}
@@ -83,7 +83,7 @@
                     </form>
                 {% else %}
                     <form method="post"
-                          hx-post="{% url 'notifications:notification_mark_read' n.id %}"
+                          hx-post="{% url 'notifications:notification_mark_read' un.id %}"
                           hx-target="#notifications-table"
                           hx-swap="innerHTML">
                         {% csrf_token %}

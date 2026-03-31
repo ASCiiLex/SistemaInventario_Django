@@ -14,9 +14,9 @@
             </a>
 
             <form method="post"
-                hx-post="{% url 'notifications:notifications_panel_toggle_all' %}"
-                hx-target="#notificationsPanelBody"
-                hx-swap="innerHTML">
+                  hx-post="{% url 'notifications:notifications_panel_toggle_all' %}"
+                  hx-target="#notificationsPanelBody"
+                  hx-swap="innerHTML">
                 {% csrf_token %}
 
                 <button class="btn btn-sm btn-outline-primary">
@@ -56,29 +56,29 @@
             <div class="d-none">
                 <ul class="list-group list-group-flush">
 
-                    {% for n in group.items %}
-                    <li class="list-group-item d-flex justify-content-between align-items-start {% if not n.seen %}fw-bold{% endif %}">
+                    {% for un in group.items %}
+                    <li class="list-group-item d-flex justify-content-between align-items-start {% if not un.seen %}fw-bold{% endif %}">
 
                         <div>
-                            {% if n.priority == "critical" %}
+                            {% if un.notification.priority == "critical" %}
                                 🔴
-                            {% elif n.priority == "warning" %}
+                            {% elif un.notification.priority == "warning" %}
                                 ⚠️
                             {% else %}
                                 🔔
                             {% endif %}
 
-                            {{ n.message }}<br>
+                            {{ un.notification.message }}<br>
 
                             <small class="text-muted">
-                                {{ n.created_at|date:"d/m/Y H:i" }}
+                                {{ un.notification.created_at|date:"d/m/Y H:i" }}
                             </small>
                         </div>
 
                         <div>
-                            {% if not n.seen %}
+                            {% if not un.seen %}
                                 <form method="post"
-                                      hx-post="{% url 'notifications:notifications_panel_mark_one' n.pk %}"
+                                      hx-post="{% url 'notifications:notifications_panel_mark_one' un.pk %}"
                                       hx-target="#notificationsPanelBody"
                                       hx-swap="innerHTML">
                                     {% csrf_token %}
@@ -86,7 +86,7 @@
                                 </form>
                             {% else %}
                                 <form method="post"
-                                      hx-post="{% url 'notifications:notifications_panel_mark_unread' n.pk %}"
+                                      hx-post="{% url 'notifications:notifications_panel_mark_unread' un.pk %}"
                                       hx-target="#notificationsPanelBody"
                                       hx-swap="innerHTML">
                                     {% csrf_token %}

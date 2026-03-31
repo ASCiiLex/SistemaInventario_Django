@@ -1,23 +1,34 @@
 import re
-from ..models import Notification
+from ..models import UserNotification
 from products.models import Product
+
+
+def user_qs(request):
+    return UserNotification.objects.filter(user=request.user).select_related(
+        "notification__product",
+        "notification__location"
+    )
+
+
+def has_unread(request):
+    return user_qs(request).filter(seen=False).exists()
 
 
 def get_products():
     products_qs = Product.objects.all().values("id", "name")
 
     def natural_key(item):
-        name = item["name"]
         return [
             int(text) if text.isdigit() else text.lower()
-            for text in re.split(r'(\d+)', name)
+            for text in re.split(r'(\d+)', item["name"])
         ]
 
-    products_sorted = sorted(products_qs, key=natural_key)
-    return [(p["id"], p["name"]) for p in products_sorted]
+    return [(p["id"], p["name"]) for p in sorted(products_qs, key=natural_key)]
 
 
 def get_filtered_notifications(request):
+    qs = user_qs(request)
+
     status = request.GET.get("status", "")
     product_id = request.GET.get("product", "")
     type_filter = request.GET.get("type", "")
@@ -26,25 +37,24 @@ def get_filtered_notifications(request):
     sort = request.GET.get("sort", "created_at")
     direction = request.GET.get("dir", "desc")
 
-    order = f"-{sort}" if direction == "desc" else sort
-
-    notifications = Notification.objects.select_related("product").order_by(order)
-
     if status == "new":
-        notifications = notifications.filter(seen=False)
+        qs = qs.filter(seen=False)
     elif status == "read":
-        notifications = notifications.filter(seen=True)
+        qs = qs.filter(seen=True)
 
     if product_id:
-        notifications = notifications.filter(product_id=product_id)
+        qs = qs.filter(notification__product_id=product_id)
 
     if type_filter:
-        notifications = notifications.filter(type=type_filter)
+        qs = qs.filter(notification__type=type_filter)
 
     if priority:
-        notifications = notifications.filter(priority=priority)
+        qs = qs.filter(notification__priority=priority)
 
-    return notifications, {
+    order = f"-notification__{sort}" if direction == "desc" else f"notification__{sort}"
+    qs = qs.order_by(order)
+
+    return qs, {
         "status": status,
         "product_id": product_id,
         "type": type_filter,
@@ -54,10 +64,11 @@ def get_filtered_notifications(request):
     }
 
 
-def group_notifications_by_product(notifications):
+def group_notifications_by_product(user_notifications):
     grouped = {}
 
-    for n in notifications:
+    for un in user_notifications:
+        n = un.notification
         key = n.product_id or "no-product"
 
         if key not in grouped:
@@ -69,28 +80,29 @@ def group_notifications_by_product(notifications):
                 "icons": set(),
             }
 
-        grouped[key]["items"].append(n)
+        grouped[key]["items"].append(un)
         grouped[key]["count"] += 1
 
-        if not n.seen:
+        if not un.seen:
             grouped[key]["has_unread"] = True
 
+        icon = "🔔"
         if n.priority == "critical":
-            grouped[key]["icons"].add("🔴")
+            icon = "🔴"
         elif n.priority == "warning":
-            grouped[key]["icons"].add("⚠️")
-        else:
-            grouped[key]["icons"].add("🔔")
+            icon = "⚠️"
+
+        grouped[key]["icons"].add(icon)
 
     grouped_list = list(grouped.values())
 
     grouped_list.sort(
-        key=lambda g: max(n.created_at for n in g["items"]),
+        key=lambda g: max(un.notification.created_at for un in g["items"]),
         reverse=True
     )
 
     for g in grouped_list:
-        g["items"].sort(key=lambda x: x.created_at, reverse=True)
+        g["items"].sort(key=lambda x: x.notification.created_at, reverse=True)
         g["icons"] = list(g["icons"])
 
     return grouped_list

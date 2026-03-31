@@ -1,15 +1,15 @@
 from django.shortcuts import render
-from .utils import get_filtered_notifications, get_products
-from ..models import Notification
+from .utils import get_filtered_notifications, get_products, has_unread
 
 
 def notifications_list(request):
-    notifications, filters_ctx = get_filtered_notifications(request)
+    qs, filters_ctx = get_filtered_notifications(request)
 
     context = {
-        "notifications": notifications,
+        "user_notifications": qs,
+        "notifications": [un.notification for un in qs],
         "products": get_products(),
-        "has_unread": Notification.objects.filter(seen=False).exists(),
+        "has_unread": has_unread(request),
         **filters_ctx,
     }
 
