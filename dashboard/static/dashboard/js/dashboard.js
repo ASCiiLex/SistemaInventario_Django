@@ -1,5 +1,15 @@
 /* ============================================
-   INICIALIZACIÓN DE SECCIONES
+   ESTADO GLOBAL (clave SaaS)
+============================================ */
+
+let categoryChart = null;
+
+let socket = null;
+let pollingInterval = null;
+let wsInitialized = false;
+
+/* ============================================
+   UI SECTIONS
 ============================================ */
 
 function initMainSections() {
@@ -47,8 +57,6 @@ function initSubSections() {
 /* ============================================
    CHART
 ============================================ */
-
-let categoryChart = null;
 
 function getSavedChartType() {
     return localStorage.getItem("dashboardChartType") || "categorias";
@@ -136,33 +144,46 @@ async function loadChartData(tipo) {
 }
 
 /* ============================================
-   REALTIME + FALLBACK
+   REFRESH CONTROLADO
 ============================================ */
 
-let socket = null;
-let pollingInterval = null;
+let refreshLock = false;
 
 function refreshDashboard() {
+    if (refreshLock) return;
+
+    refreshLock = true;
+
     htmx.trigger("#kpis-container", "refresh");
     htmx.trigger("#low-stock-container", "refresh");
     htmx.trigger("#activity-container", "refresh");
+
+    setTimeout(() => {
+        refreshLock = false;
+    }, 500);
 }
 
 function refreshChart() {
     const selector = document.getElementById("chartSelector");
     if (!selector) return;
+
     loadChartData(selector.value);
 }
 
-/* ---------- WEBSOCKET ---------- */
+/* ============================================
+   WEBSOCKET (PRIMARY)
+============================================ */
 
 function initWebSocket() {
+    if (wsInitialized) return;
+    wsInitialized = true;
+
     try {
         socket = new WebSocket(`ws://${window.location.host}/ws/notificaciones/`);
 
         socket.onopen = () => {
             console.log("WS conectado");
-            stopPolling(); // 🔥 si WS funciona → NO polling
+            stopPolling();
         };
 
         socket.onmessage = () => {
@@ -171,7 +192,7 @@ function initWebSocket() {
         };
 
         socket.onclose = () => {
-            console.warn("WS caído → activando polling");
+            console.warn("WS caído → polling activo");
             startPolling();
         };
 
@@ -185,15 +206,19 @@ function initWebSocket() {
     }
 }
 
-/* ---------- POLLING FALLBACK ---------- */
+/* ============================================
+   POLLING (FALLBACK REAL)
+============================================ */
 
 function startPolling() {
     if (pollingInterval) return;
 
+    console.log("Polling activo");
+
     pollingInterval = setInterval(() => {
         refreshDashboard();
         refreshChart();
-    }, 10000); // cada 10s (ajustable)
+    }, 10000);
 }
 
 function stopPolling() {
@@ -201,10 +226,12 @@ function stopPolling() {
 
     clearInterval(pollingInterval);
     pollingInterval = null;
+
+    console.log("Polling detenido");
 }
 
 /* ============================================
-   EVENTS
+   INIT
 ============================================ */
 
 function initRealtime() {
@@ -224,8 +251,21 @@ function initAll() {
     initMainSections();
     initSubSections();
     initChart();
-    initRealtime();
 }
 
-document.addEventListener("DOMContentLoaded", initAll);
-document.body.addEventListener("htmx:afterSwap", initAll);
+/* ============================================
+   BOOTSTRAP (CLAVE)
+============================================ */
+
+// SOLO UNA VEZ
+document.addEventListener("DOMContentLoaded", () => {
+    initAll();
+    initRealtime();
+});
+
+// SOLO UI (no realtime)
+document.body.addEventListener("htmx:afterSwap", () => {
+    initMainSections();
+    initSubSections();
+    initChart();
+});
