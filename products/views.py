@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.db.models import F, IntegerField, Sum
 from django.db.models.functions import Cast, Substr
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
 from django.template.loader import render_to_string
 import csv
 
@@ -11,6 +11,12 @@ from categories.models import Category
 from suppliers.models import Supplier
 from .forms import ProductForm
 from inventory.utils.listing import ListViewMixin
+
+# 🔐 PERMISSIONS
+from accounts.permissions import (
+    can_manage_products,
+)
+from accounts.decorators import permission_required_custom
 
 
 def product_list(request):
@@ -83,7 +89,7 @@ def product_list(request):
     # 📄 PAGINACIÓN
     page_obj = view.paginate_queryset(request, products)
 
-    # 🔥 SELECT2 LABELS (CRÍTICO)
+    # 🔥 SELECT2 LABELS
     category_name = None
     supplier_name = None
 
@@ -117,6 +123,7 @@ def product_list(request):
     return render(request, "products/list.html", context)
 
 
+@permission_required_custom(can_manage_products)
 def export_products_csv(request):
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = "attachment; filename=productos.csv"
@@ -157,6 +164,7 @@ def product_detail(request, pk):
     return render(request, "products/detail.html", {"product": product})
 
 
+@permission_required_custom(can_manage_products)
 def product_create(request):
     if request.method == "POST":
         form = ProductForm(request.POST, request.FILES)
@@ -169,6 +177,7 @@ def product_create(request):
     return render(request, "products/form.html", {"form": form, "title": "Crear Producto"})
 
 
+@permission_required_custom(can_manage_products)
 def product_edit(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
@@ -183,6 +192,7 @@ def product_edit(request, pk):
     return render(request, "products/form.html", {"form": form, "title": "Editar Producto"})
 
 
+@permission_required_custom(can_manage_products)
 def product_delete(request, pk):
     product = get_object_or_404(Product, pk=pk)
     product.delete()

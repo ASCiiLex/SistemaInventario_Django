@@ -6,8 +6,10 @@
     <h2 class="mb-0">Productos</h2>
 
     <div class="d-flex gap-2">
-        <a href="{% url 'product_create' %}" class="btn btn-success">Nuevo Producto</a>
-        <a href="{% url 'export_products_csv' %}" class="btn btn-outline-secondary">Exportar CSV</a>
+        {% if can_manage_products %}
+            <a href="{% url 'product_create' %}" class="btn btn-success">Nuevo Producto</a>
+            <a href="{% url 'export_products_csv' %}" class="btn btn-outline-secondary">Exportar CSV</a>
+        {% endif %}
     </div>
 </div>
 
