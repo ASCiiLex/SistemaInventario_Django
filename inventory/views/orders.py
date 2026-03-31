@@ -93,6 +93,11 @@ def order_detail(request, pk):
     )
 
     can_edit = can_edit_inventory(request.user)
+    can_confirm = can_confirm_inventory(request.user)
+
+    # 🔒 Lógica de estado centralizada (sin lógica en template)
+    can_receive = order.status in ("sent", "partially_received", "backordered")
+    can_cancel = order.status not in ("received", "cancelled")
 
     return render(
         request,
@@ -100,6 +105,9 @@ def order_detail(request, pk):
         {
             "order": order,
             "can_edit": can_edit,
+            "can_confirm": can_confirm,
+            "can_receive": can_receive,
+            "can_cancel": can_cancel,
         },
     )
 

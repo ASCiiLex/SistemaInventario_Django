@@ -63,15 +63,15 @@
             <a href="{% url 'order_edit' order.id %}" class="btn btn-primary">Editar</a>
         {% endif %}
 
-        {% if order.status == "pending" %}
+        {% if can_confirm and order.status == "pending" %}
             <a href="{% url 'order_send' order.id %}" class="btn btn-info">Marcar como enviado</a>
         {% endif %}
 
-        {% if order.status in "sent,partially_received,backordered" %}
+        {% if can_confirm and can_receive %}
             <a href="{% url 'order_receive' order.id %}" class="btn btn-success">Marcar como recibido</a>
         {% endif %}
 
-        {% if can_edit and order.status not in "received,cancelled" %}
+        {% if can_confirm and can_cancel %}
             <a href="{% url 'order_cancel' order.id %}" class="btn btn-danger">Cancelar</a>
         {% endif %}
 
