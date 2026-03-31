@@ -92,7 +92,16 @@ def order_detail(request, pk):
         .get(pk=pk)
     )
 
-    return render(request, "inventory/orders/detail.html", {"order": order})
+    can_edit = can_edit_inventory(request.user)
+
+    return render(
+        request,
+        "inventory/orders/detail.html",
+        {
+            "order": order,
+            "can_edit": can_edit,
+        },
+    )
 
 
 @permission_required_custom(can_edit_inventory)

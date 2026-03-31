@@ -59,16 +59,22 @@
     <p><strong>Coste total:</strong> {{ order.total_cost }}</p>
 
     <div class="d-flex gap-2 mt-3 mb-3">
-        <a href="{% url 'order_edit' order.id %}" class="btn btn-primary">Editar</a>
+        {% if can_edit %}
+            <a href="{% url 'order_edit' order.id %}" class="btn btn-primary">Editar</a>
+        {% endif %}
+
         {% if order.status == "pending" %}
             <a href="{% url 'order_send' order.id %}" class="btn btn-info">Marcar como enviado</a>
         {% endif %}
+
         {% if order.status in "sent,partially_received,backordered" %}
             <a href="{% url 'order_receive' order.id %}" class="btn btn-success">Marcar como recibido</a>
         {% endif %}
-        {% if order.status not in "received,cancelled" %}
+
+        {% if can_edit and order.status not in "received,cancelled" %}
             <a href="{% url 'order_cancel' order.id %}" class="btn btn-danger">Cancelar</a>
         {% endif %}
+
         <a href="{% url 'order_list' %}" class="btn btn-secondary">Volver</a>
     </div>
 </div>
