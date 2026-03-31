@@ -1,4 +1,4 @@
-from django.core.cache import cache
+from django.core.cache import cache 
 from django.conf import settings
 from django.db.models import Count, Q
 from notifications.models import Notification
@@ -15,7 +15,8 @@ def get_notifications_summary():
     if cached:
         return cached
 
-    qs = Notification.objects.all()
+    # 🔥 Query optimizada (solo campos necesarios)
+    qs = Notification.objects.only("id", "type", "seen")
 
     aggregated = qs.aggregate(
         total=Count("id"),

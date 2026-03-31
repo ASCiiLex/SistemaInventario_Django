@@ -16,31 +16,46 @@ class StockMovement(models.Model):
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name="movements"
+        related_name="movements",
+        db_index=True,
     )
-    movement_type = models.CharField(max_length=10, choices=MOVEMENT_TYPES)
+
+    movement_type = models.CharField(
+        max_length=10,
+        choices=MOVEMENT_TYPES,
+        db_index=True,
+    )
 
     origin = models.ForeignKey(
         Location,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="movements_origin"
+        related_name="movements_origin",
+        db_index=True,
     )
+
     destination = models.ForeignKey(
         Location,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="movements_destination"
+        related_name="movements_destination",
+        db_index=True,
     )
 
     quantity = models.PositiveIntegerField()
     note = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["-created_at"]),
+            models.Index(fields=["product", "-created_at"]),
+            models.Index(fields=["movement_type", "-created_at"]),
+        ]
 
     def __str__(self):
         return f"{self.get_movement_type_display()} - {self.product.name} ({self.quantity})"
@@ -114,7 +129,6 @@ class StockMovement(models.Model):
         from notifications.utils import broadcast_notification
         from inventory.services.stock_alerts import sync_all_notifications
 
-        # INVALIDACIÓN CENTRALIZADA
         from dashboard.services.metrics import invalidate_metrics_cache
         from dashboard.services.charts import invalidate_chart_cache
         from dashboard.services.notifications import invalidate_notifications_cache

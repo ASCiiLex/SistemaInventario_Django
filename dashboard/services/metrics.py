@@ -1,6 +1,6 @@
 from django.core.cache import cache
 from django.conf import settings
-from django.db.models import Sum, F, Value
+from django.db.models import Sum, F, Value, Count
 from django.db.models.functions import Coalesce
 
 from products.models import Product
@@ -19,23 +19,31 @@ def get_low_stock():
     if cached:
         return cached
 
-    products = (
-        Product.objects
-        .annotate(
-            total_stock_db=Coalesce(Sum("stock_items__quantity"), Value(0)),
-            total_min_stock_db=Coalesce(Sum("stock_items__min_stock"), Value(0)),
+    # 🔥 optimización: evitar joins innecesarios a nivel Python
+    qs = (
+        StockItem.objects
+        .select_related("product")
+        .filter(quantity__lte=F("min_stock"))
+        .values(
+            "product__id",
+            "product__name"
         )
-        .filter(total_stock_db__lte=F("total_min_stock_db"))
-        .only("id", "name")
+        .annotate(
+            quantity=Coalesce(Sum("quantity"), Value(0)),
+            min_stock=Coalesce(Sum("min_stock"), Value(0)),
+        )
     )
 
     result = [
         {
-            "product": p,
-            "quantity": p.total_stock_db,
-            "min_stock": p.total_min_stock_db,
+            "product": {
+                "id": row["product__id"],
+                "name": row["product__name"],
+            },
+            "quantity": row["quantity"],
+            "min_stock": row["min_stock"],
         }
-        for p in products
+        for row in qs
     ]
 
     cache.set(cache_key, result, settings.CACHE_TTL["low_stock"])
@@ -54,17 +62,18 @@ def get_dashboard_metrics():
         )["total"]
     )
 
+    # 🔥 optimización: evitar DISTINCT costoso
     low_stock_count = (
         StockItem.objects
         .filter(quantity__lte=F("min_stock"))
         .values("product")
-        .distinct()
+        .annotate(c=Count("id"))
         .count()
     )
 
     result = {
-        "total_products": Product.objects.count(),
-        "total_suppliers": Supplier.objects.count(),
+        "total_products": Product.objects.only("id").count(),
+        "total_suppliers": Supplier.objects.only("id").count(),
         "total_stock": total_stock,
         "low_stock_count": low_stock_count,
     }

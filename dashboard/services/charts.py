@@ -40,7 +40,9 @@ def get_chart_by_category():
     qs = (
         Category.objects
         .values("name")
-        .annotate(total=Coalesce(Sum("products__stock_items__quantity"), Value(0)))
+        .annotate(
+            total=Coalesce(Sum("products__stock_items__quantity"), Value(0))
+        )
         .order_by("name")
     )
 
@@ -58,7 +60,9 @@ def get_chart_by_supplier():
     qs = (
         Supplier.objects
         .values("name")
-        .annotate(total=Coalesce(Sum("products__stock_items__quantity"), Value(0)))
+        .annotate(
+            total=Coalesce(Sum("products__stock_items__quantity"), Value(0))
+        )
         .order_by("name")
     )
 
@@ -76,7 +80,9 @@ def get_chart_by_location():
     qs = (
         StockItem.objects
         .values("location__name")
-        .annotate(total=Coalesce(Sum("quantity"), Value(0)))
+        .annotate(
+            total=Coalesce(Sum("quantity"), Value(0))
+        )
         .order_by("location__name")
     )
 
@@ -94,7 +100,9 @@ def get_chart_rotation_by_product():
     qs = (
         StockMovement.objects
         .values("product__name")
-        .annotate(total=Coalesce(Sum("quantity"), Value(0)))
+        .annotate(
+            total=Coalesce(Sum("quantity"), Value(0))
+        )
         .order_by("-total")[:10]
     )
 
@@ -112,7 +120,9 @@ def get_chart_movements_by_type():
     qs = (
         StockMovement.objects
         .values("movement_type")
-        .annotate(total=Coalesce(Sum("quantity"), Value(0)))
+        .annotate(
+            total=Coalesce(Sum("quantity"), Value(0))
+        )
         .order_by("movement_type")
     )
 

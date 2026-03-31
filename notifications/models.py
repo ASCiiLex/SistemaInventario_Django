@@ -29,6 +29,7 @@ class Notification(models.Model):
         related_name="notifications",
         null=True,
         blank=True,
+        db_index=True,
     )
 
     location = models.ForeignKey(
@@ -37,31 +38,40 @@ class Notification(models.Model):
         null=True,
         blank=True,
         related_name="notifications",
+        db_index=True,
     )
 
     type = models.CharField(
         max_length=30,
         choices=TYPE_CHOICES,
-        default="info"
+        default="info",
+        db_index=True,
     )
 
     priority = models.CharField(
         max_length=20,
         choices=PRIORITY_CHOICES,
-        default="info"
+        default="info",
     )
 
     message = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
-    seen = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    seen = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["seen", "-created_at"]),
+            models.Index(fields=["type", "-created_at"]),
+            models.Index(fields=["product", "type"]),
+            models.Index(fields=["location", "type"]),
+        ]
 
     def __str__(self):
         return self.message
 
-    # 🔥 COOL DOWN (deduplicación inteligente)
     @classmethod
     def recently_created(cls, *, product=None, location=None, type=None, minutes=30):
         since = timezone.now() - timedelta(minutes=minutes)
