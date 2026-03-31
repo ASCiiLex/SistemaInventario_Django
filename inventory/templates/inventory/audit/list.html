@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Auditoría</h2>
+
+    <form
+        method="get"
+        class="row g-2 mb-3"
+        hx-get="{% url 'audit_list' %}"
+        hx-target="#audit-table"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-trigger="change delay:300ms"
+    >
+        <div class="col-md-3">
+            <input type="text" name="model" value="{{ request.GET.model }}" class="form-control" placeholder="Modelo">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="user" value="{{ request.GET.user }}" class="form-control" placeholder="Usuario">
+        </div>
+        <div class="col-md-3">
+            <select name="action" class="form-select">
+                <option value="">Acción</option>
+                <option value="CREATE">Create</option>
+                <option value="UPDATE">Update</option>
+                <option value="DELETE">Delete</option>
+                <option value="STATUS_CHANGE">Status</option>
+                <option value="IMPORT">Import</option>
+            </select>
+        </div>
+
+        <div class="col-md-3 d-grid">
+            <button type="button"
+                    class="btn btn-outline-secondary"
+                    onclick="clearFilters(this)">
+                Limpiar
+            </button>
+        </div>
+    </form>
+
+    <div id="audit-table">
+        {% include "inventory/audit/partials/table.html" %}
+    </div>
+</div>
+{% endblock %}

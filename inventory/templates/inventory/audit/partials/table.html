@@ -1,0 +1,35 @@
+<div class="table-responsive">
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            {% include "partials/sortable_th.html" with field="created_at" label="Fecha" target="#audit-table" %}
+            {% include "partials/sortable_th.html" with field="user__username" label="Usuario" target="#audit-table" %}
+            {% include "partials/sortable_th.html" with field="action" label="Acción" target="#audit-table" %}
+            {% include "partials/sortable_th.html" with field="model_name" label="Modelo" target="#audit-table" %}
+            {% include "partials/sortable_th.html" with field="object_id" label="ID" target="#audit-table" %}
+            <th>Cambios</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.created_at|date:"d/m/Y H:i" }}</td>
+            <td>{{ log.user|default:"-" }}</td>
+            <td>{{ log.get_action_display }}</td>
+            <td>{{ log.model_name }}</td>
+            <td>{{ log.object_id }}</td>
+            <td>
+                <pre class="mb-0 small">{{ log.changes|safe }}</pre>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" class="text-center">No hay registros</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include "shared/pagination.html" with target_id="#audit-table" %}

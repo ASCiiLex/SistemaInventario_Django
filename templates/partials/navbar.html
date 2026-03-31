@@ -22,6 +22,8 @@
                         <li><a class="dropdown-item" href="{% url 'transfer_list' %}">Transferencias</a></li>
                         <li><a class="dropdown-item" href="{% url 'location_list' %}">Almacenes</a></li>
                         <li><a class="dropdown-item" href="{% url 'order_list' %}">Pedidos</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'audit_list' %}">Auditoría</a></li>
                     </ul>
                 </li>
 
@@ -62,7 +64,6 @@
 
             <button id="themeToggle" class="btn btn-sm btn-outline-light me-3">🌙</button>
 
-            <!-- 🔐 LOGOUT -->
             <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
                 <button class="btn btn-sm btn-outline-light">Salir</button>
