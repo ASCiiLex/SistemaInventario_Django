@@ -62,3 +62,25 @@ def can_manage_orders(user):
 
 def can_view_dashboard(user):
     return user.is_authenticated
+
+
+# 🔥 INVENTORY PERMISSIONS
+
+def can_view_inventory(user):
+    return user.is_authenticated
+
+
+def can_create_inventory(user):
+    return is_admin(user) or is_manager(user) or is_staff(user)
+
+
+def can_edit_inventory(user):
+    return is_admin(user) or is_manager(user)
+
+
+def can_delete_inventory(user):
+    return is_admin(user) or is_manager(user)
+
+
+def can_confirm_inventory(user):
+    return is_admin(user) or is_manager(user)

@@ -9,6 +9,12 @@ from ..forms import (
 )
 from ..utils.listing import ListViewMixin
 
+from accounts.permissions import (
+    can_create_inventory,
+    can_confirm_inventory,
+)
+from accounts.decorators import permission_required_custom
+
 
 def transfer_list(request):
     view = ListViewMixin()
@@ -41,9 +47,7 @@ def transfer_list(request):
         if data.get("status"):
             qs = qs.filter(status=data["status"])
 
-    # 🔥 ORDENACIÓN
     qs = view.apply_ordering(request, qs)
-
     page_obj = view.paginate_queryset(request, qs)
 
     context = {
@@ -59,6 +63,8 @@ def transfer_list(request):
 
     return render(request, "inventory/transfers/list.html", context)
 
+
+@permission_required_custom(can_create_inventory)
 def transfer_create(request):
     if request.method == "POST":
         form = StockTransferCreateForm(request.POST)
@@ -83,6 +89,7 @@ def transfer_detail(request, pk):
     return render(request, "inventory/transfers/detail.html", {"transfer": transfer})
 
 
+@permission_required_custom(can_confirm_inventory)
 def transfer_confirm(request, pk):
     transfer = get_object_or_404(StockTransfer, pk=pk)
 
@@ -109,6 +116,7 @@ def transfer_confirm(request, pk):
     )
 
 
+@permission_required_custom(can_confirm_inventory)
 def transfer_cancel(request, pk):
     transfer = get_object_or_404(StockTransfer, pk=pk)
 

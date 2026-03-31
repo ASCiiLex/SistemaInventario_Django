@@ -13,6 +13,13 @@ from ..forms import (
 )
 from ..utils.listing import ListViewMixin
 
+from accounts.permissions import (
+    can_create_inventory,
+    can_edit_inventory,
+    can_confirm_inventory,
+)
+from accounts.decorators import permission_required_custom
+
 
 def order_list(request):
     view = ListViewMixin()
@@ -55,6 +62,7 @@ def order_list(request):
     return render(request, "inventory/orders/list.html", context)
 
 
+@permission_required_custom(can_create_inventory)
 def order_create(request):
     if request.method == "POST":
         form = OrderForm(request.POST)
@@ -87,6 +95,7 @@ def order_detail(request, pk):
     return render(request, "inventory/orders/detail.html", {"order": order})
 
 
+@permission_required_custom(can_edit_inventory)
 def order_edit(request, pk):
     order = get_object_or_404(Order, pk=pk)
 
@@ -113,6 +122,7 @@ def order_edit(request, pk):
     )
 
 
+@permission_required_custom(can_confirm_inventory)
 def order_send(request, pk):
     order = get_object_or_404(Order, pk=pk)
 
@@ -127,6 +137,7 @@ def order_send(request, pk):
     return redirect("order_detail", pk=pk)
 
 
+@permission_required_custom(can_confirm_inventory)
 def order_receive(request, pk):
     order = get_object_or_404(Order, pk=pk)
 
@@ -152,6 +163,7 @@ def order_receive(request, pk):
     )
 
 
+@permission_required_custom(can_confirm_inventory)
 def order_cancel(request, pk):
     order = get_object_or_404(Order, pk=pk)
 

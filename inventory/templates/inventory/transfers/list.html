@@ -4,9 +4,10 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Transferencias</h2>
-        <a href="{% url 'transfer_create' %}" class="btn btn-success">Nueva transferencia</a>
+        {% if can_create_inventory %}
+            <a href="{% url 'transfer_create' %}" class="btn btn-success">Nueva transferencia</a>
+        {% endif %}
     </div>
-
 
     <form
         method="get"
