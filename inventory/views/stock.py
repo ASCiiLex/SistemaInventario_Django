@@ -9,9 +9,6 @@ from ..forms import StockMovementForm, StockMovementFilterForm
 from ..utils.listing import ListViewMixin
 from notifications.utils import broadcast_notification
 
-from accounts.permissions import can_create_inventory
-from accounts.decorators import permission_required_custom
-
 
 class StockMovementListView(ListViewMixin):
     allowed_sort_fields = [
@@ -74,7 +71,6 @@ def stockmovement_list(request):
     return render(request, "inventory/stock/list.html", context)
 
 
-@permission_required_custom(can_create_inventory)
 def stockmovement_create(request):
     if request.method == "POST":
         form = StockMovementForm(request.POST)
@@ -106,7 +102,9 @@ def stockmovement_create(request):
                     "inventory/stock/partials/table.html",
                     context,
                 )
-                response["HX-Trigger"] = '{"movement-created": {"message": "Movimiento creado correctamente"}}'
+                response[
+                    "HX-Trigger"
+                ] = '{"movement-created": {"message": "Movimiento creado correctamente"}}'
                 return response
 
             return redirect(reverse("stockmovement_list"))

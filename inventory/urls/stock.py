@@ -1,11 +1,11 @@
 from django.urls import path
 
-from ..views import (
+from ..views.stock import (
     stockmovement_list,
     stockmovement_create,
-    transfer_create,
     export_stockmovements_csv,
 )
+from ..views.transfers import transfer_create
 
 urlpatterns = [
     path("stock-movements/", stockmovement_list, name="stockmovement_list"),

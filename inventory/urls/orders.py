@@ -1,5 +1,5 @@
 from django.urls import path
-from ..views import (
+from ..views.orders import (
     order_list,
     order_create,
     order_detail,

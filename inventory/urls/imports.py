@@ -1,5 +1,5 @@
 from django.urls import path
-from ..views import import_stock_view, import_stock_confirm_view
+from ..views.imports import import_stock_view, import_stock_confirm_view
 
 urlpatterns = [
     path("importar-stock/", import_stock_view, name="import_stock"),

@@ -28,7 +28,7 @@ def is_staff(user):
     return hasattr(user, "profile") and user.profile.role == "STAFF"
 
 
-# GRANULARIDAD PRODUCTOS
+# 🔹 PRODUCTS
 
 def can_view_products(user):
     return user.is_authenticated
@@ -50,28 +50,15 @@ def can_export_products(user):
     return can_create_products(user)
 
 
-# OTROS
-
-def can_manage_products(user):
-    return is_manager(user)
-
-
-def can_manage_orders(user):
-    return is_manager(user)
-
-
-def can_view_dashboard(user):
-    return user.is_authenticated
-
-
-# 🔥 INVENTORY PERMISSIONS
+# 🔹 INVENTORY
 
 def can_view_inventory(user):
     return user.is_authenticated
 
 
+# (Orders)
 def can_create_inventory(user):
-    return is_admin(user) or is_manager(user) or is_staff(user)
+    return is_admin(user) or is_manager(user)
 
 
 def can_edit_inventory(user):
@@ -84,3 +71,22 @@ def can_delete_inventory(user):
 
 def can_confirm_inventory(user):
     return is_admin(user) or is_manager(user)
+
+
+# Para "enviar" pedido
+def can_send_orders(user):
+    return user.is_authenticated
+
+
+# 🔹 LEGACY
+
+def can_manage_products(user):
+    return is_manager(user)
+
+
+def can_manage_orders(user):
+    return is_manager(user)
+
+
+def can_view_dashboard(user):
+    return user.is_authenticated
