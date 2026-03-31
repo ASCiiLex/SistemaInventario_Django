@@ -6,22 +6,47 @@
 
     <form
         method="get"
-        class="row g-2 mb-3"
+        class="row g-2 mb-3 align-items-end"
         hx-get="{% url 'audit_list' %}"
         hx-target="#audit-table"
         hx-swap="innerHTML"
         hx-push-url="true"
         hx-trigger="change delay:300ms"
     >
-        <div class="col-md-3">
-            <input type="text" name="model" value="{{ request.GET.model }}" class="form-control" placeholder="Modelo">
+
+        <!-- DESDE -->
+        <div class="col-md-2">
+            <div class="small text-muted mb-1">Desde</div>
+            <input type="date"
+                name="date_from"
+                value="{{ request.GET.date_from }}"
+                class="form-control form-control-sm">
         </div>
-        <div class="col-md-3">
-            <input type="text" name="user" value="{{ request.GET.user }}" class="form-control" placeholder="Usuario">
+
+        <!-- HASTA -->
+        <div class="col-md-2">
+            <div class="small text-muted mb-1">Hasta</div>
+            <input type="date"
+                name="date_to"
+                value="{{ request.GET.date_to }}"
+                class="form-control form-control-sm">
         </div>
-        <div class="col-md-3">
-            <select name="action" class="form-select">
-                <option value="">Acción</option>
+
+        <!-- USUARIO -->
+        <div class="col-md-2">
+            <div class="small text-muted mb-1">Usuario</div>
+            <input type="text"
+                name="user"
+                value="{{ request.GET.user }}"
+                class="form-control form-control-sm"
+                placeholder="Usuario">
+        </div>
+
+        <!-- ACCIÓN -->
+        <div class="col-md-2">
+            <div class="small text-muted mb-1">Acción</div>
+            <select name="action" class="form-select form-select-sm">
+                <option value="">Todas</option>
                 <option value="CREATE">Create</option>
                 <option value="UPDATE">Update</option>
                 <option value="DELETE">Delete</option>
@@ -30,13 +55,25 @@
             </select>
         </div>
 
-        <div class="col-md-3 d-grid">
+        <!-- MODELO -->
+        <div class="col-md-2">
+            <div class="small text-muted mb-1">Modelo</div>
+            <input type="text"
+                name="model"
+                value="{{ request.GET.model }}"
+                class="form-control form-control-sm"
+                placeholder="Modelo">
+        </div>
+
+        <!-- LIMPIAR -->
+        <div class="col-md-2 d-grid">
             <button type="button"
-                    class="btn btn-outline-secondary"
+                    class="btn btn-outline-secondary btn-sm"
                     onclick="clearFilters(this)">
                 Limpiar
             </button>
         </div>
+
     </form>
 
     <div id="audit-table">
