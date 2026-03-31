@@ -15,7 +15,7 @@ from accounts.permissions import (
 )
 from accounts.decorators import permission_required_custom
 
-from inventory.services.audit import log_action
+from inventory.services.audit import log_action, serialize_instance, get_instance_changes
 
 
 def transfer_list(request):
@@ -75,7 +75,7 @@ def transfer_create(request):
             transfer.created_by = request.user
             transfer.save()
 
-            log_action(request.user, "CREATE", transfer)
+            log_action(request.user, "CREATE", transfer, serialize_instance(transfer))
 
             messages.success(request, "Transferencia creada correctamente.")
             return redirect("transfer_list")
@@ -97,6 +97,7 @@ def transfer_detail(request, pk):
 @permission_required_custom(can_confirm_inventory)
 def transfer_confirm(request, pk):
     transfer = get_object_or_404(StockTransfer, pk=pk)
+    old_data = serialize_instance(transfer)
 
     if transfer.status != "pending":
         messages.error(request, "Esta transferencia no se puede confirmar.")
@@ -108,7 +109,8 @@ def transfer_confirm(request, pk):
             try:
                 transfer.confirm(request.user)
 
-                log_action(request.user, "STATUS_CHANGE", transfer, {"status": "received"})
+                changes = get_instance_changes(old_data, transfer)
+                log_action(request.user, "STATUS_CHANGE", transfer, changes)
 
                 messages.success(request, "Transferencia confirmada correctamente.")
             except Exception as e:
@@ -127,6 +129,7 @@ def transfer_confirm(request, pk):
 @permission_required_custom(can_confirm_inventory)
 def transfer_cancel(request, pk):
     transfer = get_object_or_404(StockTransfer, pk=pk)
+    old_data = serialize_instance(transfer)
 
     if transfer.status != "pending":
         messages.error(request, "Esta transferencia no se puede cancelar.")
@@ -134,7 +137,8 @@ def transfer_cancel(request, pk):
 
     transfer.cancel(request.user)
 
-    log_action(request.user, "STATUS_CHANGE", transfer, {"status": "cancelled"})
+    changes = get_instance_changes(old_data, transfer)
+    log_action(request.user, "STATUS_CHANGE", transfer, changes)
 
     messages.success(request, "Transferencia cancelada correctamente.")
     return redirect("transfer_detail", pk=pk)

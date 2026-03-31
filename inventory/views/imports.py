@@ -34,6 +34,8 @@ def import_stock_confirm_view(request):
         messages.error(request, "No hay datos para importar.")
         return redirect("import_stock")
 
+    total = 0
+
     for row in rows:
         product_code = row.get("product_code")
         location_code = row.get("location_code")
@@ -55,16 +57,14 @@ def import_stock_confirm_view(request):
             stock_item.quantity = quantity
             stock_item.save()
 
-        log_action(
-            request.user,
-            "IMPORT",
-            stock_item,
-            {
-                "product": product.code,
-                "location": location.code,
-                "quantity": quantity,
-            },
-        )
+        total += 1
+
+    log_action(
+        request.user,
+        "IMPORT",
+        stock_item if total else None,
+        {"rows_processed": total},
+    )
 
     messages.success(request, "Stock importado correctamente.")
     return redirect("import_stock")

@@ -20,7 +20,7 @@ from accounts.permissions import (
 )
 from accounts.decorators import permission_required_custom
 
-from inventory.services.audit import log_action
+from inventory.services.audit import log_action, serialize_instance, get_instance_changes
 
 
 def order_list(request):
@@ -74,7 +74,7 @@ def order_create(request):
             formset.instance = order
             formset.save()
 
-            log_action(request.user, "CREATE", order)
+            log_action(request.user, "CREATE", order, serialize_instance(order))
 
             messages.success(request, "Pedido creado correctamente.")
             return redirect("order_detail", pk=order.pk)
@@ -119,6 +119,7 @@ def order_detail(request, pk):
 @permission_required_custom(can_edit_inventory)
 def order_edit(request, pk):
     order = get_object_or_404(Order, pk=pk)
+    old_data = serialize_instance(order)
 
     if order.status not in ["pending", "backordered"]:
         messages.error(request, "Este pedido no se puede editar en su estado actual.")
@@ -131,7 +132,9 @@ def order_edit(request, pk):
             form.save()
             formset.save()
 
-            log_action(request.user, "UPDATE", order)
+            changes = get_instance_changes(old_data, order)
+            if changes:
+                log_action(request.user, "UPDATE", order, changes)
 
             messages.success(request, "Pedido actualizado correctamente.")
             return redirect("order_detail", pk=order.pk)
@@ -149,6 +152,7 @@ def order_edit(request, pk):
 @permission_required_custom(can_confirm_inventory)
 def order_send(request, pk):
     order = get_object_or_404(Order, pk=pk)
+    old_data = serialize_instance(order)
 
     if order.status != "pending":
         messages.error(request, "Solo se pueden marcar como enviados los pedidos pendientes.")
@@ -158,7 +162,8 @@ def order_send(request, pk):
     order.sent_at = timezone.now()
     order.save()
 
-    log_action(request.user, "STATUS_CHANGE", order, {"status": "sent"})
+    changes = get_instance_changes(old_data, order)
+    log_action(request.user, "STATUS_CHANGE", order, changes)
 
     messages.success(request, "Pedido marcado como enviado.")
     return redirect("order_detail", pk=pk)
@@ -167,6 +172,7 @@ def order_send(request, pk):
 @permission_required_custom(can_confirm_inventory)
 def order_receive(request, pk):
     order = get_object_or_404(Order, pk=pk)
+    old_data = serialize_instance(order)
 
     if order.status not in ["sent", "partially_received", "backordered"]:
         messages.error(request, "Este pedido no se puede marcar como recibido.")
@@ -179,7 +185,8 @@ def order_receive(request, pk):
             order.received_at = timezone.now()
             order.save()
 
-            log_action(request.user, "STATUS_CHANGE", order, {"status": "received"})
+            changes = get_instance_changes(old_data, order)
+            log_action(request.user, "STATUS_CHANGE", order, changes)
 
             messages.success(request, "Pedido marcado como recibido.")
             return redirect("order_detail", pk=pk)
@@ -196,6 +203,7 @@ def order_receive(request, pk):
 @permission_required_custom(can_confirm_inventory)
 def order_cancel(request, pk):
     order = get_object_or_404(Order, pk=pk)
+    old_data = serialize_instance(order)
 
     if order.status in ["received", "cancelled"]:
         messages.error(request, "Este pedido no se puede cancelar.")
@@ -204,7 +212,8 @@ def order_cancel(request, pk):
     order.status = "cancelled"
     order.save()
 
-    log_action(request.user, "STATUS_CHANGE", order, {"status": "cancelled"})
+    changes = get_instance_changes(old_data, order)
+    log_action(request.user, "STATUS_CHANGE", order, changes)
 
     messages.success(request, "Pedido cancelado correctamente.")
     return redirect("order_detail", pk=pk)

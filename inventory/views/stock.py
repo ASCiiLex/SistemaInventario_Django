@@ -9,7 +9,7 @@ from ..forms import StockMovementForm, StockMovementFilterForm
 from ..utils.listing import ListViewMixin
 from notifications.utils import broadcast_notification
 
-from inventory.services.audit import log_action
+from inventory.services.audit import log_action, serialize_instance
 
 
 class StockMovementListView(ListViewMixin):
@@ -80,7 +80,7 @@ def stockmovement_create(request):
             movement = form.save()
             product = movement.product
 
-            log_action(request.user, "CREATE", movement)
+            log_action(request.user, "CREATE", movement, serialize_instance(movement))
 
             broadcast_notification(
                 {
