@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from .models import Notification
 from .utils import broadcast_notification
+from .events import register_event
 
 
 COOLDOWNS = {
@@ -65,13 +66,45 @@ def create_notification(*, product=None, location=None, type_, message):
 
     broadcast_notification({
         "type": "notification",
-        "message": message
+        "message": message,
+        "product": product.id if product else None,
     })
 
     return notification
 
 
-# 🔥 AGRUPACIÓN PRO (Stripe-like)
+# =========================
+# EVENT HANDLERS
+# =========================
+
+@register_event("stock_item_low")
+def handle_stock_item_low(payload: dict):
+    create_notification(
+        product=payload.get("product"),
+        location=payload.get("location"),
+        type_="stock_item_low",
+        message=payload.get("message"),
+    )
+
+
+@register_event("product_risk")
+def handle_product_risk(payload: dict):
+    create_notification(
+        product=payload.get("product"),
+        type_="product_risk",
+        message=payload.get("message"),
+    )
+
+
+@register_event("order_created")
+def handle_order_created(payload: dict):
+    create_notification(
+        type_="order",
+        message=payload.get("message"),
+    )
+
+
+# AGRUPACIÓN PRO (Stripe-like)
 def get_grouped_notifications(notifications):
     grouped = {}
 
@@ -92,7 +125,6 @@ def get_grouped_notifications(notifications):
         icon = ICON_MAP.get(n.priority, "🔔")
         grouped[key]["icons"].add(icon)
 
-    # ordenar items internos
     for g in grouped.values():
         g["items"].sort(key=lambda x: x.created_at, reverse=True)
         g["icons"] = list(g["icons"])

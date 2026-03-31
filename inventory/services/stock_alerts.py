@@ -2,7 +2,7 @@ from django.core.cache import cache
 
 from inventory.models import StockItem
 from products.models import Product
-from notifications.services import create_notification
+from notifications.events import emit_event
 
 
 def invalidate_dashboard_cache():
@@ -25,11 +25,13 @@ def sync_stock_item_notifications():
     for item in items:
         if item.quantity <= item.min_stock:
 
-            create_notification(
-                product=item.product,
-                location=item.location,
-                type_="stock_item_low",
-                message=f"{item.product.name} bajo mínimo en {item.location.name}",
+            emit_event(
+                "stock_item_low",
+                {
+                    "product": item.product,
+                    "location": item.location,
+                    "message": f"{item.product.name} bajo mínimo en {item.location.name}",
+                }
             )
 
 
@@ -39,10 +41,12 @@ def sync_product_risk_notifications():
     for p in products:
         if p.total_stock <= p.total_min_stock:
 
-            create_notification(
-                product=p,
-                type_="product_risk",
-                message=f"Producto en riesgo: {p.name}",
+            emit_event(
+                "product_risk",
+                {
+                    "product": p,
+                    "message": f"Producto en riesgo: {p.name}",
+                }
             )
 
 
@@ -50,5 +54,4 @@ def sync_all_notifications():
     sync_stock_item_notifications()
     sync_product_risk_notifications()
 
-    # 🔥 invalidación tras cambios reales
     invalidate_dashboard_cache()
