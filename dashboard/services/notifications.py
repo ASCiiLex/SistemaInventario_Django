@@ -1,27 +1,31 @@
-from django.db.models import Count
+from django.db.models import Count, Q
 from notifications.models import Notification
 
 
 def get_notifications_summary():
     qs = Notification.objects.all()
 
-    # 🔥 Agrupación limpia + labels humanos
+    aggregated = qs.aggregate(
+        total=Count("id"),
+        unread=Count("id", filter=Q(seen=False)),
+    )
+
     by_type_raw = qs.values("type").annotate(total=Count("id"))
 
-    by_type = []
-    for item in by_type_raw:
-        type_key = item["type"]
-        label = dict(Notification.TYPE_CHOICES).get(type_key, type_key)
+    type_map = dict(Notification.TYPE_CHOICES)
 
-        by_type.append({
-            "type": type_key,
-            "label": label,
+    by_type = [
+        {
+            "type": item["type"],
+            "label": type_map.get(item["type"], item["type"]),
             "total": item["total"],
-        })
+        }
+        for item in by_type_raw
+    ]
 
     return {
-        "notifications_total": qs.count(),
-        "notifications_unread": qs.filter(seen=False).count(),
+        "notifications_total": aggregated["total"],
+        "notifications_unread": aggregated["unread"],
         "notifications_by_type": by_type,
     }
 
@@ -30,5 +34,14 @@ def get_recent_notifications(limit=10):
     return (
         Notification.objects
         .select_related("product", "location")
+        .only(
+            "id",
+            "message",
+            "type",
+            "seen",
+            "created_at",
+            "product__name",
+            "location__name",
+        )
         .order_by("-created_at")[:limit]
     )
