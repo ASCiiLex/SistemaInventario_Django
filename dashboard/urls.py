@@ -1,13 +1,15 @@
 from django.urls import path
-from .views import (
-    dashboard_view,
-    dashboard_totals,
-    dashboard_low_stock,
+
+from .views.main import dashboard_view
+from .views.metrics import dashboard_totals, dashboard_low_stock
+from .views.charts import dashboard_chart, dashboard_chart_data
+from .views.activity import (
     dashboard_recent_movements,
     dashboard_recent_stock_movements,
-    dashboard_chart,
-    dashboard_chart_data,
+)
+from .views.notifications import (
     dashboard_notifications_recent,
+    dashboard_notifications_summary,
 )
 
 urlpatterns = [
@@ -16,7 +18,17 @@ urlpatterns = [
     path("totales/", dashboard_totals, name="dashboard_totals"),
     path("bajo-minimo/", dashboard_low_stock, name="dashboard_low_stock"),
 
-    path("notificaciones-recientes/", dashboard_notifications_recent, name="dashboard_notifications_recent"),
+    path(
+        "notificaciones-resumen/",
+        dashboard_notifications_summary,
+        name="dashboard_notifications_summary",
+    ),
+
+    path(
+        "notificaciones-recientes/",
+        dashboard_notifications_recent,
+        name="dashboard_notifications_recent",
+    ),
 
     path("movimientos-recientes/", dashboard_recent_movements, name="dashboard_recent_movements"),
     path("movimientos-stock/", dashboard_recent_stock_movements, name="dashboard_recent_stock_movements"),

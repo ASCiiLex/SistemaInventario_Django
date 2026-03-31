@@ -6,8 +6,11 @@
                 <span>Resumen de Notificaciones</span>
                 <span class="toggle-arrow arrow-up"></span>
             </div>
-            <div class="card-body section-content compact-table">
-                {% include "dashboard/partials/notifications_summary.html" %}
+            <div class="card-body section-content compact-table"
+                 hx-get="{% url 'dashboard_notifications_summary' %}"
+                 hx-trigger="load, notifications:updated from:body"
+                 hx-target="this"
+                 hx-swap="innerHTML">
             </div>
         </div>
     </div>

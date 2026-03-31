@@ -45,7 +45,7 @@ function initSubSections() {
 }
 
 /* ============================================
-   CHART + LOCALSTORAGE
+   CHART (FLUJO CORRECTO HTMX)
 ============================================ */
 
 let categoryChart = null;
@@ -60,6 +60,8 @@ function saveChartType(tipo) {
 
 function initChart() {
     const canvas = document.getElementById("categoryChart");
+
+    // 🔥 clave: esperar a que HTMX haya cargado el HTML
     if (!canvas || !window.chartData) return;
 
     const labels = window.chartData.labels || [];
@@ -85,7 +87,7 @@ function initChart() {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: "y",
-            animation: { duration: 500 },
+            animation: { duration: 300 },
             scales: {
                 x: { beginAtZero: true }
             }
@@ -97,15 +99,13 @@ function initChart() {
 
 function initChartSelector() {
     const selector = document.getElementById("chartSelector");
-    if (!selector || !categoryChart) return;
+    if (!selector) return;
 
     if (selector.dataset.bound === "true") return;
     selector.dataset.bound = "true";
 
     const savedType = getSavedChartType();
     selector.value = savedType;
-
-    loadChartData(savedType);
 
     selector.addEventListener("change", function () {
         const tipo = this.value;
@@ -142,7 +142,7 @@ async function loadChartData(tipo) {
 }
 
 /* ============================================
-   REALTIME DASHBOARD
+   REALTIME
 ============================================ */
 
 function refreshDashboard() {
@@ -180,5 +180,10 @@ function initAll() {
     initRealtime();
 }
 
+// 🔥 carga inicial
 document.addEventListener("DOMContentLoaded", initAll);
-document.body.addEventListener("htmx:afterSwap", initAll);
+
+// 🔥 clave: reinit SIEMPRE tras HTMX (sin condiciones)
+document.body.addEventListener("htmx:afterSwap", function () {
+    initAll();
+});

@@ -1,4 +1,15 @@
-<div id="chart-container" style="height: 200px; position: relative;">
+<div style="height: 200px; position: relative;">
+
+    <!-- Selector -->
+    <div class="d-flex justify-content-end mb-2">
+        <select id="chartSelector" class="form-select form-select-sm chart-selector">
+            <option value="categorias">Stock por categoría</option>
+            <option value="proveedores">Stock por proveedor</option>
+            <option value="almacenes">Stock por almacén</option>
+            <option value="rotacion">Rotación por producto</option>
+            <option value="movimientos">Movimientos por tipo</option>
+        </select>
+    </div>
 
     <!-- Loader -->
     <div id="chart-loader"
@@ -6,6 +17,7 @@
         <div class="spinner-border text-primary"></div>
     </div>
 
+    <!-- Canvas -->
     <canvas id="categoryChart"></canvas>
 
 </div>

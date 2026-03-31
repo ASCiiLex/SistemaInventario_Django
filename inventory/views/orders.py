@@ -77,7 +77,13 @@ def order_create(request):
 
 
 def order_detail(request, pk):
-    order = get_object_or_404(Order, pk=pk)
+    order = (
+        Order.objects
+        .select_related("supplier", "location")
+        .prefetch_related("items__product")
+        .get(pk=pk)
+    )
+
     return render(request, "inventory/orders/detail.html", {"order": order})
 
 

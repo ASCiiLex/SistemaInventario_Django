@@ -23,19 +23,15 @@
                 <span>Gráfico de Stock</span>
                 <span class="toggle-arrow arrow-up"></span>
             </div>
-            <div class="card-body section-content">
-                <div class="d-flex justify-content-end mb-2">
-                    <select id="chartSelector" class="form-select form-select-sm chart-selector">
-                        <option value="categorias">Stock por categoría</option>
-                        <option value="proveedores">Stock por proveedor</option>
-                        <option value="almacenes">Stock por almacén</option>
-                        <option value="rotacion">Rotación por producto</option>
-                        <option value="movimientos">Movimientos por tipo</option>
-                    </select>
-                </div>
 
-                {% include "dashboard/partials/chart.html" %}
+            <!-- 🔥 Lazy load REAL -->
+            <div class="card-body section-content"
+                 hx-get="{% url 'dashboard_chart' %}"
+                 hx-trigger="load"
+                 hx-target="this"
+                 hx-swap="innerHTML">
             </div>
+
         </div>
     </div>
 
