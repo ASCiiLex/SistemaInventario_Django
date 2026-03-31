@@ -1,8 +1,22 @@
 def is_admin(user):
+    if not user.is_authenticated:
+        return False
+
+    # 🔥 SUPERUSER = ADMIN SIEMPRE
+    if user.is_superuser:
+        return True
+
     return hasattr(user, "profile") and user.profile.role == "ADMIN"
 
 
 def is_manager(user):
+    if not user.is_authenticated:
+        return False
+
+    # 🔥 SUPERUSER = ACCESO TOTAL
+    if user.is_superuser:
+        return True
+
     return hasattr(user, "profile") and user.profile.role in ["ADMIN", "MANAGER"]
 
 
