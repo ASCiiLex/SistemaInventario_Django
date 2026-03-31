@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.db.models import F, IntegerField, Sum
 from django.db.models.functions import Cast, Substr
-from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
+from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 import csv
 
@@ -12,9 +12,12 @@ from suppliers.models import Supplier
 from .forms import ProductForm
 from inventory.utils.listing import ListViewMixin
 
-# 🔐 PERMISSIONS
+# 🔐 PERMISSIONS (granular)
 from accounts.permissions import (
-    can_manage_products,
+    can_create_products,
+    can_edit_products,
+    can_delete_products,
+    can_export_products,
 )
 from accounts.decorators import permission_required_custom
 
@@ -31,19 +34,16 @@ def product_list(request):
     ]
     view.default_ordering = "name"
 
-    # 🔎 PARAMS
     search = request.GET.get("q", "")
     category_id = request.GET.get("category", "")
     supplier_id = request.GET.get("supplier", "")
     stock_filter = request.GET.get("stock", "")
 
-    # 🧱 BASE QUERY
     products = Product.objects.select_related("category", "supplier").annotate(
         total_stock_db=Sum("stock_items__quantity"),
         total_min_stock_db=Sum("stock_items__min_stock"),
     )
 
-    # 🔍 FILTROS
     if search:
         products = products.filter(name__icontains=search)
 
@@ -58,7 +58,6 @@ def product_list(request):
             total_stock_db__lte=F("total_min_stock_db")
         )
 
-    # 🔥 ORDENACIÓN
     sort = request.GET.get("sort")
     direction = request.GET.get("dir", "asc")
 
@@ -86,10 +85,8 @@ def product_list(request):
             order_field = f"-{order_field}"
         products = products.order_by(order_field)
 
-    # 📄 PAGINACIÓN
     page_obj = view.paginate_queryset(request, products)
 
-    # 🔥 SELECT2 LABELS
     category_name = None
     supplier_name = None
 
@@ -103,7 +100,6 @@ def product_list(request):
         if supplier:
             supplier_name = supplier.name
 
-    # 📦 CONTEXTO
     context = {
         "products": page_obj,
         "page_obj": page_obj,
@@ -116,14 +112,13 @@ def product_list(request):
         **view.get_ordering_context(request),
     }
 
-    # ⚡ HTMX
     if view.is_htmx(request):
         return render(request, "products/partials/products_table.html", context)
 
     return render(request, "products/list.html", context)
 
 
-@permission_required_custom(can_manage_products)
+@permission_required_custom(can_export_products)
 def export_products_csv(request):
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = "attachment; filename=productos.csv"
@@ -164,7 +159,7 @@ def product_detail(request, pk):
     return render(request, "products/detail.html", {"product": product})
 
 
-@permission_required_custom(can_manage_products)
+@permission_required_custom(can_create_products)
 def product_create(request):
     if request.method == "POST":
         form = ProductForm(request.POST, request.FILES)
@@ -177,7 +172,7 @@ def product_create(request):
     return render(request, "products/form.html", {"form": form, "title": "Crear Producto"})
 
 
-@permission_required_custom(can_manage_products)
+@permission_required_custom(can_edit_products)
 def product_edit(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
@@ -192,7 +187,7 @@ def product_edit(request, pk):
     return render(request, "products/form.html", {"form": form, "title": "Editar Producto"})
 
 
-@permission_required_custom(can_manage_products)
+@permission_required_custom(can_delete_products)
 def product_delete(request, pk):
     product = get_object_or_404(Product, pk=pk)
     product.delete()

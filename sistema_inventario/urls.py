@@ -14,8 +14,8 @@ urlpatterns = [
     path('login/', LoginView.as_view(template_name='auth/login.html'), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
 
-    # 👉 ROOT protegido → redirige según auth
-    path('', lambda request: redirect('product_list') if request.user.is_authenticated else redirect('login')),
+    # 👉 ROOT correcto → dashboard
+    path('', lambda request: redirect('dashboard') if request.user.is_authenticated else redirect('login')),
 
     path('dashboard/', include('dashboard.urls')),
 

@@ -28,8 +28,12 @@
             </td>
             <td>{{ p.total_min_stock_db }}</td>
             <td>
-                <a href="{% url 'product_edit' p.id %}" class="btn btn-sm btn-primary">Editar</a>
-                <a href="{% url 'product_delete' p.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                {% if can_edit_products %}
+                    <a href="{% url 'product_edit' p.id %}" class="btn btn-sm btn-primary">Editar</a>
+                {% endif %}
+                {% if can_delete_products %}
+                    <a href="{% url 'product_delete' p.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                {% endif %}
             </td>
         </tr>
         {% empty %}

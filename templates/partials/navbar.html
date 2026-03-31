@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container">
-        <a class="navbar-brand" href="/">Sistema Inventario</a>
+        <a class="navbar-brand" href="{% url 'dashboard' %}">Sistema Inventario</a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
             <span class="navbar-toggler-icon"></span>
@@ -27,10 +27,8 @@
 
             </ul>
 
-            <!-- 🔥 CONTADORES DINÁMICOS -->
             <div class="d-flex align-items-center gap-3 me-3">
 
-                <!-- Pedidos pendientes -->
                 <div id="orders-counter"
                      hx-get="{% url 'orders_counter' %}"
                      hx-trigger="load, inventory:orders_updated from:body"
@@ -38,7 +36,6 @@
                      hx-swap="outerHTML">
                 </div>
 
-                <!-- Stock bajo -->
                 <div id="lowstock-counter"
                      hx-get="{% url 'lowstock_counter' %}"
                      hx-trigger="load, inventory:stock_updated from:body"
@@ -46,7 +43,6 @@
                      hx-swap="outerHTML">
                 </div>
 
-                <!-- 🔥 NUEVO: incidencias por almacén -->
                 <div id="stockitem-counter"
                     hx-get="{% url 'stockitem_counter' %}"
                     hx-trigger="load, inventory:stock_updated from:body"
@@ -54,7 +50,6 @@
                     hx-swap="outerHTML">
                 </div>      
 
-                <!-- Notificaciones -->
                 <div id="notifications-bell"
                      hx-get="{% url 'notifications:notifications_counter' %}"
                      hx-trigger="load, inventory:notifications_updated from:body"
@@ -66,6 +61,12 @@
             </div>
 
             <button id="themeToggle" class="btn btn-sm btn-outline-light me-3">🌙</button>
+
+            <!-- 🔐 LOGOUT -->
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-light">Salir</button>
+            </form>
 
         </div>
     </div>
