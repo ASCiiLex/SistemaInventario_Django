@@ -1,9 +1,11 @@
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib.auth.models import User
 
 from .models import Notification
 from .utils import broadcast_notification
 from .events import register_event
+from .preferences import is_event_enabled
 
 
 COOLDOWNS = {
@@ -52,6 +54,10 @@ def _is_duplicate(product=None, location=None, type_=None):
     return qs.exists()
 
 
+def _get_target_users(event_type: str):
+    return User.objects.all()  # 🔜 luego roles / tenant
+
+
 def create_notification(*, product=None, location=None, type_, message):
     if _is_duplicate(product=product, location=location, type_=type_):
         return None
@@ -64,11 +70,18 @@ def create_notification(*, product=None, location=None, type_, message):
         message=message,
     )
 
-    broadcast_notification({
-        "type": "notification",
-        "message": message,
-        "product": product.id if product else None,
-    })
+    users = _get_target_users(type_)
+
+    for user in users:
+        if not is_event_enabled(user, type_):
+            continue
+
+        broadcast_notification({
+            "type": "notification",
+            "message": message,
+            "product": product.id if product else None,
+            "user_id": user.id,
+        })
 
     return notification
 
@@ -104,7 +117,6 @@ def handle_order_created(payload: dict):
     )
 
 
-# AGRUPACIÓN PRO (Stripe-like)
 def get_grouped_notifications(notifications):
     grouped = {}
 
