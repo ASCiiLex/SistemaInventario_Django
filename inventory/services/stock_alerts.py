@@ -1,7 +1,22 @@
+from django.core.cache import cache
+
 from inventory.models import StockItem
 from products.models import Product
-
 from notifications.services import create_notification
+
+
+def invalidate_dashboard_cache():
+    keys = [
+        "dashboard:metrics",
+        "dashboard:low_stock",
+        "dashboard:chart:category",
+        "dashboard:chart:supplier",
+        "dashboard:chart:location",
+        "dashboard:chart:rotation",
+        "dashboard:chart:movements",
+        "dashboard:notifications:summary",
+    ]
+    cache.delete_many(keys)
 
 
 def sync_stock_item_notifications():
@@ -34,3 +49,6 @@ def sync_product_risk_notifications():
 def sync_all_notifications():
     sync_stock_item_notifications()
     sync_product_risk_notifications()
+
+    # 🔥 invalidación tras cambios reales
+    invalidate_dashboard_cache()

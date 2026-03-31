@@ -104,6 +104,27 @@ DATABASES = {
 
 
 # ============================
+# CACHE
+# ============================
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-saas-cache",
+    }
+}
+
+# TTLs (centralizados → importante para escalar)
+CACHE_TTL = {
+    "metrics": 15,
+    "low_stock": 15,
+    "charts": 30,
+    "notifications": 10,
+    "activity": 5,
+}
+
+
+# ============================
 # VALIDACIÓN DE PASSWORDS
 # ============================
 

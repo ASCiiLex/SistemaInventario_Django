@@ -1,4 +1,6 @@
-from django.db.models import Sum, F, Count, Q, Value
+from django.core.cache import cache
+from django.conf import settings
+from django.db.models import Sum, F, Value
 from django.db.models.functions import Coalesce
 
 from products.models import Product
@@ -7,6 +9,11 @@ from inventory.models import StockItem
 
 
 def get_low_stock():
+    cache_key = "dashboard:low_stock"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
     products = (
         Product.objects
         .annotate(
@@ -17,7 +24,7 @@ def get_low_stock():
         .only("id", "name")
     )
 
-    return [
+    result = [
         {
             "product": p,
             "quantity": p.total_stock_db,
@@ -26,13 +33,23 @@ def get_low_stock():
         for p in products
     ]
 
+    cache.set(cache_key, result, settings.CACHE_TTL["low_stock"])
+    return result
+
 
 def get_dashboard_metrics():
-    aggregated = StockItem.objects.aggregate(
-        total_stock=Coalesce(Sum("quantity"), Value(0)),
+    cache_key = "dashboard:metrics"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    total_stock = (
+        StockItem.objects.aggregate(
+            total=Coalesce(Sum("quantity"), Value(0))
+        )["total"]
     )
 
-    low_stock_products = (
+    low_stock_count = (
         StockItem.objects
         .filter(quantity__lte=F("min_stock"))
         .values("product")
@@ -40,9 +57,12 @@ def get_dashboard_metrics():
         .count()
     )
 
-    return {
+    result = {
         "total_products": Product.objects.count(),
         "total_suppliers": Supplier.objects.count(),
-        "total_stock": aggregated["total_stock"],
-        "low_stock_count": low_stock_products,
+        "total_stock": total_stock,
+        "low_stock_count": low_stock_count,
     }
+
+    cache.set(cache_key, result, settings.CACHE_TTL["metrics"])
+    return result

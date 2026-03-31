@@ -1,3 +1,5 @@
+from django.core.cache import cache
+from django.conf import settings
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
 
@@ -18,32 +20,47 @@ def _format_result(qs, label_field, value_field):
 
 
 def get_chart_by_category():
+    cache_key = "dashboard:chart:category"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
     qs = (
         Category.objects
         .values("name")
-        .annotate(
-            total=Coalesce(Sum("products__stock_items__quantity"), Value(0))
-        )
+        .annotate(total=Coalesce(Sum("products__stock_items__quantity"), Value(0)))
         .order_by("name")
     )
 
-    return _format_result(qs, "name", "total")
+    result = _format_result(qs, "name", "total")
+    cache.set(cache_key, result, settings.CACHE_TTL["charts"])
+    return result
 
 
 def get_chart_by_supplier():
+    cache_key = "dashboard:chart:supplier"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
     qs = (
         Supplier.objects
         .values("name")
-        .annotate(
-            total=Coalesce(Sum("products__stock_items__quantity"), Value(0))
-        )
+        .annotate(total=Coalesce(Sum("products__stock_items__quantity"), Value(0)))
         .order_by("name")
     )
 
-    return _format_result(qs, "name", "total")
+    result = _format_result(qs, "name", "total")
+    cache.set(cache_key, result, settings.CACHE_TTL["charts"])
+    return result
 
 
 def get_chart_by_location():
+    cache_key = "dashboard:chart:location"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
     qs = (
         StockItem.objects
         .values("location__name")
@@ -51,10 +68,17 @@ def get_chart_by_location():
         .order_by("location__name")
     )
 
-    return _format_result(qs, "location__name", "total")
+    result = _format_result(qs, "location__name", "total")
+    cache.set(cache_key, result, settings.CACHE_TTL["charts"])
+    return result
 
 
 def get_chart_rotation_by_product():
+    cache_key = "dashboard:chart:rotation"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
     qs = (
         StockMovement.objects
         .values("product__name")
@@ -62,10 +86,17 @@ def get_chart_rotation_by_product():
         .order_by("-total")[:10]
     )
 
-    return _format_result(qs, "product__name", "total")
+    result = _format_result(qs, "product__name", "total")
+    cache.set(cache_key, result, settings.CACHE_TTL["charts"])
+    return result
 
 
 def get_chart_movements_by_type():
+    cache_key = "dashboard:chart:movements"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
     qs = (
         StockMovement.objects
         .values("movement_type")
@@ -73,4 +104,6 @@ def get_chart_movements_by_type():
         .order_by("movement_type")
     )
 
-    return _format_result(qs, "movement_type", "total")
+    result = _format_result(qs, "movement_type", "total")
+    cache.set(cache_key, result, settings.CACHE_TTL["charts"])
+    return result
