@@ -45,7 +45,7 @@ function initSubSections() {
 }
 
 /* ============================================
-   CHART (FLUJO CORRECTO HTMX)
+   CHART
 ============================================ */
 
 let categoryChart = null;
@@ -60,8 +60,6 @@ function saveChartType(tipo) {
 
 function initChart() {
     const canvas = document.getElementById("categoryChart");
-
-    // 🔥 clave: esperar a que HTMX haya cargado el HTML
     if (!canvas || !window.chartData) return;
 
     const labels = window.chartData.labels || [];
@@ -69,14 +67,12 @@ function initChart() {
 
     if (!labels.length) return;
 
-    if (categoryChart) {
-        categoryChart.destroy();
-    }
+    if (categoryChart) categoryChart.destroy();
 
     categoryChart = new Chart(canvas, {
         type: "bar",
         data: {
-            labels: labels,
+            labels,
             datasets: [{
                 label: "Stock",
                 data: values,
@@ -88,9 +84,7 @@ function initChart() {
             maintainAspectRatio: false,
             indexAxis: "y",
             animation: { duration: 300 },
-            scales: {
-                x: { beginAtZero: true }
-            }
+            scales: { x: { beginAtZero: true } }
         }
     });
 
@@ -142,8 +136,11 @@ async function loadChartData(tipo) {
 }
 
 /* ============================================
-   REALTIME
+   REALTIME + FALLBACK
 ============================================ */
+
+let socket = null;
+let pollingInterval = null;
 
 function refreshDashboard() {
     htmx.trigger("#kpis-container", "refresh");
@@ -151,7 +148,68 @@ function refreshDashboard() {
     htmx.trigger("#activity-container", "refresh");
 }
 
+function refreshChart() {
+    const selector = document.getElementById("chartSelector");
+    if (!selector) return;
+    loadChartData(selector.value);
+}
+
+/* ---------- WEBSOCKET ---------- */
+
+function initWebSocket() {
+    try {
+        socket = new WebSocket(`ws://${window.location.host}/ws/notificaciones/`);
+
+        socket.onopen = () => {
+            console.log("WS conectado");
+            stopPolling(); // 🔥 si WS funciona → NO polling
+        };
+
+        socket.onmessage = () => {
+            refreshDashboard();
+            refreshChart();
+        };
+
+        socket.onclose = () => {
+            console.warn("WS caído → activando polling");
+            startPolling();
+        };
+
+        socket.onerror = () => {
+            socket.close();
+        };
+
+    } catch (e) {
+        console.warn("WS no disponible → polling");
+        startPolling();
+    }
+}
+
+/* ---------- POLLING FALLBACK ---------- */
+
+function startPolling() {
+    if (pollingInterval) return;
+
+    pollingInterval = setInterval(() => {
+        refreshDashboard();
+        refreshChart();
+    }, 10000); // cada 10s (ajustable)
+}
+
+function stopPolling() {
+    if (!pollingInterval) return;
+
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+}
+
+/* ============================================
+   EVENTS
+============================================ */
+
 function initRealtime() {
+    initWebSocket();
+
     document.body.addEventListener("movement-created", () => {
         refreshDashboard();
         refreshChart();
@@ -162,17 +220,6 @@ function initRealtime() {
     });
 }
 
-function refreshChart() {
-    const selector = document.getElementById("chartSelector");
-    if (!selector) return;
-
-    loadChartData(selector.value);
-}
-
-/* ============================================
-   EVENTS
-============================================ */
-
 function initAll() {
     initMainSections();
     initSubSections();
@@ -180,10 +227,5 @@ function initAll() {
     initRealtime();
 }
 
-// 🔥 carga inicial
 document.addEventListener("DOMContentLoaded", initAll);
-
-// 🔥 clave: reinit SIEMPRE tras HTMX (sin condiciones)
-document.body.addEventListener("htmx:afterSwap", function () {
-    initAll();
-});
+document.body.addEventListener("htmx:afterSwap", initAll);
