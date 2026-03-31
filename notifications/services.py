@@ -2,7 +2,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.models import User
 
-from .models import Notification
+from .models import Notification, UserNotification
 from .utils import send_to_user
 from .events import register_event
 from .preferences import is_event_enabled
@@ -72,9 +72,18 @@ def create_notification(*, product=None, location=None, type_, message):
 
     users = _get_target_users(type_)
 
+    user_notifications = []
+
     for user in users:
         if not is_event_enabled(user, type_):
             continue
+
+        user_notifications.append(
+            UserNotification(
+                user=user,
+                notification=notification,
+            )
+        )
 
         send_to_user(
             user.id,
@@ -84,6 +93,9 @@ def create_notification(*, product=None, location=None, type_, message):
                 "product": product.id if product else None,
             }
         )
+
+    if user_notifications:
+        UserNotification.objects.bulk_create(user_notifications)
 
     return notification
 

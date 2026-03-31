@@ -59,6 +59,7 @@ class Notification(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
+    # ⚠️ deprecated (se mantiene para compatibilidad)
     seen = models.BooleanField(default=False, db_index=True)
 
     class Meta:
@@ -89,3 +90,35 @@ class Notification(models.Model):
             qs = qs.filter(location=location)
 
         return qs.exists()
+
+
+# =========================
+# NUEVO MODELO (CLAVE SaaS)
+# =========================
+
+class UserNotification(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="user_notifications"
+    )
+
+    notification = models.ForeignKey(
+        Notification,
+        on_delete=models.CASCADE,
+        related_name="user_notifications"
+    )
+
+    seen = models.BooleanField(default=False, db_index=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "notification")
+        indexes = [
+            models.Index(fields=["user", "seen"]),
+            models.Index(fields=["notification", "user"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user} - {self.notification}"
