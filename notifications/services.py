@@ -2,7 +2,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.models import User
 
-from .models import Notification, UserNotification
+from .models import Notification
 from .utils import send_to_user
 from .events import register_event
 from .preferences import is_event_enabled
@@ -54,7 +54,7 @@ def _is_duplicate(product=None, location=None, type_=None):
     return qs.exists()
 
 
-def _get_target_users(event_type: str):
+def _get_target_users():
     return User.objects.prefetch_related("notification_preferences")
 
 
@@ -70,20 +70,12 @@ def create_notification(*, product=None, location=None, type_, message):
         message=message,
     )
 
-    users = _get_target_users(type_)
-
-    user_notifications = []
+    # 🔥 SOLO realtime (persistencia ahora la hace signals)
+    users = _get_target_users()
 
     for user in users:
         if not is_event_enabled(user, type_):
             continue
-
-        user_notifications.append(
-            UserNotification(
-                user=user,
-                notification=notification,
-            )
-        )
 
         send_to_user(
             user.id,
@@ -93,9 +85,6 @@ def create_notification(*, product=None, location=None, type_, message):
                 "product": product.id if product else None,
             }
         )
-
-    if user_notifications:
-        UserNotification.objects.bulk_create(user_notifications)
 
     return notification
 
