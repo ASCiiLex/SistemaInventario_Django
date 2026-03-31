@@ -8,6 +8,18 @@ from suppliers.models import Supplier
 from inventory.models import StockItem, StockMovement
 
 
+def invalidate_chart_cache():
+    keys = [
+        "dashboard:chart:category",
+        "dashboard:chart:supplier",
+        "dashboard:chart:location",
+        "dashboard:chart:rotation",
+        "dashboard:chart:movements",
+    ]
+    for k in keys:
+        cache.delete(k)
+
+
 def _format_result(qs, label_field, value_field):
     labels = []
     values = []

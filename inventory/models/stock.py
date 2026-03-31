@@ -16,7 +16,6 @@ class StockItem(models.Model):
     )
     quantity = models.PositiveIntegerField(default=0)
 
-    # 🔥 NUEVO
     min_stock = models.PositiveIntegerField(default=0)
 
     class Meta:

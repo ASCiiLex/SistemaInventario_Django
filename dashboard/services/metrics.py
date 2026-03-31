@@ -8,6 +8,11 @@ from suppliers.models import Supplier
 from inventory.models import StockItem
 
 
+def invalidate_metrics_cache():
+    cache.delete("dashboard:metrics")
+    cache.delete("dashboard:low_stock")
+
+
 def get_low_stock():
     cache_key = "dashboard:low_stock"
     cached = cache.get(cache_key)

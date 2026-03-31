@@ -4,6 +4,11 @@ from django.db.models import Count, Q
 from notifications.models import Notification
 
 
+def invalidate_notifications_cache():
+    cache.delete("dashboard:notifications:summary")
+    cache.delete("notifications:unread_count")
+
+
 def get_notifications_summary():
     cache_key = "dashboard:notifications:summary"
     cached = cache.get(cache_key)
