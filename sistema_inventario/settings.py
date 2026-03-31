@@ -28,6 +28,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # Core (nuevo)
+    'accounts',
+
     # Apps del proyecto
     'products.apps.ProductsConfig',
     'suppliers',
@@ -74,7 +77,7 @@ ASGI_APPLICATION = 'sistema_inventario.asgi.application'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # Plantillas globales
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -83,8 +86,11 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
 
-                # Notificaciones globales
+                # Notificaciones
                 'notifications.context_processors.notifications_unread',
+
+                # Permisos (nuevo)
+                'accounts.context_processors.permissions',
             ],
         },
     },
@@ -114,7 +120,6 @@ CACHES = {
     }
 }
 
-# TTLs (centralizados → importante para escalar)
 CACHE_TTL = {
     "metrics": 15,
     "low_stock": 15,
@@ -152,25 +157,24 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# Carpeta global de estáticos (static/)
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-# Carpeta donde Django recopila todos los estáticos para producción
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+
 # ============================
-# EMAIL (modo desarrollo)
+# EMAIL
 # ============================
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 
 # ============================
-# CHANNELS (WebSockets)
+# CHANNELS
 # ============================
 
 CHANNEL_LAYERS = {
