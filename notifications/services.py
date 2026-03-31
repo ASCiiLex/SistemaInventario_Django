@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.contrib.auth.models import User
 
 from .models import Notification
-from .utils import broadcast_notification
+from .utils import send_to_user
 from .events import register_event
 from .preferences import is_event_enabled
 
@@ -55,7 +55,7 @@ def _is_duplicate(product=None, location=None, type_=None):
 
 
 def _get_target_users(event_type: str):
-    return User.objects.all()  # 🔜 luego roles / tenant
+    return User.objects.prefetch_related("notification_preferences")
 
 
 def create_notification(*, product=None, location=None, type_, message):
@@ -76,12 +76,14 @@ def create_notification(*, product=None, location=None, type_, message):
         if not is_event_enabled(user, type_):
             continue
 
-        broadcast_notification({
-            "type": "notification",
-            "message": message,
-            "product": product.id if product else None,
-            "user_id": user.id,
-        })
+        send_to_user(
+            user.id,
+            {
+                "type": "notification",
+                "message": message,
+                "product": product.id if product else None,
+            }
+        )
 
     return notification
 

@@ -32,15 +32,13 @@ def ensure_user_preferences(user: User):
 
 
 def is_event_enabled(user: User, event_type: str) -> bool:
-    UserNotificationPreference = _get_model()
+    prefs = getattr(user, "_pref_cache", None)
 
-    pref = (
-        UserNotificationPreference.objects
-        .filter(user=user, event_type=event_type)
-        .first()
-    )
+    if prefs is None:
+        prefs = {
+            p.event_type: p.enabled
+            for p in user.notification_preferences.all()
+        }
+        user._pref_cache = prefs
 
-    if not pref:
-        return True
-
-    return pref.enabled
+    return prefs.get(event_type, True)

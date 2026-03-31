@@ -2,7 +2,24 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 
-def broadcast_notification(data: dict):
+def send_to_user(user_id: int, data: dict):
+    layer = get_channel_layer()
+    if not layer:
+        return
+
+    async_to_sync(layer.group_send)(
+        f"user_{user_id}",
+        {
+            "type": "send_notification",
+            "data": data,
+        },
+    )
+
+
+def send_ui_event_to_all(data: dict):
+    """
+    Evento efímero SOLO UI (no persiste en DB)
+    """
     layer = get_channel_layer()
     if not layer:
         return
