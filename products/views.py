@@ -22,6 +22,10 @@ from accounts.permissions import (
 from accounts.decorators import permission_required_custom
 
 
+# ==========================================
+# LIST
+# ==========================================
+
 def product_list(request):
     view = ListViewMixin()
     view.allowed_sort_fields = [
@@ -39,9 +43,14 @@ def product_list(request):
     supplier_id = request.GET.get("supplier", "")
     stock_filter = request.GET.get("stock", "")
 
-    products = Product.objects.select_related("category", "supplier").annotate(
-        total_stock_db=Coalesce(Sum("stock_items__quantity"), Value(0)),
-        total_min_stock_db=Coalesce(Sum("stock_items__min_stock"), Value(0)),
+    products = (
+        Product.objects
+        .select_related("category", "supplier")
+        .filter(organization=request.organization)
+        .annotate(
+            total_stock_db=Coalesce(Sum("stock_items__quantity"), Value(0)),
+            total_min_stock_db=Coalesce(Sum("stock_items__min_stock"), Value(0)),
+        )
     )
 
     if search:
@@ -91,12 +100,18 @@ def product_list(request):
     supplier_name = None
 
     if category_id:
-        category = Category.objects.filter(id=category_id).first()
+        category = Category.objects.filter(
+            id=category_id,
+            organization=request.organization
+        ).first()
         if category:
             category_name = category.name
 
     if supplier_id:
-        supplier = Supplier.objects.filter(id=supplier_id).first()
+        supplier = Supplier.objects.filter(
+            id=supplier_id,
+            organization=request.organization
+        ).first()
         if supplier:
             supplier_name = supplier.name
 
@@ -118,6 +133,10 @@ def product_list(request):
     return render(request, "products/list.html", context)
 
 
+# ==========================================
+# EXPORT
+# ==========================================
+
 @permission_required_custom(can_export_products)
 def export_products_csv(request):
     response = HttpResponse(content_type="text/csv")
@@ -137,7 +156,9 @@ def export_products_csv(request):
         "Valor inventario",
     ])
 
-    for p in Product.objects.select_related("category", "supplier").all():
+    for p in Product.objects.select_related("category", "supplier").filter(
+        organization=request.organization
+    ):
         writer.writerow([
             p.name,
             p.sku,
@@ -154,49 +175,100 @@ def export_products_csv(request):
     return response
 
 
+# ==========================================
+# DETAIL
+# ==========================================
+
 def product_detail(request, pk):
-    product = get_object_or_404(Product, pk=pk)
+    product = get_object_or_404(
+        Product,
+        pk=pk,
+        organization=request.organization
+    )
     return render(request, "products/detail.html", {"product": product})
 
+
+# ==========================================
+# CREATE
+# ==========================================
 
 @permission_required_custom(can_create_products)
 def product_create(request):
     if request.method == "POST":
-        form = ProductForm(request.POST, request.FILES)
+        form = ProductForm(
+            request.POST,
+            request.FILES,
+            organization=request.organization
+        )
         if form.is_valid():
             form.save()
             return redirect(reverse("product_list"))
     else:
-        form = ProductForm()
+        form = ProductForm(organization=request.organization)
 
-    return render(request, "products/form.html", {"form": form, "title": "Crear Producto"})
+    return render(request, "products/form.html", {
+        "form": form,
+        "title": "Crear Producto"
+    })
 
+
+# ==========================================
+# EDIT
+# ==========================================
 
 @permission_required_custom(can_edit_products)
 def product_edit(request, pk):
-    product = get_object_or_404(Product, pk=pk)
+    product = get_object_or_404(
+        Product,
+        pk=pk,
+        organization=request.organization
+    )
 
     if request.method == "POST":
-        form = ProductForm(request.POST, request.FILES, instance=product)
+        form = ProductForm(
+            request.POST,
+            request.FILES,
+            instance=product,
+            organization=request.organization
+        )
         if form.is_valid():
             form.save()
             return redirect(reverse("product_list"))
     else:
-        form = ProductForm(instance=product)
+        form = ProductForm(
+            instance=product,
+            organization=request.organization
+        )
 
-    return render(request, "products/form.html", {"form": form, "title": "Editar Producto"})
+    return render(request, "products/form.html", {
+        "form": form,
+        "title": "Editar Producto"
+    })
 
+
+# ==========================================
+# DELETE
+# ==========================================
 
 @permission_required_custom(can_delete_products)
 def product_delete(request, pk):
-    product = get_object_or_404(Product, pk=pk)
+    product = get_object_or_404(
+        Product,
+        pk=pk,
+        organization=request.organization
+    )
     product.delete()
     return redirect(reverse("product_list"))
 
 
+# ==========================================
+# COUNTERS
+# ==========================================
+
 def lowstock_counter(request):
     count = (
         Product.objects
+        .filter(organization=request.organization)
         .annotate(
             total_stock=Coalesce(Sum("stock_items__quantity"), Value(0)),
             total_min_stock=Coalesce(Sum("stock_items__min_stock"), Value(0)),
@@ -217,6 +289,7 @@ def stockitem_counter(request):
     from inventory.models import StockItem
 
     count = StockItem.objects.filter(
+        organization=request.organization,
         quantity__lte=F("min_stock")
     ).count()
 
@@ -228,10 +301,16 @@ def stockitem_counter(request):
     return HttpResponse(html)
 
 
+# ==========================================
+# AJAX
+# ==========================================
+
 def ajax_categories(request):
     q = request.GET.get("q", "")
 
-    qs = Category.objects.all()
+    qs = Category.objects.filter(
+        organization=request.organization
+    )
 
     if q:
         qs = qs.filter(name__icontains=q)
@@ -247,7 +326,9 @@ def ajax_categories(request):
 def ajax_suppliers(request):
     q = request.GET.get("q", "")
 
-    qs = Supplier.objects.all()
+    qs = Supplier.objects.filter(
+        organization=request.organization
+    )
 
     if q:
         qs = qs.filter(name__icontains=q)

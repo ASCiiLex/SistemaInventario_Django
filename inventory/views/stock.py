@@ -25,9 +25,11 @@ class StockMovementListView(ListViewMixin):
     default_ordering = "-created_at"
 
     def get_queryset(self, request):
-        qs = StockMovement.objects.select_related(
-            "product", "origin", "destination"
-        ).all()
+        qs = (
+            StockMovement.objects
+            .select_related("product", "origin", "destination")
+            .filter(organization=request.organization)
+        )
 
         filter_form = StockMovementFilterForm(request.GET or None)
 
@@ -77,8 +79,12 @@ def stockmovement_list(request):
 def stockmovement_create(request):
     if request.method == "POST":
         form = StockMovementForm(request.POST)
+
         if form.is_valid():
-            movement = form.save()
+            movement = form.save(commit=False)
+            movement.organization = request.organization
+            movement.save()
+
             product = movement.product
 
             log_action(request.user, "CREATE", movement, serialize_instance(movement))
@@ -107,9 +113,7 @@ def stockmovement_create(request):
                     "inventory/stock/partials/table.html",
                     context,
                 )
-                response[
-                    "HX-Trigger"
-                ] = '{"movement-created": {"message": "Movimiento creado correctamente"}}'
+                response["HX-Trigger"] = '{"movement-created": {"message": "Movimiento creado correctamente"}}'
                 return response
 
             return redirect(reverse("stockmovement_list"))
@@ -137,7 +141,9 @@ def export_stockmovements_csv(request):
     writer = csv.writer(response)
     writer.writerow(["Producto", "Tipo", "Origen", "Destino", "Cantidad", "Fecha"])
 
-    for m in StockMovement.objects.select_related("product", "origin", "destination").all():
+    for m in StockMovement.objects.select_related("product", "origin", "destination").filter(
+        organization=request.organization
+    ):
         writer.writerow(
             [
                 m.product.name,

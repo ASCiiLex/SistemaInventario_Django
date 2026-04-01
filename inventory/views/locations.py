@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.db.models import Count, Q, F, OuterRef, Subquery, IntegerField, Value
-from django.db.models.functions import Cast
+from django.db.models import Count, Q, F, OuterRef, Subquery
 
 from ..models import Location, StockItem
 from ..forms import LocationForm
@@ -12,17 +11,25 @@ from notifications.models import Notification
 import re
 
 
+# ==========================================
+# LIST
+# ==========================================
+
 def location_list(request):
     view = ListViewMixin()
     view.allowed_sort_fields = ["name", "address", "is_active"]
     view.default_ordering = "name"
 
-    qs = Location.objects.all().annotate(
-        low_stock_count=Count(
-            "stock_items",
-            filter=Q(stock_items__quantity__lte=F("stock_items__min_stock"))
-        ),
-        total_products=Count("stock_items")
+    qs = (
+        Location.objects
+        .filter(organization=request.organization)
+        .annotate(
+            low_stock_count=Count(
+                "stock_items",
+                filter=Q(stock_items__quantity__lte=F("stock_items__min_stock"))
+            ),
+            total_products=Count("stock_items")
+        )
     )
 
     search = request.GET.get("q")
@@ -46,8 +53,16 @@ def location_list(request):
     return render(request, "inventory/locations/list.html", context)
 
 
+# ==========================================
+# INCIDENTS
+# ==========================================
+
 def location_incidents(request, pk):
-    location = get_object_or_404(Location, pk=pk)
+    location = get_object_or_404(
+        Location,
+        pk=pk,
+        organization=request.organization
+    )
 
     view = ListViewMixin()
     view.allowed_sort_fields = [
@@ -59,6 +74,7 @@ def location_incidents(request, pk):
     view.default_ordering = "product__name"
 
     latest_notification = Notification.objects.filter(
+        organization=request.organization,
         product=OuterRef("product"),
         location=location,
         type="stock_item_low"
@@ -68,6 +84,7 @@ def location_incidents(request, pk):
         StockItem.objects
         .select_related("product")
         .filter(
+            organization=request.organization,
             location=location,
             quantity__lte=F("min_stock")
         )
@@ -76,7 +93,6 @@ def location_incidents(request, pk):
         )
     )
 
-    # 🔥 ORDEN NATURAL SOLO CUANDO APLICA
     sort = request.GET.get("sort")
     direction = request.GET.get("dir", "asc")
 
@@ -102,11 +118,18 @@ def location_incidents(request, pk):
     return render(request, "inventory/locations/partials/incidents.html", context)
 
 
+# ==========================================
+# CREATE
+# ==========================================
+
 def location_create(request):
     if request.method == "POST":
         form = LocationForm(request.POST)
         if form.is_valid():
-            form.save()
+            location = form.save(commit=False)
+            location.organization = request.organization
+            location.save()
+
             messages.success(request, "Almacén creado correctamente.")
             return redirect("location_list")
     else:
@@ -119,8 +142,16 @@ def location_create(request):
     )
 
 
+# ==========================================
+# EDIT
+# ==========================================
+
 def location_edit(request, pk):
-    location = get_object_or_404(Location, pk=pk)
+    location = get_object_or_404(
+        Location,
+        pk=pk,
+        organization=request.organization
+    )
 
     if request.method == "POST":
         form = LocationForm(request.POST, instance=location)
@@ -138,8 +169,16 @@ def location_edit(request, pk):
     )
 
 
+# ==========================================
+# DELETE
+# ==========================================
+
 def location_delete(request, pk):
-    location = get_object_or_404(Location, pk=pk)
+    location = get_object_or_404(
+        Location,
+        pk=pk,
+        organization=request.organization
+    )
 
     if request.method == "POST":
         location.delete()
@@ -153,9 +192,19 @@ def location_delete(request, pk):
     )
 
 
+# ==========================================
+# TOGGLE
+# ==========================================
+
 def location_toggle_active(request, pk):
-    location = get_object_or_404(Location, pk=pk)
+    location = get_object_or_404(
+        Location,
+        pk=pk,
+        organization=request.organization
+    )
+
     location.is_active = not location.is_active
     location.save()
+
     messages.success(request, "Estado de almacén actualizado.")
     return redirect("location_list")

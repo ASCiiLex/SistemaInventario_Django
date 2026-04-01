@@ -20,7 +20,6 @@ def import_stock_view(request):
             request.session["import_rows"] = rows
 
             return render(request, "inventory/imports/preview.html", {"rows": rows})
-
     else:
         form = StockImportForm()
 
@@ -42,15 +41,24 @@ def import_stock_confirm_view(request):
         quantity = int(row.get("quantity", 0))
 
         try:
-            product = Product.objects.get(code=product_code)
-            location = Location.objects.get(code=location_code)
+            product = Product.objects.get(
+                code=product_code,
+                organization=request.organization
+            )
+            location = Location.objects.get(
+                code=location_code,
+                organization=request.organization
+            )
         except Exception:
             continue
 
         stock_item, created = StockItem.objects.get_or_create(
             product=product,
             location=location,
-            defaults={"quantity": quantity},
+            defaults={
+                "quantity": quantity,
+                "organization": request.organization
+            },
         )
 
         if not created:

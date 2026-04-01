@@ -31,9 +31,11 @@ def transfer_list(request):
     ]
     view.default_ordering = "-created_at"
 
-    qs = StockTransfer.objects.select_related(
-        "product", "origin", "destination", "created_by", "confirmed_by"
-    ).all()
+    qs = (
+        StockTransfer.objects
+        .select_related("product", "origin", "destination", "created_by", "confirmed_by")
+        .filter(organization=request.organization)
+    )
 
     filter_form = StockTransferFilterForm(request.GET or None)
 
@@ -70,8 +72,10 @@ def transfer_list(request):
 def transfer_create(request):
     if request.method == "POST":
         form = StockTransferCreateForm(request.POST)
+
         if form.is_valid():
             transfer = form.save(commit=False)
+            transfer.organization = request.organization
             transfer.created_by = request.user
             transfer.save()
 
@@ -90,31 +94,33 @@ def transfer_create(request):
 
 
 def transfer_detail(request, pk):
-    transfer = get_object_or_404(StockTransfer, pk=pk)
+    transfer = get_object_or_404(
+        StockTransfer,
+        pk=pk,
+        organization=request.organization
+    )
     return render(request, "inventory/transfers/detail.html", {"transfer": transfer})
 
 
 @permission_required_custom(can_confirm_inventory)
 def transfer_confirm(request, pk):
-    transfer = get_object_or_404(StockTransfer, pk=pk)
-    old_data = serialize_instance(transfer)
+    transfer = get_object_or_404(
+        StockTransfer,
+        pk=pk,
+        organization=request.organization
+    )
 
-    if transfer.status != "pending":
-        messages.error(request, "Esta transferencia no se puede confirmar.")
-        return redirect("transfer_detail", pk=pk)
+    old_data = serialize_instance(transfer)
 
     if request.method == "POST":
         form = StockTransferConfirmForm(request.POST)
         if form.is_valid():
-            try:
-                transfer.confirm(request.user)
+            transfer.confirm(request.user)
 
-                changes = get_instance_changes(old_data, transfer)
-                log_action(request.user, "STATUS_CHANGE", transfer, changes)
+            changes = get_instance_changes(old_data, transfer)
+            log_action(request.user, "STATUS_CHANGE", transfer, changes)
 
-                messages.success(request, "Transferencia confirmada correctamente.")
-            except Exception as e:
-                messages.error(request, str(e))
+            messages.success(request, "Transferencia confirmada correctamente.")
             return redirect("transfer_detail", pk=pk)
     else:
         form = StockTransferConfirmForm()
@@ -128,12 +134,13 @@ def transfer_confirm(request, pk):
 
 @permission_required_custom(can_confirm_inventory)
 def transfer_cancel(request, pk):
-    transfer = get_object_or_404(StockTransfer, pk=pk)
-    old_data = serialize_instance(transfer)
+    transfer = get_object_or_404(
+        StockTransfer,
+        pk=pk,
+        organization=request.organization
+    )
 
-    if transfer.status != "pending":
-        messages.error(request, "Esta transferencia no se puede cancelar.")
-        return redirect("transfer_detail", pk=pk)
+    old_data = serialize_instance(transfer)
 
     transfer.cancel(request.user)
 

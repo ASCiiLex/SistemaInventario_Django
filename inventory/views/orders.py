@@ -34,7 +34,9 @@ def order_list(request):
     ]
     view.default_ordering = "-created_at"
 
-    qs = Order.objects.select_related("supplier", "location").all()
+    qs = Order.objects.select_related("supplier", "location").filter(
+        organization=request.organization
+    )
 
     filter_form = OrderFilterForm(request.GET or None)
 
@@ -51,17 +53,12 @@ def order_list(request):
     qs = view.apply_ordering(request, qs)
     page_obj = view.paginate_queryset(request, qs)
 
-    context = {
+    return render(request, "inventory/orders/list.html", {
         "orders": page_obj,
         "page_obj": page_obj,
         "filter_form": filter_form,
         **view.get_ordering_context(request),
-    }
-
-    if view.is_htmx(request):
-        return render(request, "inventory/orders/partials/table.html", context)
-
-    return render(request, "inventory/orders/list.html", context)
+    })
 
 
 @permission_required_custom(can_create_inventory)
@@ -69,8 +66,12 @@ def order_create(request):
     if request.method == "POST":
         form = OrderForm(request.POST)
         formset = OrderItemFormSet(request.POST)
+
         if form.is_valid() and formset.is_valid():
-            order = form.save()
+            order = form.save(commit=False)
+            order.organization = request.organization
+            order.save()
+
             formset.instance = order
             formset.save()
 
@@ -78,56 +79,47 @@ def order_create(request):
 
             messages.success(request, "Pedido creado correctamente.")
             return redirect("order_detail", pk=order.pk)
+
     else:
         form = OrderForm()
         formset = OrderItemFormSet()
 
-    return render(
-        request,
-        "inventory/orders/form.html",
-        {"form": form, "formset": formset, "title": "Nuevo pedido"},
-    )
+    return render(request, "inventory/orders/form.html", {
+        "form": form,
+        "formset": formset,
+        "title": "Nuevo pedido",
+    })
 
 
 def order_detail(request, pk):
-    order = (
-        Order.objects
-        .select_related("supplier", "location")
-        .prefetch_related("items__product")
-        .get(pk=pk)
+    order = get_object_or_404(
+        Order.objects.select_related("supplier", "location")
+        .prefetch_related("items__product"),
+        pk=pk,
+        organization=request.organization
     )
 
-    can_edit = can_edit_inventory(request.user)
-    can_confirm = can_confirm_inventory(request.user)
-
-    can_receive = order.status in ("sent", "partially_received", "backordered")
-    can_cancel = order.status not in ("received", "cancelled")
-
-    return render(
-        request,
-        "inventory/orders/detail.html",
-        {
-            "order": order,
-            "can_edit": can_edit,
-            "can_confirm": can_confirm,
-            "can_receive": can_receive,
-            "can_cancel": can_cancel,
-        },
-    )
+    return render(request, "inventory/orders/detail.html", {
+        "order": order,
+        "can_edit": can_edit_inventory(request.user),
+        "can_confirm": can_confirm_inventory(request.user),
+        "can_receive": order.status in ("sent", "partially_received", "backordered"),
+        "can_cancel": order.status not in ("received", "cancelled"),
+    })
 
 
 @permission_required_custom(can_edit_inventory)
 def order_edit(request, pk):
-    order = get_object_or_404(Order, pk=pk)
+    order = get_object_or_404(Order, pk=pk, organization=request.organization)
     old_data = serialize_instance(order)
 
     if order.status not in ["pending", "backordered"]:
-        messages.error(request, "Este pedido no se puede editar en su estado actual.")
         return redirect("order_detail", pk=pk)
 
     if request.method == "POST":
         form = OrderForm(request.POST, instance=order)
         formset = OrderItemFormSet(request.POST, instance=order)
+
         if form.is_valid() and formset.is_valid():
             form.save()
             formset.save()
@@ -136,47 +128,36 @@ def order_edit(request, pk):
             if changes:
                 log_action(request.user, "UPDATE", order, changes)
 
-            messages.success(request, "Pedido actualizado correctamente.")
             return redirect("order_detail", pk=order.pk)
+
     else:
         form = OrderForm(instance=order)
         formset = OrderItemFormSet(instance=order)
 
-    return render(
-        request,
-        "inventory/orders/form.html",
-        {"form": form, "formset": formset, "title": f"Editar pedido #{order.id}"},
-    )
+    return render(request, "inventory/orders/form.html", {
+        "form": form,
+        "formset": formset,
+        "title": f"Editar pedido #{order.id}",
+    })
 
 
 @permission_required_custom(can_confirm_inventory)
 def order_send(request, pk):
-    order = get_object_or_404(Order, pk=pk)
-    old_data = serialize_instance(order)
+    order = get_object_or_404(Order, pk=pk, organization=request.organization)
 
     if order.status != "pending":
-        messages.error(request, "Solo se pueden marcar como enviados los pedidos pendientes.")
         return redirect("order_detail", pk=pk)
 
     order.status = "sent"
     order.sent_at = timezone.now()
     order.save()
 
-    changes = get_instance_changes(old_data, order)
-    log_action(request.user, "STATUS_CHANGE", order, changes)
-
-    messages.success(request, "Pedido marcado como enviado.")
     return redirect("order_detail", pk=pk)
 
 
 @permission_required_custom(can_confirm_inventory)
 def order_receive(request, pk):
-    order = get_object_or_404(Order, pk=pk)
-    old_data = serialize_instance(order)
-
-    if order.status not in ["sent", "partially_received", "backordered"]:
-        messages.error(request, "Este pedido no se puede marcar como recibido.")
-        return redirect("order_detail", pk=pk)
+    order = get_object_or_404(Order, pk=pk, organization=request.organization)
 
     if request.method == "POST":
         form = OrderReceiveForm(request.POST)
@@ -185,42 +166,31 @@ def order_receive(request, pk):
             order.received_at = timezone.now()
             order.save()
 
-            changes = get_instance_changes(old_data, order)
-            log_action(request.user, "STATUS_CHANGE", order, changes)
-
-            messages.success(request, "Pedido marcado como recibido.")
             return redirect("order_detail", pk=pk)
     else:
         form = OrderReceiveForm()
 
-    return render(
-        request,
-        "inventory/orders/receive.html",
-        {"order": order, "form": form},
-    )
+    return render(request, "inventory/orders/receive.html", {
+        "order": order,
+        "form": form,
+    })
 
 
 @permission_required_custom(can_confirm_inventory)
 def order_cancel(request, pk):
-    order = get_object_or_404(Order, pk=pk)
-    old_data = serialize_instance(order)
-
-    if order.status in ["received", "cancelled"]:
-        messages.error(request, "Este pedido no se puede cancelar.")
-        return redirect("order_detail", pk=pk)
+    order = get_object_or_404(Order, pk=pk, organization=request.organization)
 
     order.status = "cancelled"
     order.save()
 
-    changes = get_instance_changes(old_data, order)
-    log_action(request.user, "STATUS_CHANGE", order, changes)
-
-    messages.success(request, "Pedido cancelado correctamente.")
     return redirect("order_detail", pk=pk)
 
 
 def orders_counter(request):
-    pending = Order.objects.filter(status="pending").count()
+    pending = Order.objects.filter(
+        organization=request.organization,
+        status="pending"
+    ).count()
 
     html = render_to_string(
         "inventory/orders/partials/counter.html",
