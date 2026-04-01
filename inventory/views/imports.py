@@ -34,6 +34,7 @@ def import_stock_confirm_view(request):
         return redirect("import_stock")
 
     total = 0
+    last_item = None
 
     for row in rows:
         product_code = row.get("product_code")
@@ -42,7 +43,7 @@ def import_stock_confirm_view(request):
 
         try:
             product = Product.objects.get(
-                code=product_code,
+                sku=product_code,
                 organization=request.organization
             )
             location = Location.objects.get(
@@ -55,22 +56,21 @@ def import_stock_confirm_view(request):
         stock_item, created = StockItem.objects.get_or_create(
             product=product,
             location=location,
-            defaults={
-                "quantity": quantity,
-                "organization": request.organization
-            },
+            organization=request.organization,
+            defaults={"quantity": quantity},
         )
 
         if not created:
             stock_item.quantity = quantity
-            stock_item.save()
+            stock_item.save(update_fields=["quantity"])
 
+        last_item = stock_item
         total += 1
 
     log_action(
         request.user,
         "IMPORT",
-        stock_item if total else None,
+        last_item,
         {"rows_processed": total},
     )
 

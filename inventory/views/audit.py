@@ -19,7 +19,9 @@ def audit_list(request):
     ]
     view.default_ordering = "-created_at"
 
-    qs = AuditLog.objects.select_related("user").all()
+    qs = AuditLog.objects.select_related("user").filter(
+        organization=request.organization
+    )
 
     filter_form = AuditFilterForm(request.GET or None)
 
@@ -44,7 +46,6 @@ def audit_list(request):
     qs = view.apply_ordering(request, qs)
     page_obj = view.paginate_queryset(request, qs)
 
-    # 🔥 FORMATEO PRO
     logs = []
     for log in page_obj:
         log.formatted_changes = format_changes(log.changes)

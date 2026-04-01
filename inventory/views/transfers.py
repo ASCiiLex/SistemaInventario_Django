@@ -37,7 +37,10 @@ def transfer_list(request):
         .filter(organization=request.organization)
     )
 
-    filter_form = StockTransferFilterForm(request.GET or None)
+    filter_form = StockTransferFilterForm(
+        request.GET or None,
+        organization=request.organization
+    )
 
     if filter_form.is_valid():
         data = filter_form.cleaned_data
@@ -71,11 +74,13 @@ def transfer_list(request):
 @permission_required_custom(can_create_inventory)
 def transfer_create(request):
     if request.method == "POST":
-        form = StockTransferCreateForm(request.POST)
+        form = StockTransferCreateForm(
+            request.POST,
+            organization=request.organization
+        )
 
         if form.is_valid():
             transfer = form.save(commit=False)
-            transfer.organization = request.organization
             transfer.created_by = request.user
             transfer.save()
 
@@ -84,7 +89,7 @@ def transfer_create(request):
             messages.success(request, "Transferencia creada correctamente.")
             return redirect("transfer_list")
     else:
-        form = StockTransferCreateForm()
+        form = StockTransferCreateForm(organization=request.organization)
 
     return render(
         request,
