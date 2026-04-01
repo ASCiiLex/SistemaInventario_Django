@@ -4,9 +4,16 @@ from products.models import Product
 
 
 def user_qs(request):
-    return UserNotification.objects.filter(user=request.user).select_related(
-        "notification__product",
-        "notification__location"
+    return (
+        UserNotification.objects
+        .filter(
+            user=request.user,
+            notification__organization=request.organization
+        )
+        .select_related(
+            "notification__product",
+            "notification__location"
+        )
     )
 
 
@@ -14,8 +21,10 @@ def has_unread(request):
     return user_qs(request).filter(seen=False).exists()
 
 
-def get_products():
-    products_qs = Product.objects.all().values("id", "name")
+def get_products(request):
+    products_qs = Product.objects.filter(
+        organization=request.organization
+    ).values("id", "name")
 
     def natural_key(item):
         return [

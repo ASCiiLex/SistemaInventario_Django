@@ -1,11 +1,12 @@
 from django.utils import timezone
 from datetime import timedelta
-from django.contrib.auth.models import User
 
 from .models import Notification
 from .utils import send_to_user
 from .events import register_event
 from .preferences import is_event_enabled
+
+from organizations.models import Membership
 
 
 COOLDOWNS = {
@@ -33,12 +34,21 @@ def _get_priority(type_):
     return PRIORITY_MAP.get(type_, "info")
 
 
-def _is_duplicate(product=None, location=None, type_=None):
+def _resolve_organization(product=None, location=None):
+    if product and hasattr(product, "organization_id"):
+        return product.organization
+    if location and hasattr(location, "organization_id"):
+        return location.organization
+    return None
+
+
+def _is_duplicate(organization, product=None, location=None, type_=None):
     minutes = COOLDOWNS.get(type_, 30)
 
     since = timezone.now() - timedelta(minutes=minutes)
 
     qs = Notification.objects.filter(
+        organization=organization,
         type=type_,
         created_at__gte=since
     )
@@ -52,12 +62,17 @@ def _is_duplicate(product=None, location=None, type_=None):
     return qs.exists()
 
 
-def _get_target_users():
+def _get_target_users(organization):
     from .preferences import ensure_user_preferences
 
-    users = User.objects.prefetch_related("notification_preferences")
+    memberships = (
+        Membership.objects
+        .select_related("user")
+        .filter(organization=organization, is_active=True)
+    )
 
-    # 🔥 asegurar preferencias para TODOS
+    users = [m.user for m in memberships]
+
     for user in users:
         ensure_user_preferences(user)
 
@@ -65,10 +80,16 @@ def _get_target_users():
 
 
 def create_notification(*, product=None, location=None, type_, message):
-    if _is_duplicate(product=product, location=location, type_=type_):
+    organization = _resolve_organization(product, location)
+
+    if not organization:
+        return None
+
+    if _is_duplicate(organization, product=product, location=location, type_=type_):
         return None
 
     notification = Notification.objects.create(
+        organization=organization,
         product=product,
         location=location,
         type=type_,
@@ -78,7 +99,7 @@ def create_notification(*, product=None, location=None, type_, message):
 
     from notifications.models import UserNotification
 
-    users = _get_target_users()
+    users = _get_target_users(organization)
 
     user_notifications = []
 
@@ -86,7 +107,6 @@ def create_notification(*, product=None, location=None, type_, message):
         if not is_event_enabled(user, type_):
             continue
 
-        # 🔥 persistencia REAL por usuario
         user_notifications.append(
             UserNotification(
                 user=user,
@@ -95,7 +115,6 @@ def create_notification(*, product=None, location=None, type_, message):
             )
         )
 
-        # 🔥 realtime
         send_to_user(
             user.id,
             {
@@ -105,15 +124,10 @@ def create_notification(*, product=None, location=None, type_, message):
             }
         )
 
-    # 🔥 BULK = rendimiento SaaS
     UserNotification.objects.bulk_create(user_notifications, ignore_conflicts=True)
 
     return notification
 
-
-# =========================
-# EVENT HANDLERS
-# =========================
 
 @register_event("stock_item_low")
 def handle_stock_item_low(payload: dict):

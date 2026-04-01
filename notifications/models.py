@@ -14,8 +14,7 @@ class Notification(models.Model):
         Organization,
         on_delete=models.CASCADE,
         related_name="notifications",
-        null=True,
-        blank=True,
+        db_index=True,
     )
 
     TYPE_CHOICES = [
@@ -72,15 +71,20 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["organization", "created_at"]),
+            models.Index(fields=["organization", "type"]),
+        ]
 
     def __str__(self):
         return self.message
 
     @classmethod
-    def recently_created(cls, *, product=None, location=None, type=None, minutes=30):
+    def recently_created(cls, *, organization, product=None, location=None, type=None, minutes=30):
         since = timezone.now() - timedelta(minutes=minutes)
 
         qs = cls.objects.filter(
+            organization=organization,
             type=type,
             created_at__gte=since
         )
@@ -113,3 +117,6 @@ class UserNotification(models.Model):
 
     class Meta:
         unique_together = ("user", "notification")
+        indexes = [
+            models.Index(fields=["user", "seen"]),
+        ]
