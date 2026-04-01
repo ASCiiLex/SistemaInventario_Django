@@ -10,15 +10,17 @@
         </tr>
     </thead>
     <tbody>
-        {% for n in notifications %}
+        {% for un in notifications %}
+        {% with n=un.notification %}
         <tr>
             <td>{{ n.message }}</td>
-            <td>{{ n.product|default:"-" }}</td>
-            <td>{{ n.location|default:"-" }}</td>
+            <td>{{ n.product.name|default:"-" }}</td>
+            <td>{{ n.location.name|default:"-" }}</td>
             <td>{{ n.get_type_display }}</td>
-            <td>{{ n.seen|yesno:"Sí,No" }}</td>
+            <td>{{ un.seen|yesno:"Sí,No" }}</td>
             <td>{{ n.created_at|date:"d/m/Y H:i" }}</td>
         </tr>
+        {% endwith %}
         {% empty %}
         <tr>
             <td colspan="6" class="text-center">No hay notificaciones recientes.</td>

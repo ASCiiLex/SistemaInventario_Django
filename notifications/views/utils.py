@@ -86,11 +86,12 @@ def group_notifications_by_product(user_notifications):
         if not un.seen:
             grouped[key]["has_unread"] = True
 
-        icon = "🔔"
-        if n.priority == "critical":
-            icon = "🔴"
-        elif n.priority == "warning":
+        if n.type == "product_risk":
             icon = "⚠️"
+        elif n.type == "stock_item_low":
+            icon = "🔴"
+        else:
+            icon = "🔔"
 
         grouped[key]["icons"].add(icon)
 

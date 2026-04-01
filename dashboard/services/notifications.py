@@ -2,22 +2,29 @@ from django.core.cache import cache
 from django.conf import settings
 from django.db.models import Count, Q
 
-from notifications.models import Notification
+from notifications.models import UserNotification
 
 
-def invalidate_notifications_cache():
-    cache.delete("dashboard:notifications:summary")
-    cache.delete("dashboard:notifications:recent")
-    cache.delete("notifications:unread_count")
+def _cache_key(user_id, suffix):
+    return f"dashboard:notifications:{user_id}:{suffix}"
 
 
-def get_notifications_summary():
-    cache_key = "dashboard:notifications:summary"
+def invalidate_notifications_cache(user_id=None):
+    if user_id:
+        cache.delete(_cache_key(user_id, "summary"))
+        cache.delete(_cache_key(user_id, "recent"))
+    else:
+        # fallback global (por si acaso)
+        cache.clear()
+
+
+def get_notifications_summary(user):
+    cache_key = _cache_key(user.id, "summary")
     cached = cache.get(cache_key)
     if cached:
         return cached
 
-    qs = Notification.objects.all()
+    qs = UserNotification.objects.filter(user=user).select_related("notification")
 
     aggregated = qs.aggregate(
         total=Count("id"),
@@ -31,12 +38,15 @@ def get_notifications_summary():
         "movement": "Movimiento",
     }
 
-    by_type_raw = qs.values("type").annotate(total=Count("id"))
+    by_type_raw = (
+        qs.values("notification__type")
+        .annotate(total=Count("id"))
+    )
 
     by_type = [
         {
-            "type": item["type"],
-            "label": TYPE_LABELS.get(item["type"], item["type"]),
+            "type": item["notification__type"],
+            "label": TYPE_LABELS.get(item["notification__type"], item["notification__type"]),
             "total": item["total"],
         }
         for item in by_type_raw
@@ -52,26 +62,28 @@ def get_notifications_summary():
     return result
 
 
-def get_recent_notifications(limit=10):
-    cache_key = f"dashboard:notifications:recent:{limit}"
+def get_recent_notifications(user, limit=10):
+    cache_key = _cache_key(user.id, f"recent:{limit}")
     cached = cache.get(cache_key)
     if cached:
         return cached
 
     qs = list(
-        Notification.objects
-        .select_related("product", "location")
+        UserNotification.objects
+        .filter(user=user)
+        .select_related("notification__product", "notification__location")
         .only(
             "id",
-            "message",
-            "type",
-            "priority",
             "seen",
-            "created_at",
-            "product__name",
-            "location__name",
+            "notification__id",
+            "notification__message",
+            "notification__type",
+            "notification__priority",
+            "notification__created_at",
+            "notification__product__name",
+            "notification__location__name",
         )
-        .order_by("-created_at")[:limit]
+        .order_by("-notification__created_at")[:limit]
     )
 
     cache.set(cache_key, qs, settings.CACHE_TTL["notifications"])

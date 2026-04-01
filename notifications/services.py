@@ -159,7 +159,7 @@ def get_grouped_notifications(notifications):
         grouped[key]["count"] += 1
         grouped[key]["items"].append(n)
 
-        icon = ICON_MAP.get(n.priority, "🔔")
+        icon = ICON_MAP.get(n.type, "🔔")
         grouped[key]["icons"].add(icon)
 
     for g in grouped.values():
