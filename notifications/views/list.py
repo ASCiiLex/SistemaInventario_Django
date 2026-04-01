@@ -8,7 +8,7 @@ def notifications_list(request):
     context = {
         "user_notifications": qs,
         "notifications": [un.notification for un in qs],
-        "products": get_products(),
+        "products": get_products(request),
         "has_unread": has_unread(request),
         **filters_ctx,
     }
