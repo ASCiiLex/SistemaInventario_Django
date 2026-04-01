@@ -111,10 +111,11 @@ class StockMovement(models.Model):
         elif self.movement_type == "TRANSFER":
             self._apply_transfer()
 
-        from notifications.utils import broadcast_notification
+        # 🔥 NUEVO SISTEMA (events)
+        from notifications.events import emit_event
         from inventory.services.stock_alerts import sync_all_notifications
 
-        # 🔥 INVALIDACIÓN TOTAL CENTRALIZADA
+        # 🔥 INVALIDACIÓN CACHE
         from dashboard.services.metrics import invalidate_metrics_cache
         from dashboard.services.charts import invalidate_chart_cache
         from dashboard.services.notifications import invalidate_notifications_cache
@@ -125,9 +126,10 @@ class StockMovement(models.Model):
         invalidate_notifications_cache()
         invalidate_activity_cache()
 
-        broadcast_notification({
-            "type": "stock_changed",
-            "product": self.product.name,
+        # 🔥 EVENTO CENTRALIZADO
+        emit_event("movement", {
+            "product": self.product,
+            "message": f"Movimiento de stock en {self.product.name}",
         })
 
         sync_all_notifications()

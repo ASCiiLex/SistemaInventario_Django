@@ -19,15 +19,13 @@ PRIORITY_MAP = {
     "product_risk": "warning",
     "movement": "info",
     "order": "info",
-    "alert": "warning",
-    "info": "info",
 }
 
-
 ICON_MAP = {
-    "critical": "🔴",
-    "warning": "⚠️",
-    "info": "🔔",
+    "stock_item_low": "📦",
+    "product_risk": "⚠️",
+    "movement": "🔄",
+    "order": "🧾",
 }
 
 
@@ -55,7 +53,15 @@ def _is_duplicate(product=None, location=None, type_=None):
 
 
 def _get_target_users():
-    return User.objects.prefetch_related("notification_preferences")
+    from .preferences import ensure_user_preferences
+
+    users = User.objects.prefetch_related("notification_preferences")
+
+    # 🔥 asegurar preferencias para TODOS
+    for user in users:
+        ensure_user_preferences(user)
+
+    return users
 
 
 def create_notification(*, product=None, location=None, type_, message):
@@ -70,13 +76,26 @@ def create_notification(*, product=None, location=None, type_, message):
         message=message,
     )
 
-    # 🔥 SOLO realtime (persistencia ahora la hace signals)
+    from notifications.models import UserNotification
+
     users = _get_target_users()
+
+    user_notifications = []
 
     for user in users:
         if not is_event_enabled(user, type_):
             continue
 
+        # 🔥 persistencia REAL por usuario
+        user_notifications.append(
+            UserNotification(
+                user=user,
+                notification=notification,
+                seen=False,
+            )
+        )
+
+        # 🔥 realtime
         send_to_user(
             user.id,
             {
@@ -85,6 +104,9 @@ def create_notification(*, product=None, location=None, type_, message):
                 "product": product.id if product else None,
             }
         )
+
+    # 🔥 BULK = rendimiento SaaS
+    UserNotification.objects.bulk_create(user_notifications, ignore_conflicts=True)
 
     return notification
 

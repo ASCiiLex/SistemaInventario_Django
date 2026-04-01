@@ -1,11 +1,13 @@
 from django.core.cache import cache
 from django.conf import settings
 from django.db.models import Count, Q
+
 from notifications.models import Notification
 
 
 def invalidate_notifications_cache():
     cache.delete("dashboard:notifications:summary")
+    cache.delete("dashboard:notifications:recent")
     cache.delete("notifications:unread_count")
 
 
@@ -15,20 +17,26 @@ def get_notifications_summary():
     if cached:
         return cached
 
-    qs = Notification.objects.only("id", "type", "seen")
+    qs = Notification.objects.all()
 
     aggregated = qs.aggregate(
         total=Count("id"),
         unread=Count("id", filter=Q(seen=False)),
     )
 
+    TYPE_LABELS = {
+        "stock_item_low": "Incidencia almacén",
+        "product_risk": "Producto en riesgo",
+        "order": "Pedido",
+        "movement": "Movimiento",
+    }
+
     by_type_raw = qs.values("type").annotate(total=Count("id"))
-    type_map = dict(Notification.TYPE_CHOICES)
 
     by_type = [
         {
             "type": item["type"],
-            "label": type_map.get(item["type"], item["type"]),
+            "label": TYPE_LABELS.get(item["type"], item["type"]),
             "total": item["total"],
         }
         for item in by_type_raw
@@ -57,6 +65,7 @@ def get_recent_notifications(limit=10):
             "id",
             "message",
             "type",
+            "priority",
             "seen",
             "created_at",
             "product__name",

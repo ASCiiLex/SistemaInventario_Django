@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.db.models import F, IntegerField, Sum
-from django.db.models.functions import Cast, Substr
+from django.db.models import F, IntegerField, Sum, Value
+from django.db.models.functions import Cast, Substr, Coalesce
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 import csv
@@ -12,7 +12,7 @@ from suppliers.models import Supplier
 from .forms import ProductForm
 from inventory.utils.listing import ListViewMixin
 
-# 🔐 PERMISSIONS (granular)
+# 🔐 PERMISSIONS
 from accounts.permissions import (
     can_create_products,
     can_edit_products,
@@ -40,8 +40,8 @@ def product_list(request):
     stock_filter = request.GET.get("stock", "")
 
     products = Product.objects.select_related("category", "supplier").annotate(
-        total_stock_db=Sum("stock_items__quantity"),
-        total_min_stock_db=Sum("stock_items__min_stock"),
+        total_stock_db=Coalesce(Sum("stock_items__quantity"), Value(0)),
+        total_min_stock_db=Coalesce(Sum("stock_items__min_stock"), Value(0)),
     )
 
     if search:
@@ -195,12 +195,15 @@ def product_delete(request, pk):
 
 
 def lowstock_counter(request):
-    count = Product.objects.annotate(
-        total_stock_db=Sum("stock_items__quantity"),
-        total_min_stock_db=Sum("stock_items__min_stock"),
-    ).filter(
-        total_stock_db__lte=F("total_min_stock_db")
-    ).count()
+    count = (
+        Product.objects
+        .annotate(
+            total_stock=Coalesce(Sum("stock_items__quantity"), Value(0)),
+            total_min_stock=Coalesce(Sum("stock_items__min_stock"), Value(0)),
+        )
+        .filter(total_stock__lte=F("total_min_stock"))
+        .count()
+    )
 
     html = render_to_string(
         "products/partials/lowstock_counter.html",
@@ -212,7 +215,6 @@ def lowstock_counter(request):
 
 def stockitem_counter(request):
     from inventory.models import StockItem
-    from django.db.models import F
 
     count = StockItem.objects.filter(
         quantity__lte=F("min_stock")

@@ -6,4 +6,5 @@ class NotificationsConfig(AppConfig):
     name = "notifications"
 
     def ready(self):
-        import notifications.signals
+        # 🔥 IMPORTA LOS HANDLERS (esto registra los eventos)
+        import notifications.services

@@ -24,13 +24,12 @@ def sync_stock_item_notifications():
 
     for item in items:
         if item.quantity <= item.min_stock:
-
             emit_event(
                 "stock_item_low",
                 {
                     "product": item.product,
                     "location": item.location,
-                    "message": f"{item.product.name} bajo mínimo en {item.location.name}",
+                    "message": f"Stock bajo en {item.location.name}: {item.product.name}",
                 }
             )
 
@@ -40,7 +39,6 @@ def sync_product_risk_notifications():
 
     for p in products:
         if p.total_stock <= p.total_min_stock:
-
             emit_event(
                 "product_risk",
                 {

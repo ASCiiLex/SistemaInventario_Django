@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
 
     # Core
     'accounts',
@@ -37,7 +38,7 @@ INSTALLED_APPS = [
     'suppliers',
     'categories',
     'dashboard',
-    'notifications',
+    'notifications.apps.NotificationsConfig',
     'inventory',
 
     # WebSockets
