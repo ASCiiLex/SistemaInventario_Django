@@ -1,9 +1,8 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from ..models import Order, OrderItem
+from ..models import Order, OrderItem, Location
 from suppliers.models import Supplier
-from ..models import Location
 from products.models import Product
 
 
@@ -59,24 +58,28 @@ class OrderItemForm(forms.ModelForm):
         return qty
 
 
+class BaseOrderItemFormSet(forms.BaseInlineFormSet):
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+
+        for form in self.forms:
+            form.organization = self.organization
+            if self.organization:
+                form.fields["product"].queryset = Product.objects.filter(organization=self.organization)
+
+
 OrderItemFormSet = inlineformset_factory(
     Order,
     OrderItem,
     form=OrderItemForm,
+    formset=BaseOrderItemFormSet,
     extra=1,
     can_delete=True,
 )
 
 
 class OrderFilterForm(forms.Form):
-    def __init__(self, *args, **kwargs):
-        organization = kwargs.pop("organization", None)
-        super().__init__(*args, **kwargs)
-
-        if organization:
-            self.fields["supplier"].queryset = Supplier.objects.filter(organization=organization)
-            self.fields["location"].queryset = Location.objects.filter(organization=organization)
-
     supplier = forms.ModelChoiceField(
         queryset=Supplier.objects.none(),
         required=False,
@@ -97,6 +100,14 @@ class OrderFilterForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-select"}),
         label="Estado",
     )
+
+    def __init__(self, *args, **kwargs):
+        organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+
+        if organization:
+            self.fields["supplier"].queryset = Supplier.objects.filter(organization=organization)
+            self.fields["location"].queryset = Location.objects.filter(organization=organization)
 
 
 class OrderReceiveForm(forms.Form):
