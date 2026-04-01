@@ -6,7 +6,7 @@ from notifications.models import UserNotification
 
 
 def _cache_key(user_id, org_id, suffix):
-    return f"dashboard:notifications:{org_id}:{user_id}:{suffix}"
+    return f"dashboard:notifications:{user_id}:{org_id}:{suffix}"
 
 
 def invalidate_notifications_cache(user_id=None, org_id=None):
@@ -25,7 +25,10 @@ def get_notifications_summary(user, organization):
 
     qs = (
         UserNotification.objects
-        .filter(user=user, notification__organization=organization)
+        .filter(
+            user=user,
+            notification__organization=organization
+        )
         .select_related("notification")
     )
 
@@ -73,8 +76,22 @@ def get_recent_notifications(user, organization, limit=10):
 
     qs = list(
         UserNotification.objects
-        .filter(user=user, notification__organization=organization)
+        .filter(
+            user=user,
+            notification__organization=organization
+        )
         .select_related("notification__product", "notification__location")
+        .only(
+            "id",
+            "seen",
+            "notification__id",
+            "notification__message",
+            "notification__type",
+            "notification__priority",
+            "notification__created_at",
+            "notification__product__name",
+            "notification__location__name",
+        )
         .order_by("-notification__created_at")[:limit]
     )
 

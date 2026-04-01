@@ -6,7 +6,10 @@ from dashboard.services.notifications import (
 
 
 def dashboard_notifications_recent(request):
-    notifications = get_recent_notifications(request.user)
+    notifications = get_recent_notifications(
+        request.user,
+        request.organization
+    )
 
     return render(
         request,
@@ -16,7 +19,10 @@ def dashboard_notifications_recent(request):
 
 
 def dashboard_notifications_summary(request):
-    context = get_notifications_summary(request.user)
+    context = get_notifications_summary(
+        request.user,
+        request.organization
+    )
 
     return render(
         request,
