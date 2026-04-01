@@ -4,7 +4,10 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Almacenes</h1>
-        <a href="{% url 'location_create' %}" class="btn btn-success">Nuevo almacén</a>
+
+        {% if can_create_inventory %}
+            <a href="{% url 'location_create' %}" class="btn btn-success">Nuevo almacén</a>
+        {% endif %}
     </div>
 
     <div id="locations-table">

@@ -97,7 +97,9 @@ TEMPLATES = [
                 'notifications.context_processors.notifications_unread',
 
                 # Permisos
-                'accounts.context_processors.permissions',
+                "accounts.context_processors.permissions_context",
+
+                # Organización
                 'organizations.context_processors.organization',
             ],
         },

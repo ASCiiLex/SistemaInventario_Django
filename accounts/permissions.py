@@ -1,108 +1,189 @@
 from organizations.models import Membership
 
 
+# ==========================================
+# 🔥 CORE HELPERS
+# ==========================================
+
 def _get_membership(user):
-    if not user.is_authenticated:
+    if not user or not user.is_authenticated:
         return None
 
-    # 🔥 usar middleware si existe
-    request = getattr(user, "_request", None)
-
-    if request and hasattr(request, "membership"):
-        return request.membership
-
     return (
-        Membership.objects
-        .filter(user=user, is_active=True)
+        user.memberships
         .select_related("organization")
+        .filter(is_active=True)
         .first()
     )
 
 
-def is_owner(user):
+def _has_role(user, roles):
     membership = _get_membership(user)
-    return membership and membership.role == Membership.Roles.OWNER
+    if not membership:
+        return False
+    return membership.role in roles
 
 
-def is_admin(user):
-    membership = _get_membership(user)
-    return membership and membership.role in [
-        Membership.Roles.OWNER,
-        Membership.Roles.ADMIN
-    ]
+def _is_owner(user):
+    return _has_role(user, [Membership.Roles.OWNER])
 
 
-def is_manager(user):
-    membership = _get_membership(user)
-    return membership and membership.role in [
+def _is_admin(user):
+    return _has_role(user, [Membership.Roles.OWNER, Membership.Roles.ADMIN])
+
+
+def _is_manager(user):
+    return _has_role(user, [
         Membership.Roles.OWNER,
         Membership.Roles.ADMIN,
         Membership.Roles.MANAGER
-    ]
+    ])
 
 
-def is_staff(user):
-    membership = _get_membership(user)
-    return membership and membership.role == Membership.Roles.STAFF
+def _is_staff(user):
+    return _has_role(user, [
+        Membership.Roles.OWNER,
+        Membership.Roles.ADMIN,
+        Membership.Roles.MANAGER,
+        Membership.Roles.STAFF
+    ])
 
 
-# 🔹 PRODUCTS
+# ==========================================
+# PRODUCTS
+# ==========================================
 
 def can_view_products(user):
-    return user.is_authenticated
+    return _is_staff(user)
 
 
 def can_create_products(user):
-    return is_manager(user) or is_staff(user)
+    return _is_manager(user)
 
 
 def can_edit_products(user):
-    return is_manager(user)
+    return _is_manager(user)
 
 
 def can_delete_products(user):
-    return is_admin(user)
+    return _is_admin(user)
 
 
 def can_export_products(user):
-    return can_create_products(user)
+    return _is_manager(user)
 
 
-# 🔹 INVENTORY
+# ==========================================
+# CATEGORIES
+# ==========================================
+
+def can_view_categories(user):
+    return _is_staff(user)
+
+
+def can_manage_categories(user):
+    return _is_manager(user)
+
+
+# ==========================================
+# SUPPLIERS
+# ==========================================
+
+def can_view_suppliers(user):
+    return _is_staff(user)
+
+
+def can_manage_suppliers(user):
+    return _is_manager(user)
+
+
+# ==========================================
+# LOCATIONS
+# ==========================================
+
+def can_view_locations(user):
+    return _is_staff(user)
+
+
+def can_manage_locations(user):
+    return _is_admin(user)
+
+
+# ==========================================
+# INVENTORY
+# ==========================================
 
 def can_view_inventory(user):
-    return user.is_authenticated
+    return _is_staff(user)
 
 
 def can_create_inventory(user):
-    return is_manager(user)
+    return _is_staff(user)
 
 
 def can_edit_inventory(user):
-    return is_manager(user)
-
-
-def can_delete_inventory(user):
-    return is_admin(user)
+    return _is_manager(user)
 
 
 def can_confirm_inventory(user):
-    return is_manager(user)
+    return _is_manager(user)
 
 
-def can_send_orders(user):
-    return user.is_authenticated
+# ==========================================
+# TRANSFERS
+# ==========================================
+
+def can_view_transfers(user):
+    return _is_staff(user)
 
 
-# 🔹 LEGACY
-
-def can_manage_products(user):
-    return is_manager(user)
+def can_create_transfer(user):
+    return _is_staff(user)
 
 
-def can_manage_orders(user):
-    return is_manager(user)
+def can_confirm_transfer(user):
+    return _is_manager(user)
 
 
-def can_view_dashboard(user):
-    return user.is_authenticated
+# ==========================================
+# ORDERS
+# ==========================================
+
+def can_view_orders(user):
+    return _is_staff(user)
+
+
+def can_create_order(user):
+    return _is_manager(user)
+
+
+def can_edit_order(user):
+    return _is_manager(user)
+
+
+def can_send_order(user):
+    return _is_manager(user)
+
+
+def can_cancel_order(user):
+    return _is_manager(user)
+
+
+def can_receive_order(user):
+    return _is_staff(user)
+
+
+# ==========================================
+# AUDIT
+# ==========================================
+
+def can_view_audit(user):
+    return _is_manager(user)
+
+
+# ==========================================
+# NOTIFICATIONS
+# ==========================================
+
+def can_manage_notifications(user):
+    return _is_manager(user)

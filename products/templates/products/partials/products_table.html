@@ -28,10 +28,10 @@
             </td>
             <td>{{ p.total_min_stock_db }}</td>
             <td>
-                {% if can_edit_products %}
+                {% if perm.edit_products %}
                     <a href="{% url 'product_edit' p.id %}" class="btn btn-sm btn-primary">Editar</a>
                 {% endif %}
-                {% if can_delete_products %}
+                {% if perm.delete_products %}
                     <a href="{% url 'product_delete' p.id %}" class="btn btn-sm btn-danger">Eliminar</a>
                 {% endif %}
             </td>

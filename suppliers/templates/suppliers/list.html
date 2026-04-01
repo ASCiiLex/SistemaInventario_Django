@@ -8,7 +8,9 @@
     <button class="btn btn-primary">Buscar</button>
 </form>
 
+{% if perm.manage_suppliers %}
 <a href="{% url 'supplier_create' %}" class="btn btn-success mb-3">Nuevo Proveedor</a>
+{% endif %}
 
 <table class="table table-striped">
     <thead>
@@ -28,8 +30,10 @@
             <td>{{ s.email }}</td>
             <td>{{ s.phone }}</td>
             <td>
-                <a href="{% url 'supplier_edit' s.id %}" class="btn btn-sm btn-primary">Editar</a>
-                <a href="{% url 'supplier_delete' s.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                {% if perm.manage_suppliers %}
+                    <a href="{% url 'supplier_edit' s.id %}" class="btn btn-sm btn-primary">Editar</a>
+                    <a href="{% url 'supplier_delete' s.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                {% endif %}
             </td>
         </tr>
         {% empty %}

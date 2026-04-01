@@ -5,7 +5,7 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Pedidos</h1>
-        {% if can_create_inventory %}
+        {% if perm.create_order %}
             <a href="{% url 'order_create' %}" class="btn btn-success">Nuevo pedido</a>
         {% endif %}
     </div>

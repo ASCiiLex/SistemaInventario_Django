@@ -4,32 +4,27 @@ from django.urls import reverse
 
 class LoginRequiredMiddleware:
     """
-    Fuerza autenticación global en toda la app.
-    Compatible con HTMX (no rompe peticiones parciales).
+    🔐 Fuerza login en toda la app excepto rutas públicas
     """
 
     EXEMPT_URLS = [
         "login",
         "logout",
-        "admin:login",
     ]
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        if not request.user.is_authenticated:
-            current_path = request.path
 
-            exempt_paths = [reverse(url) for url in self.EXEMPT_URLS]
+        if request.user.is_authenticated:
+            return self.get_response(request)
 
-            if not any(current_path.startswith(path) for path in exempt_paths):
-                # 🔥 HTMX → no redirigir normal (rompe UI)
-                if request.headers.get("HX-Request"):
-                    response = redirect("login")
-                    response["HX-Redirect"] = reverse("login")
-                    return response
+        path = request.path
 
-                return redirect("login")
+        exempt_paths = [reverse(url) for url in self.EXEMPT_URLS]
 
-        return self.get_response(request)
+        if any(path.startswith(url) for url in exempt_paths):
+            return self.get_response(request)
+
+        return redirect("login")

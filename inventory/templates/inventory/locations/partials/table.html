@@ -49,15 +49,17 @@
             </td>
 
             <td class="text-end">
-                <a href="{% url 'location_edit' location.id %}" class="btn btn-sm btn-primary">Editar</a>
-                <a href="{% url 'location_toggle_active' location.id %}" class="btn btn-sm btn-warning">
-                    {% if location.is_active %}Desactivar{% else %}Activar{% endif %}
-                </a>
-                <a href="{% url 'location_delete' location.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                {% if perm.edit_inventory %}
+                    <a href="{% url 'location_edit' location.id %}" class="btn btn-sm btn-primary">Editar</a>
+                    <a href="{% url 'location_toggle_active' location.id %}" class="btn btn-sm btn-warning">
+                        {% if location.is_active %}Desactivar{% else %}Activar{% endif %}
+                    </a>
+                    <a href="{% url 'location_delete' location.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                {% endif %}
             </td>
         </tr>
 
-        <!-- EXPAND (FULL WIDTH) -->
+        <!-- EXPAND -->
         <tr>
             <td colspan="5" class="p-0">
                 <div id="expand-{{ location.id }}"></div>

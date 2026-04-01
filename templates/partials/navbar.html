@@ -18,12 +18,17 @@
                         Inventario
                     </a>
                     <ul class="dropdown-menu">
+
                         <li><a class="dropdown-item" href="{% url 'stockmovement_list' %}">Movimientos</a></li>
                         <li><a class="dropdown-item" href="{% url 'transfer_list' %}">Transferencias</a></li>
+
                         <li><a class="dropdown-item" href="{% url 'location_list' %}">Almacenes</a></li>
                         <li><a class="dropdown-item" href="{% url 'order_list' %}">Pedidos</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{% url 'audit_list' %}">Auditoría</a></li>
+
+                        {% if perm.view_audit %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'audit_list' %}">Auditoría</a></li>
+                        {% endif %}
                     </ul>
                 </li>
 
@@ -31,12 +36,14 @@
 
             <div class="d-flex align-items-center gap-3 me-3">
 
+                {% if perm.view_orders %}
                 <div id="orders-counter"
                      hx-get="{% url 'orders_counter' %}"
                      hx-trigger="load, inventory:orders_updated from:body"
                      hx-target="this"
                      hx-swap="outerHTML">
                 </div>
+                {% endif %}
 
                 <div id="lowstock-counter"
                      hx-get="{% url 'lowstock_counter' %}"
@@ -60,16 +67,13 @@
                     {% include 'notifications/partials/bell.html' %}
                 </div>
 
-
                 <a href="{% url 'notification_preferences' %}"
-                    class="btn btn-sm btn-outline-light"
-                    title="Configurar notificaciones">
+                   class="btn btn-sm btn-outline-light"
+                   title="Configurar notificaciones">
                     ⚙️
                 </a>
 
             </div>
-
-           
 
             <button id="themeToggle" class="btn btn-sm btn-outline-light me-3">🌙</button>
 

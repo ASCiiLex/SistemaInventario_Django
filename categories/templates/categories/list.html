@@ -8,7 +8,9 @@
     <button class="btn btn-primary">Buscar</button>
 </form>
 
+{% if perm.manage_categories %}
 <a href="{% url 'category_create' %}" class="btn btn-success mb-3">Nueva Categoría</a>
+{% endif %}
 
 <table class="table table-striped">
     <thead>
@@ -26,8 +28,10 @@
             <td>{{ c.description }}</td>
             <td>{{ c.parent }}</td>
             <td>
-                <a href="{% url 'category_edit' c.id %}" class="btn btn-sm btn-primary">Editar</a>
-                <a href="{% url 'category_delete' c.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                {% if perm.manage_categories %}
+                    <a href="{% url 'category_edit' c.id %}" class="btn btn-sm btn-primary">Editar</a>
+                    <a href="{% url 'category_delete' c.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                {% endif %}
             </td>
         </tr>
         {% empty %}

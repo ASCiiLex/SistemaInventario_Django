@@ -5,7 +5,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Movimientos de stock</h1>
         <div>
-            {% if can_create_inventory %}
+            {% if perm.create_inventory %}
                 <a href="{% url 'stockmovement_create' %}" class="btn btn-primary me-2">Nuevo movimiento</a>
                 <a href="{% url 'transfer_create' %}" class="btn btn-secondary">Transferencia</a>
             {% endif %}

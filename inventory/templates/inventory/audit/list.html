@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
+
+{% if not can_view_audit %}
+    <div class="alert alert-danger mt-4">
+        No tienes permisos para acceder a auditoría.
+    </div>
+{% else %}
+
 <div class="container mt-4">
     <h2 class="mb-3">Auditoría</h2>
 
@@ -14,58 +21,31 @@
         hx-trigger="change delay:300ms"
     >
 
-        <!-- DESDE -->
         <div class="col-md-2">
             <div class="small text-muted mb-1">Desde</div>
-            <input type="date"
-                name="date_from"
-                value="{{ request.GET.date_from }}"
-                class="form-control form-control-sm">
+            {{ filter_form.date_from }}
         </div>
 
-        <!-- HASTA -->
         <div class="col-md-2">
             <div class="small text-muted mb-1">Hasta</div>
-            <input type="date"
-                name="date_to"
-                value="{{ request.GET.date_to }}"
-                class="form-control form-control-sm">
+            {{ filter_form.date_to }}
         </div>
 
-        <!-- USUARIO -->
         <div class="col-md-2">
             <div class="small text-muted mb-1">Usuario</div>
-            <input type="text"
-                name="user"
-                value="{{ request.GET.user }}"
-                class="form-control form-control-sm"
-                placeholder="Usuario">
+            {{ filter_form.user }}
         </div>
 
-        <!-- ACCIÓN -->
         <div class="col-md-2">
             <div class="small text-muted mb-1">Acción</div>
-            <select name="action" class="form-select form-select-sm">
-                <option value="">Todas</option>
-                <option value="CREATE">Create</option>
-                <option value="UPDATE">Update</option>
-                <option value="DELETE">Delete</option>
-                <option value="STATUS_CHANGE">Status</option>
-                <option value="IMPORT">Import</option>
-            </select>
+            {{ filter_form.action }}
         </div>
 
-        <!-- MODELO -->
         <div class="col-md-2">
             <div class="small text-muted mb-1">Modelo</div>
-            <input type="text"
-                name="model"
-                value="{{ request.GET.model }}"
-                class="form-control form-control-sm"
-                placeholder="Modelo">
+            {{ filter_form.model }}
         </div>
 
-        <!-- LIMPIAR -->
         <div class="col-md-2 d-grid">
             <button type="button"
                     class="btn btn-outline-secondary btn-sm"
@@ -80,4 +60,7 @@
         {% include "inventory/audit/partials/table.html" %}
     </div>
 </div>
+
+{% endif %}
+
 {% endblock %}
