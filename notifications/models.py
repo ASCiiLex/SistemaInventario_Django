@@ -3,11 +3,20 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.models import User
 
+from organizations.models import Organization
 from products.models import Product
 from inventory.models import Location
 
 
 class Notification(models.Model):
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        null=True,
+        blank=True,
+    )
 
     TYPE_CHOICES = [
         ("movement", "Movimiento"),
@@ -59,17 +68,10 @@ class Notification(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
-    # ⚠️ deprecated (se mantiene para compatibilidad)
     seen = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         ordering = ["-created_at"]
-        indexes = [
-            models.Index(fields=["seen", "-created_at"]),
-            models.Index(fields=["type", "-created_at"]),
-            models.Index(fields=["product", "type"]),
-            models.Index(fields=["location", "type"]),
-        ]
 
     def __str__(self):
         return self.message
@@ -92,10 +94,6 @@ class Notification(models.Model):
         return qs.exists()
 
 
-# =========================
-# NUEVO MODELO (CLAVE SaaS)
-# =========================
-
 class UserNotification(models.Model):
     user = models.ForeignKey(
         User,
@@ -115,10 +113,3 @@ class UserNotification(models.Model):
 
     class Meta:
         unique_together = ("user", "notification")
-        indexes = [
-            models.Index(fields=["user", "seen"]),
-            models.Index(fields=["notification", "user"]),
-        ]
-
-    def __str__(self):
-        return f"{self.user} - {self.notification}"

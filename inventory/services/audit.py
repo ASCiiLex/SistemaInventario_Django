@@ -31,11 +31,12 @@ def get_instance_changes(old_data, new_instance):
     return changes
 
 
-def log_action(user, action, instance, changes=None):
+def log_action(user, action, instance, changes=None, organization=None):
     if changes is None:
         changes = {}
 
     AuditLog.objects.create(
+        organization=organization,
         user=user if user and user.is_authenticated else None,
         action=action,
         model_name=instance.__class__.__name__ if instance else "System",
@@ -44,7 +45,6 @@ def log_action(user, action, instance, changes=None):
     )
 
 
-# 🔥 NUEVO → render limpio para UI
 def format_changes(changes: dict):
     if not changes:
         return []
@@ -59,7 +59,6 @@ def format_changes(changes: dict):
                 "new": values["new"],
             })
         else:
-            # fallback (CREATE / IMPORT planos)
             formatted.append({
                 "field": field,
                 "old": None,

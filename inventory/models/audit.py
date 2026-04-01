@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from organizations.models import Organization
 
 
 class AuditLog(models.Model):
@@ -10,6 +11,14 @@ class AuditLog(models.Model):
         ("STATUS_CHANGE", "Status change"),
         ("IMPORT", "Import"),
         ("OTHER", "Other"),
+    )
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="audit_logs",
+        null=True,
+        blank=True,
     )
 
     user = models.ForeignKey(

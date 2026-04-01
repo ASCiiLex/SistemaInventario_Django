@@ -28,8 +28,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Core (nuevo)
+    # Core
     'accounts',
+    'organizations',
 
     # Apps del proyecto
     'products.apps.ProductsConfig',
@@ -58,6 +59,7 @@ MIDDLEWARE = [
 
     # 🔐 LOGIN GLOBAL
     'accounts.middleware.LoginRequiredMiddleware',
+    'organizations.middleware.OrganizationMiddleware',
 
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -93,8 +95,9 @@ TEMPLATES = [
                 # Notificaciones
                 'notifications.context_processors.notifications_unread',
 
-                # Permisos (nuevo)
+                # Permisos
                 'accounts.context_processors.permissions',
+                'organizations.context_processors.organization',
             ],
         },
     },
