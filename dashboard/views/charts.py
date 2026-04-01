@@ -11,7 +11,7 @@ from dashboard.services.charts import (
 
 
 def dashboard_chart(request):
-    labels, values = get_chart_by_category()
+    labels, values = get_chart_by_category(request.organization)
 
     return render(
         request,
@@ -21,16 +21,18 @@ def dashboard_chart(request):
 
 
 def dashboard_chart_data(request, tipo):
+    org = request.organization
+
     if tipo == "categorias":
-        labels, values = get_chart_by_category()
+        labels, values = get_chart_by_category(org)
     elif tipo == "proveedores":
-        labels, values = get_chart_by_supplier()
+        labels, values = get_chart_by_supplier(org)
     elif tipo == "almacenes":
-        labels, values = get_chart_by_location()
+        labels, values = get_chart_by_location(org)
     elif tipo == "rotacion":
-        labels, values = get_chart_rotation_by_product()
+        labels, values = get_chart_rotation_by_product(org)
     elif tipo == "movimientos":
-        labels, values = get_chart_movements_by_type()
+        labels, values = get_chart_movements_by_type(org)
     else:
         labels, values = [], []
 

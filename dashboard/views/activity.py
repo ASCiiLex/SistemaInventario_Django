@@ -6,7 +6,7 @@ from dashboard.services.activity import (
 
 
 def dashboard_recent_movements(request):
-    movements = get_recent_movements()
+    movements = get_recent_movements(request.organization)
     return render(
         request,
         "dashboard/partials/recent_movements.html",
@@ -15,7 +15,7 @@ def dashboard_recent_movements(request):
 
 
 def dashboard_recent_stock_movements(request):
-    stock_movements = get_all_stock_movements()
+    stock_movements = get_all_stock_movements(request.organization)
     return render(
         request,
         "dashboard/partials/recent_stock_movements.html",

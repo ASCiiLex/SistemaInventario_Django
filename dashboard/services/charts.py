@@ -8,16 +8,19 @@ from suppliers.models import Supplier
 from inventory.models import StockItem, StockMovement
 
 
-def invalidate_chart_cache():
-    keys = [
-        "dashboard:chart:category",
-        "dashboard:chart:supplier",
-        "dashboard:chart:location",
-        "dashboard:chart:rotation",
-        "dashboard:chart:movements",
-    ]
-    for k in keys:
-        cache.delete(k)
+def invalidate_chart_cache(org_id=None):
+    if org_id:
+        keys = [
+            f"dashboard:chart:category:{org_id}",
+            f"dashboard:chart:supplier:{org_id}",
+            f"dashboard:chart:location:{org_id}",
+            f"dashboard:chart:rotation:{org_id}",
+            f"dashboard:chart:movements:{org_id}",
+        ]
+        for k in keys:
+            cache.delete(k)
+    else:
+        cache.clear()
 
 
 def _format_result(qs, label_field, value_field):
@@ -31,18 +34,17 @@ def _format_result(qs, label_field, value_field):
     return labels, values
 
 
-def get_chart_by_category():
-    cache_key = "dashboard:chart:category"
+def get_chart_by_category(organization):
+    cache_key = f"dashboard:chart:category:{organization.id}"
     cached = cache.get(cache_key)
     if cached:
         return cached
 
     qs = (
         Category.objects
+        .filter(organization=organization)
         .values("name")
-        .annotate(
-            total=Coalesce(Sum("products__stock_items__quantity"), Value(0))
-        )
+        .annotate(total=Coalesce(Sum("products__stock_items__quantity"), Value(0)))
         .order_by("name")
     )
 
@@ -51,18 +53,17 @@ def get_chart_by_category():
     return result
 
 
-def get_chart_by_supplier():
-    cache_key = "dashboard:chart:supplier"
+def get_chart_by_supplier(organization):
+    cache_key = f"dashboard:chart:supplier:{organization.id}"
     cached = cache.get(cache_key)
     if cached:
         return cached
 
     qs = (
         Supplier.objects
+        .filter(organization=organization)
         .values("name")
-        .annotate(
-            total=Coalesce(Sum("products__stock_items__quantity"), Value(0))
-        )
+        .annotate(total=Coalesce(Sum("products__stock_items__quantity"), Value(0)))
         .order_by("name")
     )
 
@@ -71,18 +72,17 @@ def get_chart_by_supplier():
     return result
 
 
-def get_chart_by_location():
-    cache_key = "dashboard:chart:location"
+def get_chart_by_location(organization):
+    cache_key = f"dashboard:chart:location:{organization.id}"
     cached = cache.get(cache_key)
     if cached:
         return cached
 
     qs = (
         StockItem.objects
+        .filter(organization=organization)
         .values("location__name")
-        .annotate(
-            total=Coalesce(Sum("quantity"), Value(0))
-        )
+        .annotate(total=Coalesce(Sum("quantity"), Value(0)))
         .order_by("location__name")
     )
 
@@ -91,18 +91,17 @@ def get_chart_by_location():
     return result
 
 
-def get_chart_rotation_by_product():
-    cache_key = "dashboard:chart:rotation"
+def get_chart_rotation_by_product(organization):
+    cache_key = f"dashboard:chart:rotation:{organization.id}"
     cached = cache.get(cache_key)
     if cached:
         return cached
 
     qs = (
         StockMovement.objects
+        .filter(organization=organization)
         .values("product__name")
-        .annotate(
-            total=Coalesce(Sum("quantity"), Value(0))
-        )
+        .annotate(total=Coalesce(Sum("quantity"), Value(0)))
         .order_by("-total")[:10]
     )
 
@@ -111,18 +110,17 @@ def get_chart_rotation_by_product():
     return result
 
 
-def get_chart_movements_by_type():
-    cache_key = "dashboard:chart:movements"
+def get_chart_movements_by_type(organization):
+    cache_key = f"dashboard:chart:movements:{organization.id}"
     cached = cache.get(cache_key)
     if cached:
         return cached
 
     qs = (
         StockMovement.objects
+        .filter(organization=organization)
         .values("movement_type")
-        .annotate(
-            total=Coalesce(Sum("quantity"), Value(0))
-        )
+        .annotate(total=Coalesce(Sum("quantity"), Value(0)))
         .order_by("movement_type")
     )
 

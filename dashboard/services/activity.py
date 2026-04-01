@@ -3,19 +3,23 @@ from django.conf import settings
 from inventory.models import StockMovement
 
 
-def invalidate_activity_cache():
-    cache.delete("dashboard:activity:recent")
-    cache.delete("dashboard:activity:all")
+def invalidate_activity_cache(org_id=None):
+    if org_id:
+        cache.delete(f"dashboard:activity:recent:{org_id}")
+        cache.delete(f"dashboard:activity:all:{org_id}")
+    else:
+        cache.clear()
 
 
-def get_recent_movements(limit=10):
-    cache_key = f"dashboard:activity:recent:{limit}"
+def get_recent_movements(organization, limit=10):
+    cache_key = f"dashboard:activity:recent:{organization.id}:{limit}"
     cached = cache.get(cache_key)
     if cached:
         return cached
 
     qs = list(
         StockMovement.objects
+        .filter(organization=organization)
         .select_related("product", "origin", "destination")
         .only(
             "id",
@@ -26,7 +30,6 @@ def get_recent_movements(limit=10):
             "origin__name",
             "destination__name",
         )
-        .exclude(origin__isnull=True, destination__isnull=True)
         .order_by("-created_at")[:limit]
     )
 
@@ -34,14 +37,15 @@ def get_recent_movements(limit=10):
     return qs
 
 
-def get_all_stock_movements():
-    cache_key = "dashboard:activity:all"
+def get_all_stock_movements(organization):
+    cache_key = f"dashboard:activity:all:{organization.id}"
     cached = cache.get(cache_key)
     if cached:
         return cached
 
     qs = list(
         StockMovement.objects
+        .filter(organization=organization)
         .select_related("product")
         .only(
             "id",
