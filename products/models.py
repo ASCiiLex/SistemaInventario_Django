@@ -17,8 +17,6 @@ class Product(models.Model):
         on_delete=models.CASCADE,
         related_name="products",
         db_index=True,
-        null=True,
-        blank=True,
     )
 
     name = models.CharField(max_length=150, db_index=True)
@@ -54,6 +52,7 @@ class Product(models.Model):
 
     class Meta:
         ordering = ['name']
+        unique_together = ("organization", "sku")
         indexes = [
             models.Index(fields=["organization", "name"]),
             models.Index(fields=["organization", "sku"]),

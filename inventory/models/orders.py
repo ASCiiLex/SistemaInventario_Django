@@ -20,8 +20,6 @@ class Order(models.Model):
         on_delete=models.CASCADE,
         related_name="orders",
         db_index=True,
-        null=True,
-        blank=True,
     )
 
     supplier = models.ForeignKey(
@@ -69,8 +67,6 @@ class OrderItem(models.Model):
         on_delete=models.CASCADE,
         related_name="order_items",
         db_index=True,
-        null=True,
-        blank=True,
     )
 
     order = models.ForeignKey(
