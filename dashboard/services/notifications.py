@@ -5,26 +5,29 @@ from django.db.models import Count, Q
 from notifications.models import UserNotification
 
 
-def _cache_key(user_id, suffix):
-    return f"dashboard:notifications:{user_id}:{suffix}"
+def _cache_key(user_id, org_id, suffix):
+    return f"dashboard:notifications:{org_id}:{user_id}:{suffix}"
 
 
-def invalidate_notifications_cache(user_id=None):
-    if user_id:
-        cache.delete(_cache_key(user_id, "summary"))
-        cache.delete(_cache_key(user_id, "recent"))
+def invalidate_notifications_cache(user_id=None, org_id=None):
+    if user_id and org_id:
+        cache.delete(_cache_key(user_id, org_id, "summary"))
+        cache.delete(_cache_key(user_id, org_id, "recent"))
     else:
-        # fallback global (por si acaso)
         cache.clear()
 
 
-def get_notifications_summary(user):
-    cache_key = _cache_key(user.id, "summary")
+def get_notifications_summary(user, organization):
+    cache_key = _cache_key(user.id, organization.id, "summary")
     cached = cache.get(cache_key)
     if cached:
         return cached
 
-    qs = UserNotification.objects.filter(user=user).select_related("notification")
+    qs = (
+        UserNotification.objects
+        .filter(user=user, notification__organization=organization)
+        .select_related("notification")
+    )
 
     aggregated = qs.aggregate(
         total=Count("id"),
@@ -62,27 +65,16 @@ def get_notifications_summary(user):
     return result
 
 
-def get_recent_notifications(user, limit=10):
-    cache_key = _cache_key(user.id, f"recent:{limit}")
+def get_recent_notifications(user, organization, limit=10):
+    cache_key = _cache_key(user.id, organization.id, f"recent:{limit}")
     cached = cache.get(cache_key)
     if cached:
         return cached
 
     qs = list(
         UserNotification.objects
-        .filter(user=user)
+        .filter(user=user, notification__organization=organization)
         .select_related("notification__product", "notification__location")
-        .only(
-            "id",
-            "seen",
-            "notification__id",
-            "notification__message",
-            "notification__type",
-            "notification__priority",
-            "notification__created_at",
-            "notification__product__name",
-            "notification__location__name",
-        )
         .order_by("-notification__created_at")[:limit]
     )
 

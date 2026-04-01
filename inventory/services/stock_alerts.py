@@ -5,22 +5,29 @@ from products.models import Product
 from notifications.events import emit_event
 
 
-def invalidate_dashboard_cache():
+def invalidate_dashboard_cache(org_id=None):
+    if not org_id:
+        return
+
     keys = [
-        "dashboard:metrics",
-        "dashboard:low_stock",
-        "dashboard:chart:category",
-        "dashboard:chart:supplier",
-        "dashboard:chart:location",
-        "dashboard:chart:rotation",
-        "dashboard:chart:movements",
-        "dashboard:notifications:summary",
+        f"dashboard:metrics:{org_id}",
+        f"dashboard:low_stock:{org_id}",
+        f"dashboard:chart:category:{org_id}",
+        f"dashboard:chart:supplier:{org_id}",
+        f"dashboard:chart:location:{org_id}",
+        f"dashboard:chart:rotation:{org_id}",
+        f"dashboard:chart:movements:{org_id}",
+        f"dashboard:notifications:summary:{org_id}",
     ]
     cache.delete_many(keys)
 
 
-def sync_stock_item_notifications():
-    items = StockItem.objects.select_related("product", "location")
+def sync_stock_item_notifications(organization):
+    items = (
+        StockItem.objects
+        .select_related("product", "location")
+        .filter(organization=organization)
+    )
 
     for item in items:
         if item.quantity <= item.min_stock:
@@ -34,8 +41,8 @@ def sync_stock_item_notifications():
             )
 
 
-def sync_product_risk_notifications():
-    products = Product.objects.all()
+def sync_product_risk_notifications(organization):
+    products = Product.objects.filter(organization=organization)
 
     for p in products:
         if p.total_stock <= p.total_min_stock:
@@ -48,8 +55,8 @@ def sync_product_risk_notifications():
             )
 
 
-def sync_all_notifications():
-    sync_stock_item_notifications()
-    sync_product_risk_notifications()
+def sync_all_notifications(organization):
+    sync_stock_item_notifications(organization)
+    sync_product_risk_notifications(organization)
 
-    invalidate_dashboard_cache()
+    invalidate_dashboard_cache(organization.id)

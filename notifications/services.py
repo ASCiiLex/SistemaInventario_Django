@@ -22,13 +22,6 @@ PRIORITY_MAP = {
     "order": "info",
 }
 
-ICON_MAP = {
-    "stock_item_low": "📦",
-    "product_risk": "⚠️",
-    "movement": "🔄",
-    "order": "🧾",
-}
-
 
 def _get_priority(type_):
     return PRIORITY_MAP.get(type_, "info")
@@ -44,7 +37,6 @@ def _resolve_organization(product=None, location=None):
 
 def _is_duplicate(organization, product=None, location=None, type_=None):
     minutes = COOLDOWNS.get(type_, 30)
-
     since = timezone.now() - timedelta(minutes=minutes)
 
     qs = Notification.objects.filter(
@@ -146,38 +138,3 @@ def handle_product_risk(payload: dict):
         type_="product_risk",
         message=payload.get("message"),
     )
-
-
-@register_event("order_created")
-def handle_order_created(payload: dict):
-    create_notification(
-        type_="order",
-        message=payload.get("message"),
-    )
-
-
-def get_grouped_notifications(notifications):
-    grouped = {}
-
-    for n in notifications:
-        key = n.product_id or "no-product"
-
-        if key not in grouped:
-            grouped[key] = {
-                "product": n.product,
-                "count": 0,
-                "items": [],
-                "icons": set(),
-            }
-
-        grouped[key]["count"] += 1
-        grouped[key]["items"].append(n)
-
-        icon = ICON_MAP.get(n.type, "🔔")
-        grouped[key]["icons"].add(icon)
-
-    for g in grouped.values():
-        g["items"].sort(key=lambda x: x.created_at, reverse=True)
-        g["icons"] = list(g["icons"])
-
-    return list(grouped.values())

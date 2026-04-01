@@ -31,9 +31,22 @@ def get_instance_changes(old_data, new_instance):
     return changes
 
 
+def _resolve_organization(instance, organization):
+    if organization:
+        return organization
+    if instance and hasattr(instance, "organization"):
+        return instance.organization
+    return None
+
+
 def log_action(user, action, instance, changes=None, organization=None):
     if changes is None:
         changes = {}
+
+    organization = _resolve_organization(instance, organization)
+
+    if not organization:
+        return  # 🔥 fail-safe: nunca registrar sin org
 
     AuditLog.objects.create(
         organization=organization,
