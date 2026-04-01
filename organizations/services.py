@@ -1,16 +1,26 @@
-from .models import Organization, Membership
+from .models import Membership
 
 
-def create_organization_with_owner(user, name, slug):
-    organization = Organization.objects.create(
-        name=name,
-        slug=slug
+def get_user_memberships(user):
+    return Membership.objects.select_related("organization").filter(user=user, is_active=True)
+
+
+def get_user_organizations(user):
+    return [m.organization for m in get_user_memberships(user)]
+
+
+def get_user_role(user, organization):
+    membership = (
+        Membership.objects
+        .filter(user=user, organization=organization, is_active=True)
+        .first()
     )
+    return membership.role if membership else None
 
-    Membership.objects.create(
-        user=user,
-        organization=organization,
-        role=Membership.Roles.OWNER
-    )
 
-    return organization
+def is_admin(user, organization):
+    return get_user_role(user, organization) == "admin"
+
+
+def is_manager(user, organization):
+    return get_user_role(user, organization) in ["admin", "manager"]

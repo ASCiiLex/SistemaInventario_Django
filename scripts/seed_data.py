@@ -16,29 +16,14 @@ def run():
     print("🔄 Generando datos PRO SaaS...")
 
     # =====================
-    # ORGANIZATION
-    # =====================
-    org, _ = Organization.objects.get_or_create(
-        slug="default",
-        defaults={"name": "Default Organization"}
-    )
-
-    # =====================
-    # USERS + MEMBERSHIPS
+    # USERS (PRIMERO 🔥)
     # =====================
     if not User.objects.filter(username="admin").exists():
         admin = User.objects.create_superuser("admin", "admin@test.com", "admin1234")
     else:
         admin = User.objects.get(username="admin")
 
-    Membership.objects.get_or_create(
-        user=admin,
-        organization=org,
-        defaults={"role": Membership.Roles.OWNER}
-    )
-
     users = []
-
     roles = [
         Membership.Roles.ADMIN,
         Membership.Roles.MANAGER,
@@ -49,16 +34,41 @@ def run():
         u, _ = User.objects.get_or_create(username=f"user{i}")
         u.set_password("1234")
         u.save()
+        users.append(u)
 
+    all_users = [admin] + users
+
+    # =====================
+    # ORGANIZATION (AHORA CON OWNER ✅)
+    # =====================
+    org, created = Organization.objects.get_or_create(
+        slug="default",
+        defaults={
+            "name": "Default Organization",
+            "owner": admin,
+        }
+    )
+
+    # 🔥 asegurar owner si ya existía
+    if not org.owner:
+        org.owner = admin
+        org.save()
+
+    # =====================
+    # MEMBERSHIPS
+    # =====================
+    Membership.objects.get_or_create(
+        user=admin,
+        organization=org,
+        defaults={"role": Membership.Roles.OWNER}
+    )
+
+    for i, u in enumerate(users):
         Membership.objects.get_or_create(
             user=u,
             organization=org,
             defaults={"role": roles[i % len(roles)]}
         )
-
-        users.append(u)
-
-    all_users = [admin] + users
 
     # =====================
     # CATEGORIES & SUPPLIERS
@@ -188,7 +198,7 @@ def run():
             )
 
     # =====================
-    # NOTIFICATIONS + USER NOTIFICATIONS
+    # NOTIFICATIONS
     # =====================
     for _ in range(30):
         product = random.choice(products)

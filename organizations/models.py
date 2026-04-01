@@ -3,22 +3,31 @@ from django.contrib.auth.models import User
 
 
 class Organization(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=150)
     slug = models.SlugField(unique=True)
 
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="owned_organizations"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
 
 
 class Membership(models.Model):
+
     class Roles(models.TextChoices):
-        OWNER = "OWNER", "Owner"
-        ADMIN = "ADMIN", "Admin"
-        MANAGER = "MANAGER", "Manager"
-        STAFF = "STAFF", "Staff"
-        VIEWER = "VIEWER", "Viewer"
+        OWNER = "owner", "Owner"
+        ADMIN = "admin", "Admin"
+        MANAGER = "manager", "Manager"
+        STAFF = "staff", "Staff"
 
     user = models.ForeignKey(
         User,
@@ -49,4 +58,4 @@ class Membership(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user} - {self.organization} ({self.role})"
+        return f"{self.user.username} @ {self.organization.name} ({self.role})"
