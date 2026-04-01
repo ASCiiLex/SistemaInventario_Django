@@ -5,16 +5,18 @@ from ..models import StockTransfer, Location
 
 
 class StockTransferCreateForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+
+        if self.organization:
+            self.fields["product"].queryset = Product.objects.filter(organization=self.organization)
+            self.fields["origin"].queryset = Location.objects.filter(organization=self.organization)
+            self.fields["destination"].queryset = Location.objects.filter(organization=self.organization)
+
     class Meta:
         model = StockTransfer
         fields = ["product", "origin", "destination", "quantity", "note"]
-        widgets = {
-            "product": forms.Select(attrs={"class": "form-control select2"}),
-            "origin": forms.Select(attrs={"class": "form-control select2"}),
-            "destination": forms.Select(attrs={"class": "form-control select2"}),
-            "quantity": forms.NumberInput(attrs={"class": "form-control"}),
-            "note": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-        }
 
     def clean_quantity(self):
         qty = self.cleaned_data["quantity"]
@@ -22,54 +24,30 @@ class StockTransferCreateForm(forms.ModelForm):
             raise forms.ValidationError("La cantidad debe ser mayor que cero.")
         return qty
 
-    def clean(self):
-        cleaned = super().clean()
-        origin = cleaned.get("origin")
-        destination = cleaned.get("destination")
-
-        if origin and destination and origin == destination:
-            raise forms.ValidationError("El origen y destino no pueden ser iguales.")
-
-        return cleaned
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.organization:
+            instance.organization = self.organization
+        if commit:
+            instance.save()
+        return instance
 
 
 class StockTransferConfirmForm(forms.Form):
-    confirmar = forms.BooleanField(
-        required=True,
-        initial=True,
-        widget=forms.HiddenInput()
-    )
+    confirmar = forms.BooleanField(required=True, initial=True, widget=forms.HiddenInput())
 
 
 class StockTransferFilterForm(forms.Form):
-    STATUS_CHOICES = [
-        ("", "Todos los estados"),
-    ] + list(StockTransfer.STATUS_CHOICES)
+    def __init__(self, *args, **kwargs):
+        organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
 
-    product = forms.ModelChoiceField(
-        queryset=Product.objects.all(),
-        required=False,
-        widget=forms.Select(attrs={"class": "form-select select2",
-            "data-placeholder": "Producto"}),
-        label="Producto",
-    )
-    origin = forms.ModelChoiceField(
-        queryset=Location.objects.all(),
-        required=False,
-        widget=forms.Select(attrs={"class": "form-select select2",
-            "data-placeholder": "Origen"}),
-        label="Origen",
-    )
-    destination = forms.ModelChoiceField(
-        queryset=Location.objects.all(),
-        required=False,
-        widget=forms.Select(attrs={"class": "form-select select2",
-            "data-placeholder": "Destino"}),
-        label="Destino",
-    )
-    status = forms.ChoiceField(
-        required=False,
-        choices=STATUS_CHOICES,
-        widget=forms.Select(attrs={"class": "form-select"}),
-        label="Estado",
-    )
+        if organization:
+            self.fields["product"].queryset = Product.objects.filter(organization=organization)
+            self.fields["origin"].queryset = Location.objects.filter(organization=organization)
+            self.fields["destination"].queryset = Location.objects.filter(organization=organization)
+
+    product = forms.ModelChoiceField(queryset=Product.objects.none(), required=False)
+    origin = forms.ModelChoiceField(queryset=Location.objects.none(), required=False)
+    destination = forms.ModelChoiceField(queryset=Location.objects.none(), required=False)
+    status = forms.ChoiceField(required=False, choices=[("", "Todos")] + list(StockTransfer.STATUS_CHOICES))

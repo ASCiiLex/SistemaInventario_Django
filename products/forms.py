@@ -1,8 +1,17 @@
 from django import forms
 from .models import Product
+from categories.models import Category
+from suppliers.models import Supplier
 
 
 class ProductForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+
+        if self.organization:
+            self.fields["category"].queryset = Category.objects.filter(organization=self.organization)
+            self.fields["supplier"].queryset = Supplier.objects.filter(organization=self.organization)
 
     class Meta:
         model = Product
@@ -18,18 +27,13 @@ class ProductForm(forms.ModelForm):
             "image",
         ]
 
-        widgets = {
-            "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nombre del producto"}),
-            "sku": forms.TextInput(attrs={"class": "form-control", "placeholder": "Código SKU"}),
-            "category": forms.Select(attrs={"class": "form-control"}),
-            "supplier": forms.Select(attrs={"class": "form-control"}),
-            "stock": forms.NumberInput(attrs={"class": "form-control"}),
-            "min_stock": forms.NumberInput(attrs={"class": "form-control"}),
-            "cost_price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
-            "sale_price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
-            "image": forms.FileInput(attrs={"class": "form-control"}),
-        }
-
     def clean_sku(self):
-        sku = self.cleaned_data["sku"].upper()
-        return sku
+        return self.cleaned_data["sku"].upper()
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.organization:
+            instance.organization = self.organization
+        if commit:
+            instance.save()
+        return instance

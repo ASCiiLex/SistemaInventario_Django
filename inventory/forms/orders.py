@@ -3,25 +3,46 @@ from django.forms import inlineformset_factory
 
 from ..models import Order, OrderItem
 from suppliers.models import Supplier
-from .locations import Location
+from ..models import Location
 from products.models import Product
 
 
 class OrderForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+
+        if self.organization:
+            self.fields["supplier"].queryset = Supplier.objects.filter(organization=self.organization)
+            self.fields["location"].queryset = Location.objects.filter(organization=self.organization)
+
     class Meta:
         model = Order
         fields = ["supplier", "location", "estimated_arrival", "status"]
         widgets = {
             "supplier": forms.Select(attrs={"class": "form-select select2"}),
             "location": forms.Select(attrs={"class": "form-select select2"}),
-            "estimated_arrival": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
-            ),
+            "estimated_arrival": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "status": forms.Select(attrs={"class": "form-select"}),
         }
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.organization:
+            instance.organization = self.organization
+        if commit:
+            instance.save()
+        return instance
+
 
 class OrderItemForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+
+        if self.organization:
+            self.fields["product"].queryset = Product.objects.filter(organization=self.organization)
+
     class Meta:
         model = OrderItem
         fields = ["product", "quantity", "cost_price"]
@@ -48,20 +69,28 @@ OrderItemFormSet = inlineformset_factory(
 
 
 class OrderFilterForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+
+        if organization:
+            self.fields["supplier"].queryset = Supplier.objects.filter(organization=organization)
+            self.fields["location"].queryset = Location.objects.filter(organization=organization)
+
     supplier = forms.ModelChoiceField(
-        queryset=Supplier.objects.all(),
+        queryset=Supplier.objects.none(),
         required=False,
-        widget=forms.Select(attrs={"class": "form-select select2",
-            "data-placeholder": "Proveedor"}),
+        widget=forms.Select(attrs={"class": "form-select select2"}),
         label="Proveedor",
     )
+
     location = forms.ModelChoiceField(
-        queryset=Location.objects.all(),
+        queryset=Location.objects.none(),
         required=False,
-        widget=forms.Select(attrs={"class": "form-select select2",
-            "data-placeholder": "Almacén"}),
+        widget=forms.Select(attrs={"class": "form-select select2"}),
         label="Almacén",
     )
+
     status = forms.ChoiceField(
         required=False,
         choices=[("", "Todos los estados")] + list(Order.STATUS_CHOICES),
@@ -71,8 +100,4 @@ class OrderFilterForm(forms.Form):
 
 
 class OrderReceiveForm(forms.Form):
-    confirmar = forms.BooleanField(
-        required=True,
-        initial=True,
-        widget=forms.HiddenInput(),
-    )
+    confirmar = forms.BooleanField(required=True, initial=True, widget=forms.HiddenInput())
