@@ -2,6 +2,7 @@ from django.db import models
 from suppliers.models import Supplier
 from products.models import Product
 from .locations import Location
+from organizations.models import Organization
 
 
 class Order(models.Model):
@@ -12,6 +13,13 @@ class Order(models.Model):
         ("cancelled", "Cancelado"),
         ("partially_received", "Parcialmente recibido"),
         ("backordered", "Backorder"),
+    )
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="orders",
+        db_index=True,
     )
 
     supplier = models.ForeignKey(
@@ -37,8 +45,9 @@ class Order(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "Order"
-        verbose_name_plural = "Orders"
+        indexes = [
+            models.Index(fields=["organization", "created_at"]),
+        ]
 
     def __str__(self):
         return f"Order #{self.id} - {self.supplier.name if self.supplier else 'N/A'}"
@@ -53,6 +62,13 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="order_items",
+        db_index=True,
+    )
+
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
@@ -68,8 +84,9 @@ class OrderItem(models.Model):
     cost_price = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
-        verbose_name = "Order Item"
-        verbose_name_plural = "Order Items"
+        indexes = [
+            models.Index(fields=["organization", "order"]),
+        ]
 
     def __str__(self):
         return f"{self.product.name if self.product else 'N/A'} x {self.quantity}"
@@ -77,3 +94,8 @@ class OrderItem(models.Model):
     @property
     def total_cost(self):
         return self.quantity * self.cost_price
+
+    def save(self, *args, **kwargs):
+        if self.order and not self.organization_id:
+            self.organization = self.order.organization
+        super().save(*args, **kwargs)

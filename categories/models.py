@@ -1,8 +1,16 @@
 from django.db import models
+from organizations.models import Organization
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=100, unique=True, db_index=True)
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="categories",
+        db_index=True,
+    )
+
+    name = models.CharField(max_length=100, db_index=True)
     description = models.TextField(blank=True)
 
     parent = models.ForeignKey(
@@ -14,9 +22,11 @@ class Category(models.Model):
     )
 
     class Meta:
-        verbose_name = "Category"
-        verbose_name_plural = "Categories"
         ordering = ['name']
+        unique_together = ("organization", "name")
+        indexes = [
+            models.Index(fields=["organization", "name"]),
+        ]
 
     def __str__(self):
         return self.name

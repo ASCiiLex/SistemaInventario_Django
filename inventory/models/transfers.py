@@ -6,6 +6,7 @@ from products.models import Product
 from .locations import Location
 from .stock import StockItem
 from .movements import StockMovement
+from organizations.models import Organization
 
 
 class StockTransfer(models.Model):
@@ -13,6 +14,13 @@ class StockTransfer(models.Model):
         ("pending", "Pendiente"),
         ("received", "Recibida"),
         ("cancelled", "Cancelada"),
+    )
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="transfers",
+        db_index=True,
     )
 
     product = models.ForeignKey(
@@ -36,7 +44,6 @@ class StockTransfer(models.Model):
     )
 
     quantity = models.PositiveIntegerField()
-
     note = models.TextField(blank=True)
 
     status = models.CharField(
@@ -65,18 +72,25 @@ class StockTransfer(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "Transferencia de stock"
-        verbose_name_plural = "Transferencias de stock"
+        indexes = [
+            models.Index(fields=["organization", "created_at"]),
+        ]
 
     def __str__(self):
         return f"Transferencia #{self.id} - {self.product.name}"
 
-    # -----------------------------
-    # VALIDACIONES
-    # -----------------------------
     def clean(self):
         if self.quantity <= 0:
             raise ValidationError("La cantidad debe ser mayor que cero.")
+
+        if self.product and self.product.organization_id != self.organization_id:
+            raise ValidationError("El producto no pertenece a la organización.")
+
+        if self.origin and self.origin.organization_id != self.organization_id:
+            raise ValidationError("El origen no pertenece a la organización.")
+
+        if self.destination and self.destination.organization_id != self.organization_id:
+            raise ValidationError("El destino no pertenece a la organización.")
 
         if not self.origin or not self.destination:
             raise ValidationError("Debe seleccionar origen y destino.")
@@ -84,9 +98,9 @@ class StockTransfer(models.Model):
         if self.origin == self.destination:
             raise ValidationError("El origen y destino no pueden ser iguales.")
 
-        # Validar stock disponible en origen
         if self.status == "pending":
             stock_item = StockItem.objects.filter(
+                organization=self.organization,
                 product=self.product,
                 location=self.origin
             ).first()
@@ -94,15 +108,12 @@ class StockTransfer(models.Model):
             if not stock_item or stock_item.quantity < self.quantity:
                 raise ValidationError("No hay suficiente stock en el almacén de origen.")
 
-    # -----------------------------
-    # CONFIRMAR TRANSFERENCIA
-    # -----------------------------
     def confirm(self, user):
         if self.status != "pending":
             raise ValidationError("Solo se pueden confirmar transferencias pendientes.")
 
-        # Crear movimiento real
         StockMovement.objects.create(
+            organization=self.organization,
             product=self.product,
             movement_type="TRANSFER",
             origin=self.origin,
@@ -113,13 +124,11 @@ class StockTransfer(models.Model):
 
         self.status = "received"
         self.confirmed_by = user
+
         from django.utils import timezone
         self.confirmed_at = timezone.now()
         self.save()
 
-    # -----------------------------
-    # CANCELAR TRANSFERENCIA
-    # -----------------------------
     def cancel(self, user):
         if self.status != "pending":
             raise ValidationError("Solo se pueden cancelar transferencias pendientes.")
@@ -127,3 +136,9 @@ class StockTransfer(models.Model):
         self.status = "cancelled"
         self.confirmed_by = user
         self.save()
+
+    def save(self, *args, **kwargs):
+        if self.product and not self.organization_id:
+            self.organization = self.product.organization
+
+        super().save(*args, **kwargs)

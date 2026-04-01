@@ -5,6 +5,12 @@ def _get_membership(user):
     if not user.is_authenticated:
         return None
 
+    # 🔥 usar middleware si existe
+    request = getattr(user, "_request", None)
+
+    if request and hasattr(request, "membership"):
+        return request.membership
+
     return (
         Membership.objects
         .filter(user=user, is_active=True)

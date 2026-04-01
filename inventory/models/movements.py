@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from products.models import Product
 from .locations import Location
 from .stock import StockItem
+from organizations.models import Organization
 
 
 class StockMovement(models.Model):
@@ -11,6 +12,13 @@ class StockMovement(models.Model):
         ("IN", "Entrada"),
         ("OUT", "Salida"),
         ("TRANSFER", "Transferencia"),
+    )
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="movements",
+        db_index=True,
     )
 
     product = models.ForeignKey(
@@ -41,6 +49,9 @@ class StockMovement(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["organization", "created_at"]),
+        ]
 
     def __str__(self):
         return f"{self.get_movement_type_display()} - {self.product.name} ({self.quantity})"
@@ -48,6 +59,15 @@ class StockMovement(models.Model):
     def clean(self):
         if self.quantity <= 0:
             raise ValidationError("La cantidad debe ser mayor que cero.")
+
+        if self.product and self.product.organization_id != self.organization_id:
+            raise ValidationError("El producto no pertenece a la organización.")
+
+        if self.origin and self.origin.organization_id != self.organization_id:
+            raise ValidationError("El origen no pertenece a la organización.")
+
+        if self.destination and self.destination.organization_id != self.organization_id:
+            raise ValidationError("El destino no pertenece a la organización.")
 
         if self.movement_type == "TRANSFER":
             if not self.origin or not self.destination:
@@ -62,6 +82,7 @@ class StockMovement(models.Model):
             if not self.origin:
                 raise ValidationError("Las salidas requieren un almacén de origen.")
             stock_item = StockItem.objects.filter(
+                organization=self.organization,
                 product=self.product,
                 location=self.origin
             ).first()
@@ -70,6 +91,7 @@ class StockMovement(models.Model):
 
     def _apply_in(self):
         stock_item, _ = StockItem.objects.get_or_create(
+            organization=self.organization,
             product=self.product,
             location=self.destination,
             defaults={"quantity": 0},
@@ -79,6 +101,7 @@ class StockMovement(models.Model):
 
     def _apply_out(self):
         stock_item = StockItem.objects.get(
+            organization=self.organization,
             product=self.product,
             location=self.origin,
         )
@@ -88,6 +111,7 @@ class StockMovement(models.Model):
 
     def _apply_transfer(self):
         origin_item = StockItem.objects.get(
+            organization=self.organization,
             product=self.product,
             location=self.origin,
         )
@@ -96,6 +120,7 @@ class StockMovement(models.Model):
         origin_item.save()
 
         dest_item, _ = StockItem.objects.get_or_create(
+            organization=self.organization,
             product=self.product,
             location=self.destination,
             defaults={"quantity": 0},
@@ -111,11 +136,9 @@ class StockMovement(models.Model):
         elif self.movement_type == "TRANSFER":
             self._apply_transfer()
 
-        # 🔥 NUEVO SISTEMA (events)
         from notifications.events import emit_event
         from inventory.services.stock_alerts import sync_all_notifications
 
-        # 🔥 INVALIDACIÓN CACHE
         from dashboard.services.metrics import invalidate_metrics_cache
         from dashboard.services.charts import invalidate_chart_cache
         from dashboard.services.notifications import invalidate_notifications_cache
@@ -126,7 +149,6 @@ class StockMovement(models.Model):
         invalidate_notifications_cache()
         invalidate_activity_cache()
 
-        # 🔥 EVENTO CENTRALIZADO
         emit_event("movement", {
             "product": self.product,
             "message": f"Movimiento de stock en {self.product.name}",
@@ -135,8 +157,12 @@ class StockMovement(models.Model):
         sync_all_notifications()
 
     def save(self, *args, **kwargs):
+        if self.product and not self.organization_id:
+            self.organization = self.product.organization
+
         is_new = self.pk is None
         self.full_clean()
         super().save(*args, **kwargs)
+
         if is_new:
             self.apply_to_stock()

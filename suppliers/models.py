@@ -1,7 +1,15 @@
 from django.db import models
+from organizations.models import Organization
 
 
 class Supplier(models.Model):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="suppliers",
+        db_index=True,
+    )
+
     name = models.CharField(max_length=150, db_index=True)
     contact_name = models.CharField(max_length=100, blank=True)
     email = models.EmailField(blank=True)
@@ -13,8 +21,10 @@ class Supplier(models.Model):
 
     class Meta:
         ordering = ['name']
-        verbose_name = "Supplier"
-        verbose_name_plural = "Suppliers"
+        unique_together = ("organization", "name")
+        indexes = [
+            models.Index(fields=["organization", "name"]),
+        ]
 
     def __str__(self):
         return self.name

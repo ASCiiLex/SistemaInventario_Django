@@ -4,6 +4,7 @@ from categories.models import Category
 from suppliers.models import Supplier
 from django.utils.timezone import now
 from django.apps import apps
+from organizations.models import Organization
 
 
 def product_image_path(instance, filename):
@@ -11,8 +12,15 @@ def product_image_path(instance, filename):
 
 
 class Product(models.Model):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="products",
+        db_index=True,
+    )
+
     name = models.CharField(max_length=150, db_index=True)
-    sku = models.CharField(max_length=50, unique=True, db_index=True)
+    sku = models.CharField(max_length=50, db_index=True)
 
     category = models.ForeignKey(
         Category,
@@ -31,7 +39,6 @@ class Product(models.Model):
 
     stock = models.IntegerField(default=0)
 
-    # 🔥 DEPRECATED (no usar en lógica nueva)
     min_stock = models.IntegerField(default=0)
 
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -46,8 +53,11 @@ class Product(models.Model):
 
     class Meta:
         ordering = ['name']
-        verbose_name = "Product"
-        verbose_name_plural = "Products"
+        unique_together = ("organization", "sku")
+        indexes = [
+            models.Index(fields=["organization", "name"]),
+            models.Index(fields=["organization", "sku"]),
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.sku})"
@@ -57,13 +67,11 @@ class Product(models.Model):
         total = self.stock_items.aggregate(total=Sum("quantity"))["total"]
         return total or 0
 
-    # 🔥 NUEVO: mínimo global = suma por almacén
     @property
     def total_min_stock(self):
         total = self.stock_items.aggregate(total=Sum("min_stock"))["total"]
         return total or 0
 
-    # 🔥 NUEVO: riesgo real
     @property
     def is_below_minimum(self):
         return self.total_stock <= self.total_min_stock
@@ -75,16 +83,3 @@ class Product(models.Model):
     @property
     def inventory_value(self):
         return self.total_stock * self.cost_price
-
-    @property
-    def total_in(self):
-        return self.movements.filter(movement_type='IN').aggregate(models.Sum('quantity'))['quantity__sum'] or 0
-
-    @property
-    def total_out(self):
-        return self.movements.filter(movement_type='OUT').aggregate(models.Sum('quantity'))['quantity__sum'] or 0
-
-    @property
-    def last_movement(self):
-        return self.movements.order_by('-created_at').first()
-
