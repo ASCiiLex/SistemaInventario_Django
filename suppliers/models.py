@@ -8,6 +8,8 @@ class Supplier(models.Model):
         on_delete=models.CASCADE,
         related_name="suppliers",
         db_index=True,
+        null=True,
+        blank=True,
     )
 
     name = models.CharField(max_length=150, db_index=True)
@@ -21,7 +23,6 @@ class Supplier(models.Model):
 
     class Meta:
         ordering = ['name']
-        unique_together = ("organization", "name")
         indexes = [
             models.Index(fields=["organization", "name"]),
         ]

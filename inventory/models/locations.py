@@ -8,6 +8,8 @@ class Location(models.Model):
         on_delete=models.CASCADE,
         related_name="locations",
         db_index=True,
+        null=True,
+        blank=True,
     )
 
     name = models.CharField(max_length=150)
@@ -16,7 +18,9 @@ class Location(models.Model):
 
     class Meta:
         ordering = ["name"]
-        unique_together = ("organization", "name")
+        indexes = [
+            models.Index(fields=["organization", "name"]),
+        ]
 
     def __str__(self):
         return self.name

@@ -21,6 +21,8 @@ class StockTransfer(models.Model):
         on_delete=models.CASCADE,
         related_name="transfers",
         db_index=True,
+        null=True,
+        blank=True,
     )
 
     product = models.ForeignKey(
@@ -83,14 +85,15 @@ class StockTransfer(models.Model):
         if self.quantity <= 0:
             raise ValidationError("La cantidad debe ser mayor que cero.")
 
-        if self.product and self.product.organization_id != self.organization_id:
-            raise ValidationError("El producto no pertenece a la organización.")
+        if self.organization_id:
+            if self.product and self.product.organization_id != self.organization_id:
+                raise ValidationError("El producto no pertenece a la organización.")
 
-        if self.origin and self.origin.organization_id != self.organization_id:
-            raise ValidationError("El origen no pertenece a la organización.")
+            if self.origin and self.origin.organization_id != self.organization_id:
+                raise ValidationError("El origen no pertenece a la organización.")
 
-        if self.destination and self.destination.organization_id != self.organization_id:
-            raise ValidationError("El destino no pertenece a la organización.")
+            if self.destination and self.destination.organization_id != self.organization_id:
+                raise ValidationError("El destino no pertenece a la organización.")
 
         if not self.origin or not self.destination:
             raise ValidationError("Debe seleccionar origen y destino.")
