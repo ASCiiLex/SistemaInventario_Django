@@ -1,5 +1,6 @@
 from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
 
 
 class StockDomainService:
@@ -24,10 +25,18 @@ class StockDomainService:
                 movement.full_clean()
                 movement.save()
 
+                # 🔥 LOCK GLOBAL POR PRODUCTO
+                StockItem.objects.select_for_update().filter(
+                    organization=movement.organization,
+                    product=movement.product
+                )
+
                 StockDomainService._apply_stock(movement, StockItem)
 
+                # 🔥 VALIDACIÓN GLOBAL
+                StockDomainService._validate_global_stock(movement, StockItem)
+
         except IntegrityError:
-            # 🔒 fallback fuerte contra race condition
             if movement.idempotency_key:
                 return movement.__class__.objects.get(
                     organization=movement.organization,
@@ -106,7 +115,6 @@ class StockDomainService:
 
         elif movement.movement_type == "TRANSFER":
 
-            # 🔒 ORDEN CONSISTENTE PARA EVITAR DEADLOCK
             locations = sorted(
                 [movement.origin, movement.destination],
                 key=lambda l: l.id
@@ -130,6 +138,16 @@ class StockDomainService:
 
             dest.quantity += movement.quantity
             dest.save(update_fields=["quantity"])
+
+    @staticmethod
+    def _validate_global_stock(movement, StockItem):
+        total = StockItem.objects.filter(
+            organization=movement.organization,
+            product=movement.product
+        ).aggregate(total=Sum("quantity"))["total"] or 0
+
+        if total < 0:
+            raise ValidationError("Inconsistencia detectada: stock total negativo.")
 
     @staticmethod
     def _post_commit(movement, user):
