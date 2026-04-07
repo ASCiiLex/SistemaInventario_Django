@@ -178,7 +178,7 @@ def can_receive_order(user):
 # ==========================================
 
 def can_view_audit(user):
-    return _is_manager(user)
+    return _is_owner(user) or _is_admin(user) or _is_manager(user)
 
 
 # ==========================================
