@@ -237,4 +237,32 @@ document.body.addEventListener("htmx:afterSwap", () => {
     bar.style.width = "100%";
     setTimeout(() => bar.style.width = "0%", 300);
 });
+
+
+
+// ===============================
+// 🔒 FORM LOCK (ANTI DOBLE SUBMIT)
+// ===============================
+
+function handleSubmit(form) {
+    if (form.dataset.submitted === "true") {
+        return false;
+    }
+
+    form.dataset.submitted = "true";
+
+    const btn = form.querySelector("button[type=submit]");
+    if (btn) {
+        btn.disabled = true;
+
+        const original = btn.innerHTML;
+        const loadingText = btn.dataset.loadingText || "Procesando...";
+
+        btn.dataset.originalText = original;
+        btn.innerHTML = loadingText;
+    }
+
+    return true;
+}
+
 </script>

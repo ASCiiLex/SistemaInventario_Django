@@ -16,11 +16,17 @@
         </div>
     </div>
 
-    <form method="post" class="d-inline">
+    <form method="post" class="d-inline" onsubmit="return handleSubmit(this)">
         {% csrf_token %}
         {{ form.as_p }}
-        <button class="btn btn-success">Confirmar</button>
+
+        <button class="btn btn-success" data-loading-text="Confirmando...">
+            Confirmar
+        </button>
     </form>
-    <a href="{% url 'transfer_detail' transfer.id %}" class="btn btn-secondary ms-2">Cancelar</a>
+
+    <a href="{% url 'transfer_detail' transfer.id %}" class="btn btn-secondary ms-2">
+        Cancelar
+    </a>
 </div>
 {% endblock %}

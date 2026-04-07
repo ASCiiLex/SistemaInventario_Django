@@ -29,9 +29,20 @@
 
     <div class="d-flex gap-2 mb-3">
         {% if transfer.status == "pending" %}
-            <a href="{% url 'transfer_confirm' transfer.id %}" class="btn btn-success">Confirmar recepción</a>
-            <a href="{% url 'transfer_cancel' transfer.id %}" class="btn btn-danger">Cancelar</a>
+            <a href="{% url 'transfer_confirm' transfer.id %}" class="btn btn-success">
+                Confirmar recepción
+            </a>
+
+            <form method="post"
+                  action="{% url 'transfer_cancel' transfer.id %}"
+                  onsubmit="return handleSubmit(this)">
+                {% csrf_token %}
+                <button class="btn btn-danger" data-loading-text="Cancelando...">
+                    Cancelar
+                </button>
+            </form>
         {% endif %}
+
         <a href="{% url 'transfer_list' %}" class="btn btn-secondary">Volver</a>
     </div>
 </div>
