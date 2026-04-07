@@ -9,6 +9,7 @@ from inventory.services.audit import (
 from inventory.middleware.audit_user import get_current_user
 
 from notifications.events import emit_event
+from notifications.constants import Events
 
 from inventory.models.stock import StockItem
 from inventory.models.orders import Order, OrderItem
@@ -65,15 +66,14 @@ def log_create_update(sender, instance, created, **kwargs):
             changes=serialize_instance(instance),
         )
 
-        # 🔥 EVENTOS REALES
         if isinstance(instance, StockItem):
-            emit_event("inventory:stock_changed", {"instance": instance})
+            emit_event(Events.STOCK_CHANGED, {"instance": instance})
 
         if isinstance(instance, StockMovement):
-            emit_event("inventory:movement_created", {"instance": instance})
+            emit_event(Events.MOVEMENT_CREATED, {"instance": instance})
 
         if isinstance(instance, Order):
-            emit_event("orders:updated", {"instance": instance})
+            emit_event(Events.ORDERS_UPDATED, {"instance": instance})
 
         return
 
@@ -89,10 +89,10 @@ def log_create_update(sender, instance, created, **kwargs):
         )
 
         if isinstance(instance, StockItem):
-            emit_event("inventory:stock_changed", {"instance": instance})
+            emit_event(Events.STOCK_CHANGED, {"instance": instance})
 
         if isinstance(instance, Order):
-            emit_event("orders:updated", {"instance": instance})
+            emit_event(Events.ORDERS_UPDATED, {"instance": instance})
 
 
 @receiver(post_delete)

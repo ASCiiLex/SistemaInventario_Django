@@ -5,21 +5,22 @@ from .models import Notification, UserNotification
 from .utils import send_to_user
 from .events import register_event
 from .preferences import is_event_enabled
+from .constants import Events
 
 from organizations.models import Membership
 
 
 COOLDOWNS = {
-    "stock_item_low": 30,
-    "product_risk": 60,
+    Events.STOCK_LOW: 30,
+    Events.PRODUCT_RISK: 60,
 }
 
 
 PRIORITY_MAP = {
-    "stock_item_low": "critical",
-    "product_risk": "warning",
-    "movement": "info",
-    "order": "info",
+    Events.STOCK_LOW: "critical",
+    Events.PRODUCT_RISK: "warning",
+    Events.MOVEMENT_CREATED: "info",
+    Events.ORDERS_UPDATED: "info",
 }
 
 
@@ -91,13 +92,13 @@ def create_notification(*, product=None, location=None, type_, message):
 
     users = _get_target_users(organization)
 
-    user_notifications = []
+    bulk = []
 
     for user in users:
         if not is_event_enabled(user, type_):
             continue
 
-        user_notifications.append(
+        bulk.append(
             UserNotification(
                 user=user,
                 notification=notification,
@@ -109,31 +110,30 @@ def create_notification(*, product=None, location=None, type_, message):
             user.id,
             {
                 "event": type_,
-                "type": "notification",  # compatibilidad frontend
                 "message": message,
                 "product": product.id if product else None,
             }
         )
 
-    UserNotification.objects.bulk_create(user_notifications, ignore_conflicts=True)
+    UserNotification.objects.bulk_create(bulk, ignore_conflicts=True)
 
     return notification
 
 
-@register_event("stock_item_low")
-def handle_stock_item_low(payload: dict):
+@register_event(Events.STOCK_LOW)
+def handle_stock_low(payload: dict):
     create_notification(
         product=payload.get("product"),
         location=payload.get("location"),
-        type_="stock_item_low",
+        type_=Events.STOCK_LOW,
         message=payload.get("message"),
     )
 
 
-@register_event("product_risk")
+@register_event(Events.PRODUCT_RISK)
 def handle_product_risk(payload: dict):
     create_notification(
         product=payload.get("product"),
-        type_="product_risk",
+        type_=Events.PRODUCT_RISK,
         message=payload.get("message"),
     )

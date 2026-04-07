@@ -3,6 +3,7 @@ from django.core.cache import cache
 from inventory.models import StockItem
 from products.models import Product
 from notifications.events import emit_event
+from notifications.constants import Events
 
 
 def invalidate_dashboard_cache(org_id=None):
@@ -32,7 +33,7 @@ def sync_stock_item_notifications(organization):
     for item in items:
         if item.quantity <= item.min_stock:
             emit_event(
-                "stock_item_low",
+                Events.STOCK_LOW,
                 {
                     "product": item.product,
                     "location": item.location,
@@ -47,7 +48,7 @@ def sync_product_risk_notifications(organization):
     for p in products:
         if p.total_stock <= p.total_min_stock:
             emit_event(
-                "product_risk",
+                Events.PRODUCT_RISK,
                 {
                     "product": p,
                     "message": f"Producto en riesgo: {p.name}",

@@ -184,7 +184,7 @@ document.body.addEventListener('htmx:afterSwap', (e) => {
 });
 
 // ===============================
-// WEBSOCKET → EVENT BUS
+// WEBSOCKET → EVENT BUS (UNIFICADO)
 // ===============================
 function connectWS() {
     const protocol = location.protocol === "https:" ? "wss://" : "ws://";
@@ -193,20 +193,25 @@ function connectWS() {
     socket.onmessage = (e) => {
         const data = JSON.parse(e.data);
 
-        if (data.type === "notification") {
-            EventBus.emit("inventory:notifications_updated", data);
+        // 🔥 EVENTO PRINCIPAL (source of truth)
+        if (data.event) {
+            EventBus.emit(data.event, data);
         }
 
-        if (data.type === "stock_low") {
-            EventBus.emit("inventory:stock_updated", data);
+        // 🔥 COMPATIBILIDAD UI (navbar, panel, etc.)
+        if (data.event && data.event.includes("notifications")) {
+            EventBus.emit("inventory:notifications_updated");
         }
 
-        if (data.type === "order") {
-            EventBus.emit("inventory:orders_updated", data);
+        if (data.event && data.event.includes("stock")) {
+            EventBus.emit("inventory:stock_updated");
         }
 
-        EventBus.emit(`inventory:${data.type}`, data);
+        if (data.event && data.event.includes("orders")) {
+            EventBus.emit("inventory:orders_updated");
+        }
 
+        // 🔥 TOAST
         if (data.message) showToast(data.message);
     };
 

@@ -25,11 +25,6 @@ def send_ui_event_to_all(data: dict):
         "notifications_global",
         {
             "type": "send_notification",
-            "data": {
-                "event": data.get("event", "ui"),
-                "type": data.get("type", "notification"),
-                "message": data.get("message"),
-                "product": data.get("product"),
-            },
+            "data": data,
         },
     )

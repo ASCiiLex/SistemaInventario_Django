@@ -2,6 +2,13 @@ from collections import defaultdict
 
 
 class EventBus:
+    """
+    🔥 EVENT BUS UNIFICADO
+
+    - Evita duplicados
+    - Estándar único: domain:event
+    """
+
     def __init__(self):
         self._listeners = defaultdict(list)
 
@@ -20,6 +27,9 @@ event_bus = EventBus()
 
 
 def emit_event(event_type: str, payload: dict):
+    """
+    🔥 ÚNICO PUNTO DE EMISIÓN
+    """
     event_bus.emit(event_type, payload)
 
 

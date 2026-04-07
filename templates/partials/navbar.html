@@ -80,12 +80,10 @@
                 </div>      
 
                 <div id="notifications-bell"
-                     hx-get="{% url 'notifications:notifications_counter' %}"
-                     hx-trigger="load, notifications:created from:body"
-                     hx-target="this"
-                     hx-swap="outerHTML">
-                    {% include 'notifications/partials/bell.html' %}
-                </div>
+                    hx-get="{% url 'notifications:notifications_counter' %}"
+                    hx-trigger="load, inventory:notifications_updated from:body"
+                    hx-target="this"
+                    hx-swap="outerHTML">
 
                 <a href="{% url 'notification_preferences' %}"
                    class="btn btn-sm btn-outline-light"

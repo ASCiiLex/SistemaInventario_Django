@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 
 from ..models import UserNotification
 from ..utils import send_ui_event_to_all
+from ..constants import Events
 from .utils import group_notifications_by_product, user_qs, has_unread
 
 
@@ -32,7 +33,7 @@ def notifications_panel_mark_all(request):
     user_qs(request).filter(seen=False).update(seen=True)
 
     send_ui_event_to_all({
-        "type": "notification",
+        "event": Events.NOTIFICATIONS_UPDATED,
         "message": "Todas las notificaciones marcadas como leídas"
     })
 
@@ -45,7 +46,7 @@ def notifications_panel_mark_one(request, pk):
     un.save(update_fields=["seen"])
 
     send_ui_event_to_all({
-        "type": "notification",
+        "event": Events.NOTIFICATIONS_UPDATED,
         "message": "Notificación marcada como leída"
     })
 
@@ -58,7 +59,7 @@ def notifications_panel_mark_unread(request, pk):
     un.save(update_fields=["seen"])
 
     send_ui_event_to_all({
-        "type": "notification",
+        "event": Events.NOTIFICATIONS_UPDATED,
         "message": "Notificación marcada como no leída"
     })
 
