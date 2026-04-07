@@ -1,0 +1,60 @@
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            {% include "partials/sortable_th.html" with field="user__username" label="Usuario" target="#members-table" %}
+            {% include "partials/sortable_th.html" with field="user__email" label="Email" target="#members-table" %}
+            {% include "partials/sortable_th.html" with field="role" label="Rol" target="#members-table" %}
+            {% include "partials/sortable_th.html" with field="is_active" label="Activo" target="#members-table" %}
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for m in members %}
+        <tr>
+            <td>{{ m.user.username }}</td>
+            <td>{{ m.user.email }}</td>
+
+            <td style="max-width: 180px;">
+                {% if m.role != "owner" %}
+                <form method="post" action="{% url 'update_role' m.id %}">
+                    {% csrf_token %}
+                    <select name="role"
+                            class="form-select form-select-sm"
+                            onchange="this.form.submit()">
+                        {% for key, label in m.Roles.choices %}
+                            <option value="{{ key }}" {% if m.role == key %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+                {% else %}
+                    <span class="badge bg-dark">Owner</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if m.is_active %}
+                    <span class="badge bg-success">Activo</span>
+                {% else %}
+                    <span class="badge bg-secondary">Inactivo</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if m.role != "owner" %}
+                <form method="post" action="{% url 'toggle_member' m.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger">
+                        {% if m.is_active %}Desactivar{% else %}Activar{% endif %}
+                    </button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% include "shared/pagination.html" with target_id="#members-table" %}
