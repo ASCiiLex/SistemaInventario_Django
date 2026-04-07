@@ -8,9 +8,6 @@ from ..models import StockMovement
 from ..forms import StockMovementForm, StockMovementFilterForm
 from ..utils.listing import ListViewMixin
 
-from notifications.events import emit_event
-from inventory.services.audit import log_action, serialize_instance
-
 
 class StockMovementListView(ListViewMixin):
     allowed_sort_fields = [
@@ -85,18 +82,7 @@ def stockmovement_create(request):
         )
 
         if form.is_valid():
-            movement = form.save()
-
-            log_action(request.user, "CREATE", movement, serialize_instance(movement))
-
-            emit_event(
-                "movement",
-                {
-                    "product": movement.product,
-                    "message": f"Nuevo movimiento registrado: {movement.product.name}",
-                }
-            )
-
+            form.save()
             return redirect(reverse("stockmovement_list"))
     else:
         form = StockMovementForm(organization=request.organization)

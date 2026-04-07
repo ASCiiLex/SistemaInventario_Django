@@ -1,10 +1,11 @@
-from django.db import models, transaction
+from django.db import models
 from django.core.exceptions import ValidationError
 
 from products.models import Product
 from .locations import Location
-from .stock import StockItem
 from organizations.models import Organization
+
+from inventory.services.stock_domain import StockDomainService
 
 
 class StockMovement(models.Model):
@@ -26,6 +27,7 @@ class StockMovement(models.Model):
         on_delete=models.CASCADE,
         related_name="movements"
     )
+
     movement_type = models.CharField(max_length=10, choices=MOVEMENT_TYPES)
 
     origin = models.ForeignKey(
@@ -35,6 +37,7 @@ class StockMovement(models.Model):
         blank=True,
         related_name="movements_origin"
     )
+
     destination = models.ForeignKey(
         Location,
         on_delete=models.SET_NULL,
@@ -46,8 +49,12 @@ class StockMovement(models.Model):
     quantity = models.PositiveIntegerField()
     note = models.TextField(blank=True)
 
-    # 🔥 NUEVO → idempotencia
-    idempotency_key = models.CharField(max_length=64, null=True, blank=True, db_index=True)
+    idempotency_key = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        db_index=True
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -81,100 +88,18 @@ class StockMovement(models.Model):
                 raise ValidationError("El origen y destino no pueden ser iguales.")
 
         if self.movement_type == "IN" and not self.destination:
-            raise ValidationError("Las entradas requieren un almacén de destino.")
+            raise ValidationError("Las entradas requieren destino.")
 
         if self.movement_type == "OUT" and not self.origin:
-            raise ValidationError("Las salidas requieren un almacén de origen.")
-
-    def _get_stock_for_update(self, location):
-        return StockItem.objects.select_for_update().get(
-            organization=self.organization,
-            product=self.product,
-            location=location,
-        )
-
-    def _get_or_create_stock_for_update(self, location):
-        item, _ = StockItem.objects.select_for_update().get_or_create(
-            organization=self.organization,
-            product=self.product,
-            location=location,
-            defaults={"quantity": 0},
-        )
-        return item
-
-    def _apply_in(self):
-        stock_item = self._get_or_create_stock_for_update(self.destination)
-        stock_item.quantity += self.quantity
-        stock_item.save(update_fields=["quantity"])
-
-    def _apply_out(self):
-        stock_item = self._get_stock_for_update(self.origin)
-
-        if stock_item.quantity < self.quantity:
-            raise ValidationError("Stock insuficiente.")
-
-        stock_item.quantity -= self.quantity
-        stock_item.save(update_fields=["quantity"])
-
-    def _apply_transfer(self):
-        origin_item = self._get_stock_for_update(self.origin)
-
-        if origin_item.quantity < self.quantity:
-            raise ValidationError("Stock insuficiente para transferir.")
-
-        origin_item.quantity -= self.quantity
-        origin_item.save(update_fields=["quantity"])
-
-        dest_item = self._get_or_create_stock_for_update(self.destination)
-        dest_item.quantity += self.quantity
-        dest_item.save(update_fields=["quantity"])
-
-    def apply_to_stock(self):
-        with transaction.atomic():
-
-            if self.movement_type == "IN":
-                self._apply_in()
-            elif self.movement_type == "OUT":
-                self._apply_out()
-            elif self.movement_type == "TRANSFER":
-                self._apply_transfer()
-
-        from notifications.events import emit_event
-        from inventory.services.stock_alerts import sync_all_notifications
-
-        from dashboard.services.metrics import invalidate_metrics_cache
-        from dashboard.services.charts import invalidate_chart_cache
-        from dashboard.services.notifications import invalidate_notifications_cache
-        from dashboard.services.activity import invalidate_activity_cache
-
-        invalidate_metrics_cache()
-        invalidate_chart_cache()
-        invalidate_notifications_cache()
-        invalidate_activity_cache()
-
-        emit_event("movement", {
-            "product": self.product,
-            "message": f"Movimiento de stock en {self.product.name}",
-        })
-
-        sync_all_notifications(self.organization)
+            raise ValidationError("Las salidas requieren origen.")
 
     def save(self, *args, **kwargs):
         if self.product and not self.organization_id:
             self.organization = self.product.organization
 
-        if self.idempotency_key:
-            existing = StockMovement.objects.filter(
-                organization=self.organization,
-                idempotency_key=self.idempotency_key
-            ).first()
-            if existing:
-                return existing
-
         is_new = self.pk is None
-        self.full_clean()
-
-        super().save(*args, **kwargs)
 
         if is_new:
-            self.apply_to_stock()
+            return StockDomainService.execute(self)
+
+        return super().save(*args, **kwargs)
