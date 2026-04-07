@@ -60,6 +60,13 @@ class StockMovement(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "idempotency_key"],
+                name="unique_movement_idempotency_per_org",
+                condition=~models.Q(idempotency_key=None)
+            )
+        ]
         indexes = [
             models.Index(fields=["organization", "created_at"]),
             models.Index(fields=["organization", "idempotency_key"]),

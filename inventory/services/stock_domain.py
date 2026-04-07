@@ -1,23 +1,14 @@
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
 
 
 class StockDomainService:
-    """
-    🔥 CORE DEL DOMINIO DE INVENTARIO (HARDENED)
-
-    - Consistencia fuerte (locks reales)
-    - Idempotencia sólida
-    - Validaciones de negocio centralizadas
-    - Sin efectos secundarios en models
-    """
 
     @staticmethod
     def execute(movement, user=None):
 
         from inventory.models.stock import StockItem
 
-        # 🔒 idempotencia fuerte
         if movement.idempotency_key:
             existing = movement.__class__.objects.filter(
                 organization=movement.organization,
@@ -27,25 +18,26 @@ class StockDomainService:
             if existing:
                 return existing
 
-        with transaction.atomic():
+        try:
+            with transaction.atomic():
 
-            # 🔒 validación previa
-            movement.full_clean()
+                movement.full_clean()
+                movement.save()
 
-            # 🔒 persistencia (activa signals)
-            movement.save()
+                StockDomainService._apply_stock(movement, StockItem)
 
-            # 🔒 aplicar stock con locks reales
-            StockDomainService._apply_stock(movement, StockItem)
+        except IntegrityError:
+            # 🔒 fallback fuerte contra race condition
+            if movement.idempotency_key:
+                return movement.__class__.objects.get(
+                    organization=movement.organization,
+                    idempotency_key=movement.idempotency_key
+                )
+            raise
 
-        # 🔥 fuera de transacción
         StockDomainService._post_commit(movement, user)
 
         return movement
-
-    # =========================
-    # STOCK CORE (LOCKED)
-    # =========================
 
     @staticmethod
     def _get_stock_for_update(StockItem, movement, location):
@@ -114,27 +106,30 @@ class StockDomainService:
 
         elif movement.movement_type == "TRANSFER":
 
-            origin = StockDomainService._get_stock_for_update(
-                StockItem, movement, movement.origin
+            # 🔒 ORDEN CONSISTENTE PARA EVITAR DEADLOCK
+            locations = sorted(
+                [movement.origin, movement.destination],
+                key=lambda l: l.id
             )
+
+            locked_items = {}
+
+            for loc in locations:
+                locked_items[loc.id] = StockDomainService._get_or_create_stock_for_update(
+                    StockItem, movement, loc
+                )
+
+            origin = locked_items[movement.origin.id]
+            dest = locked_items[movement.destination.id]
 
             if origin.quantity < movement.quantity:
                 raise ValidationError("Stock insuficiente para transferir.")
 
-            # 🔥 ORDEN FIJO PARA EVITAR DEADLOCK
             origin.quantity -= movement.quantity
             origin.save(update_fields=["quantity"])
 
-            dest = StockDomainService._get_or_create_stock_for_update(
-                StockItem, movement, movement.destination
-            )
-
             dest.quantity += movement.quantity
             dest.save(update_fields=["quantity"])
-
-    # =========================
-    # POST-COMMIT
-    # =========================
 
     @staticmethod
     def _post_commit(movement, user):
