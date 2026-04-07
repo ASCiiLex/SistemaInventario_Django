@@ -23,8 +23,15 @@
 </div>
 
 <script>
-window.chartData = {
-    labels: {{ chart_labels|safe }},
-    values: {{ chart_values|safe }}
-};
+(function () {
+    window.chartData = {
+        labels: {{ chart_labels|safe }},
+        values: {{ chart_values|safe }}
+    };
+
+    // 🔥 Forzar init cuando HTMX inyecta este bloque
+    if (window.initView) {
+        window.initView();
+    }
+})();
 </script>

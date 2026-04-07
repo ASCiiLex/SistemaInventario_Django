@@ -3,6 +3,7 @@
 ============================================ */
 
 let categoryChart = null;
+let realtimeInitialized = false;
 
 /* ============================================
    UI
@@ -63,7 +64,10 @@ function initChart() {
 
     if (!labels.length) return;
 
-    if (categoryChart) categoryChart.destroy();
+    if (categoryChart) {
+        categoryChart.destroy();
+        categoryChart = null;
+    }
 
     categoryChart = new Chart(canvas, {
         type: "bar",
@@ -129,17 +133,19 @@ function refreshChart() {
 }
 
 /* ============================================
-   EVENTOS (USAMOS EVENT BUS GLOBAL)
+   EVENTOS (SOLO UNA VEZ)
 ============================================ */
 
 function initRealtimeListeners() {
+    if (realtimeInitialized) return;
+    realtimeInitialized = true;
 
     document.body.addEventListener("inventory:refresh", () => {
         refreshChart();
     });
 
     document.body.addEventListener("notifications:updated", () => {
-        // opcional (no recargar chart)
+        // opcional
     });
 }
 
@@ -147,17 +153,26 @@ function initRealtimeListeners() {
    INIT
 ============================================ */
 
-function initAll() {
+function initView() {
     initMainSections();
     initSubSections();
     initChart();
+}
+
+function initOnce() {
     initRealtimeListeners();
 }
 
-document.addEventListener("DOMContentLoaded", initAll);
+// 🔥 EXPONER GLOBAL (clave para HTMX)
+window.initView = initView;
 
-document.body.addEventListener("htmx:afterSwap", () => {
-    initMainSections();
-    initSubSections();
-    initChart();
+document.addEventListener("DOMContentLoaded", () => {
+    initOnce();
+    initView();
+});
+
+document.body.addEventListener("htmx:afterSwap", (e) => {
+    if (e.target.id === "app") {
+        initView();
+    }
 });
