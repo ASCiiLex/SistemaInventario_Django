@@ -140,12 +140,8 @@ function initRealtimeListeners() {
     if (realtimeInitialized) return;
     realtimeInitialized = true;
 
-    document.body.addEventListener("inventory:refresh", () => {
+    document.body.addEventListener("inventory:stock_changed", () => {
         refreshChart();
-    });
-
-    document.body.addEventListener("notifications:updated", () => {
-        // opcional
     });
 }
 
@@ -163,7 +159,6 @@ function initOnce() {
     initRealtimeListeners();
 }
 
-// 🔥 EXPONER GLOBAL (clave para HTMX)
 window.initView = initView;
 
 document.addEventListener("DOMContentLoaded", () => {

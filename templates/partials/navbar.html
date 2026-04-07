@@ -8,7 +8,6 @@
 
         <div class="collapse navbar-collapse" id="navbarMain">
 
-            <!-- 🔥 SELECTOR ORGANIZACIÓN -->
             <div class="dropdown me-3">
                 <button class="btn btn-sm btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
                     {{ organization.name }}
@@ -59,7 +58,7 @@
                 {% if perm.view_orders %}
                 <div id="orders-counter"
                      hx-get="{% url 'orders_counter' %}"
-                     hx-trigger="load, inventory:orders_updated from:body"
+                     hx-trigger="load, orders:updated from:body"
                      hx-target="this"
                      hx-swap="outerHTML">
                 </div>
@@ -67,21 +66,21 @@
 
                 <div id="lowstock-counter"
                      hx-get="{% url 'lowstock_counter' %}"
-                     hx-trigger="load, inventory:stock_updated from:body"
+                     hx-trigger="load, inventory:stock_changed from:body"
                      hx-target="this"
                      hx-swap="outerHTML">
                 </div>
 
                 <div id="stockitem-counter"
                     hx-get="{% url 'stockitem_counter' %}"
-                    hx-trigger="load, inventory:stock_updated from:body"
+                    hx-trigger="load, inventory:stock_changed from:body"
                     hx-target="this"
                     hx-swap="outerHTML">
                 </div>      
 
                 <div id="notifications-bell"
                      hx-get="{% url 'notifications:notifications_counter' %}"
-                     hx-trigger="load, inventory:notifications_updated from:body"
+                     hx-trigger="load, notifications:created from:body"
                      hx-target="this"
                      hx-swap="outerHTML">
                     {% include 'notifications/partials/bell.html' %}
