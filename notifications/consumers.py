@@ -10,19 +10,31 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        self.group_name = f"user_{user.id}"
+        self.user_group = f"user_{user.id}"
+        self.global_group = "notifications_global"
 
         await self.channel_layer.group_add(
-            self.group_name,
+            self.user_group,
+            self.channel_name
+        )
+
+        await self.channel_layer.group_add(
+            self.global_group,
             self.channel_name
         )
 
         await self.accept()
 
     async def disconnect(self, close_code):
-        if hasattr(self, "group_name"):
+        if hasattr(self, "user_group"):
             await self.channel_layer.group_discard(
-                self.group_name,
+                self.user_group,
+                self.channel_name
+            )
+
+        if hasattr(self, "global_group"):
+            await self.channel_layer.group_discard(
+                self.global_group,
                 self.channel_name
             )
 
@@ -32,7 +44,8 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def send_notification(self, event):
         await self.send(
             text_data=json.dumps({
-                "type": event["data"].get("type"),
+                "event": event["data"].get("event"),
+                "type": event["data"].get("type"),  # compatibilidad
                 "message": event["data"].get("message"),
                 "product": event["data"].get("product"),
             })

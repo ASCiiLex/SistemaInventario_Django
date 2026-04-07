@@ -6,7 +6,8 @@ class EventBus:
         self._listeners = defaultdict(list)
 
     def register(self, event_type: str, handler):
-        self._listeners[event_type].append(handler)
+        if handler not in self._listeners[event_type]:
+            self._listeners[event_type].append(handler)
 
     def emit(self, event_type: str, payload: dict):
         handlers = self._listeners.get(event_type, [])
@@ -15,7 +16,6 @@ class EventBus:
             handler(payload)
 
 
-# instancia global
 event_bus = EventBus()
 
 

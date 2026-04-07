@@ -17,9 +17,6 @@ def send_to_user(user_id: int, data: dict):
 
 
 def send_ui_event_to_all(data: dict):
-    """
-    Evento efímero SOLO UI (no persiste en DB)
-    """
     layer = get_channel_layer()
     if not layer:
         return
@@ -28,6 +25,11 @@ def send_ui_event_to_all(data: dict):
         "notifications_global",
         {
             "type": "send_notification",
-            "data": data,
+            "data": {
+                "event": data.get("event", "ui"),
+                "type": data.get("type", "notification"),
+                "message": data.get("message"),
+                "product": data.get("product"),
+            },
         },
     )
