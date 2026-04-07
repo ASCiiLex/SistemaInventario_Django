@@ -123,17 +123,38 @@ function syncSelect2(ctx) {
 }
 
 // ===============================
-// INIT
+// INIT GLOBAL
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
     initSelect2(document);
     syncSelect2(document);
+    initNotificationsPanel();   // 🔥 NUEVO
 });
 
 document.body.addEventListener('htmx:afterSwap', e => {
     initSelect2(e.target);
     syncSelect2(e.target);
 });
+
+// ===============================
+// 🔥 NOTIFICATIONS PANEL LAZY LOAD (CORRECTO)
+// ===============================
+function initNotificationsPanel() {
+    const panel = document.getElementById("notificationsPanelOffcanvas");
+    const body = document.getElementById("notificationsPanelBody");
+
+    if (!panel || !body) return;
+
+    if (panel.dataset.bound === "true") return;
+    panel.dataset.bound = "true";
+
+    panel.addEventListener("show.bs.offcanvas", () => {
+        if (!body.dataset.loaded) {
+            body.dataset.loaded = "true";
+            htmx.trigger(body, "load");
+        }
+    });
+}
 
 // ===============================
 // TOASTS
@@ -238,12 +259,9 @@ document.body.addEventListener("htmx:afterSwap", () => {
     setTimeout(() => bar.style.width = "0%", 300);
 });
 
-
-
 // ===============================
 // 🔒 FORM LOCK (ANTI DOBLE SUBMIT)
 // ===============================
-
 function handleSubmit(form) {
     if (form.dataset.submitted === "true") {
         return false;
@@ -264,5 +282,4 @@ function handleSubmit(form) {
 
     return true;
 }
-
 </script>

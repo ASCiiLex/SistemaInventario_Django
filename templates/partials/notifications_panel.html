@@ -7,8 +7,9 @@
     <div id="notificationsPanelBody"
          class="offcanvas-body"
          hx-get="{% url 'notifications:notifications_panel' %}"
-         hx-trigger="load, inventory:notifications_updated from:body"
+         hx-trigger="inventory:notifications_updated from:body"
          hx-target="this"
          hx-swap="innerHTML">
     </div>
 </div>
+

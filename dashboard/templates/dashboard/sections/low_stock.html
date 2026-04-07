@@ -9,7 +9,7 @@
             <div id="low-stock-container"
                  class="card-body section-content compact-table"
                  hx-get="{% url 'dashboard_low_stock' %}"
-                 hx-trigger="load, inventory:refresh from:body"
+                 hx-trigger="load once, inventory:refresh from:body"
                  hx-target="this"
                  hx-swap="innerHTML">
             </div>
