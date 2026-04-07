@@ -28,6 +28,7 @@
                         {% if perm.view_audit %}
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'audit_list' %}">Auditoría</a></li>
+                            <li><a class="dropdown-item" href="{% url 'members_list' %}">Usuarios</a></li>
                         {% endif %}
                     </ul>
                 </li>
