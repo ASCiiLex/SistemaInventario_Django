@@ -4,20 +4,20 @@ from django.core.exceptions import ValidationError
 
 class StockDomainService:
     """
-    🔥 CORE DEL DOMINIO DE INVENTARIO (ORQUESTADOR)
+    🔥 CORE DEL DOMINIO DE INVENTARIO (HARDENED)
 
-    - Sin lógica duplicada
+    - Consistencia fuerte (locks reales)
+    - Idempotencia sólida
+    - Validaciones de negocio centralizadas
     - Sin efectos secundarios en models
-    - Flujo controlado
     """
 
     @staticmethod
     def execute(movement, user=None):
 
-        # 🔥 imports lazy
         from inventory.models.stock import StockItem
 
-        # 🔒 idempotencia
+        # 🔒 idempotencia fuerte
         if movement.idempotency_key:
             existing = movement.__class__.objects.filter(
                 organization=movement.organization,
@@ -28,26 +28,35 @@ class StockDomainService:
                 return existing
 
         with transaction.atomic():
-            movement.full_clean()
-            movement.save()  # 🔥 IMPORTANTE → signals funcionan
 
+            # 🔒 validación previa
+            movement.full_clean()
+
+            # 🔒 persistencia (activa signals)
+            movement.save()
+
+            # 🔒 aplicar stock con locks reales
             StockDomainService._apply_stock(movement, StockItem)
 
+        # 🔥 fuera de transacción
         StockDomainService._post_commit(movement, user)
 
         return movement
 
     # =========================
-    # STOCK
+    # STOCK CORE (LOCKED)
     # =========================
 
     @staticmethod
     def _get_stock_for_update(StockItem, movement, location):
-        return StockItem.objects.select_for_update().get(
-            organization=movement.organization,
-            product=movement.product,
-            location=location,
-        )
+        try:
+            return StockItem.objects.select_for_update().get(
+                organization=movement.organization,
+                product=movement.product,
+                location=location,
+            )
+        except StockItem.DoesNotExist:
+            raise ValidationError("Stock no existente para la operación.")
 
     @staticmethod
     def _get_or_create_stock_for_update(StockItem, movement, location):
@@ -60,16 +69,39 @@ class StockDomainService:
         return item
 
     @staticmethod
+    def _validate_business_rules(movement):
+
+        if movement.quantity <= 0:
+            raise ValidationError("Cantidad inválida.")
+
+        if movement.movement_type == "OUT" and not movement.origin:
+            raise ValidationError("Salida sin origen.")
+
+        if movement.movement_type == "IN" and not movement.destination:
+            raise ValidationError("Entrada sin destino.")
+
+        if movement.movement_type == "TRANSFER":
+            if not movement.origin or not movement.destination:
+                raise ValidationError("Transferencia incompleta.")
+            if movement.origin == movement.destination:
+                raise ValidationError("Origen y destino no pueden coincidir.")
+
+    @staticmethod
     def _apply_stock(movement, StockItem):
 
+        StockDomainService._validate_business_rules(movement)
+
         if movement.movement_type == "IN":
+
             item = StockDomainService._get_or_create_stock_for_update(
                 StockItem, movement, movement.destination
             )
+
             item.quantity += movement.quantity
             item.save(update_fields=["quantity"])
 
         elif movement.movement_type == "OUT":
+
             item = StockDomainService._get_stock_for_update(
                 StockItem, movement, movement.origin
             )
@@ -81,6 +113,7 @@ class StockDomainService:
             item.save(update_fields=["quantity"])
 
         elif movement.movement_type == "TRANSFER":
+
             origin = StockDomainService._get_stock_for_update(
                 StockItem, movement, movement.origin
             )
@@ -88,12 +121,14 @@ class StockDomainService:
             if origin.quantity < movement.quantity:
                 raise ValidationError("Stock insuficiente para transferir.")
 
+            # 🔥 ORDEN FIJO PARA EVITAR DEADLOCK
             origin.quantity -= movement.quantity
             origin.save(update_fields=["quantity"])
 
             dest = StockDomainService._get_or_create_stock_for_update(
                 StockItem, movement, movement.destination
             )
+
             dest.quantity += movement.quantity
             dest.save(update_fields=["quantity"])
 
@@ -107,8 +142,6 @@ class StockDomainService:
         from notifications.events import emit_event
         from notifications.constants import Events
         from inventory.services.stock_alerts import sync_all_notifications
-
-        # 🔥 SOLO EVENTOS → nada de lógica duplicada
 
         emit_event(
             Events.MOVEMENT_CREATED,

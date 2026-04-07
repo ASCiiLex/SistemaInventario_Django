@@ -51,7 +51,6 @@ class StockTransfer(models.Model):
     quantity = models.PositiveIntegerField()
     note = models.TextField(blank=True)
 
-    # 🔥 NUEVO
     idempotency_key = models.CharField(max_length=64, null=True, blank=True, db_index=True)
 
     status = models.CharField(
@@ -86,9 +85,10 @@ class StockTransfer(models.Model):
 
     def confirm(self, user):
         if self.status != "pending":
-            return  # idempotente
+            return
 
         with transaction.atomic():
+
             stock_item = StockItem.objects.select_for_update().get(
                 organization=self.organization,
                 product=self.product,
