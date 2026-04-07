@@ -26,6 +26,9 @@ urlpatterns = [
     path('proveedores/', include('suppliers.urls')),
     path('productos/', include('products.urls')),
 
+    # 🔥 ORGANIZATIONS (NUEVO)
+    path('organization/', include('organizations.urls')),
+
     path("movimientos/", lambda r: redirect("/stock-movements/")),
     path("stock-movements/", lambda r: redirect("/inventory/stock-movements/")),
 
