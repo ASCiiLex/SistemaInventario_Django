@@ -51,6 +51,9 @@ class StockTransfer(models.Model):
     quantity = models.PositiveIntegerField()
     note = models.TextField(blank=True)
 
+    # 🔥 NUEVO
+    idempotency_key = models.CharField(max_length=64, null=True, blank=True, db_index=True)
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -77,39 +80,13 @@ class StockTransfer(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        indexes = [
-            models.Index(fields=["organization", "created_at"]),
-        ]
 
     def __str__(self):
         return f"Transferencia #{self.id} - {self.product.name}"
 
-    def clean(self):
-        if self.quantity <= 0:
-            raise ValidationError("La cantidad debe ser mayor que cero.")
-
-        if self.product and self.product.organization_id != self.organization_id:
-            raise ValidationError("El producto no pertenece a la organización.")
-
-        if self.origin and self.origin.organization_id != self.organization_id:
-            raise ValidationError("El origen no pertenece a la organización.")
-
-        if self.destination and self.destination.organization_id != self.organization_id:
-            raise ValidationError("El destino no pertenece a la organización.")
-
-        if not self.origin or not self.destination:
-            raise ValidationError("Debe seleccionar origen y destino.")
-
-        if self.origin == self.destination:
-            raise ValidationError("El origen y destino no pueden ser iguales.")
-
-    # ==========================================
-    # CORE CONFIRMACIÓN ROBUSTA
-    # ==========================================
-
     def confirm(self, user):
         if self.status != "pending":
-            raise ValidationError("Solo se pueden confirmar transferencias pendientes.")
+            return  # idempotente
 
         with transaction.atomic():
             stock_item = StockItem.objects.select_for_update().get(
@@ -131,6 +108,7 @@ class StockTransfer(models.Model):
                 destination=self.destination,
                 quantity=self.quantity,
                 note=f"Transferencia #{self.id} confirmada",
+                idempotency_key=f"transfer:{self.id}"
             )
 
             self.status = "received"
@@ -147,7 +125,7 @@ class StockTransfer(models.Model):
 
     def cancel(self, user):
         if self.status != "pending":
-            raise ValidationError("Solo se pueden cancelar transferencias pendientes.")
+            return
 
         old_status = self.status
 

@@ -45,20 +45,21 @@ class StockMovement(models.Model):
 
     quantity = models.PositiveIntegerField()
     note = models.TextField(blank=True)
+
+    # 🔥 NUEVO → idempotencia
+    idempotency_key = models.CharField(max_length=64, null=True, blank=True, db_index=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["organization", "created_at"]),
+            models.Index(fields=["organization", "idempotency_key"]),
         ]
 
     def __str__(self):
         return f"{self.get_movement_type_display()} - {self.product.name} ({self.quantity})"
-
-    # ==========================================
-    # VALIDACIONES FUERTES
-    # ==========================================
 
     def clean(self):
         if self.quantity <= 0:
@@ -82,13 +83,8 @@ class StockMovement(models.Model):
         if self.movement_type == "IN" and not self.destination:
             raise ValidationError("Las entradas requieren un almacén de destino.")
 
-        if self.movement_type == "OUT":
-            if not self.origin:
-                raise ValidationError("Las salidas requieren un almacén de origen.")
-
-    # ==========================================
-    # CORE STOCK ENGINE (ATÓMICO + LOCK)
-    # ==========================================
+        if self.movement_type == "OUT" and not self.origin:
+            raise ValidationError("Las salidas requieren un almacén de origen.")
 
     def _get_stock_for_update(self, location):
         return StockItem.objects.select_for_update().get(
@@ -166,6 +162,14 @@ class StockMovement(models.Model):
     def save(self, *args, **kwargs):
         if self.product and not self.organization_id:
             self.organization = self.product.organization
+
+        if self.idempotency_key:
+            existing = StockMovement.objects.filter(
+                organization=self.organization,
+                idempotency_key=self.idempotency_key
+            ).first()
+            if existing:
+                return existing
 
         is_new = self.pk is None
         self.full_clean()
