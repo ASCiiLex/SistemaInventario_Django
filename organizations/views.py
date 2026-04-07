@@ -1,23 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 
 from .models import Membership
 from .forms import InviteUserForm, UpdateRoleForm
 from inventory.utils.listing import ListViewMixin
 
 
-# ==========================================
-# 🔐 PERMISOS
-# ==========================================
-
 def _can_manage(request):
     membership = request.membership
     return membership and membership.role in ["owner", "admin"]
 
-
-# ==========================================
-# 📋 LISTADO DE MIEMBROS
-# ==========================================
 
 @login_required
 def members_list(request):
@@ -55,10 +48,6 @@ def members_list(request):
     return render(request, "organizations/members/list.html", context)
 
 
-# ==========================================
-# ➕ INVITAR USUARIO
-# ==========================================
-
 @login_required
 def invite_member(request):
     if not _can_manage(request):
@@ -81,10 +70,6 @@ def invite_member(request):
     return redirect("members_list")
 
 
-# ==========================================
-# 🔁 CAMBIAR ROL
-# ==========================================
-
 @login_required
 def update_role(request, pk):
     if not _can_manage(request):
@@ -96,7 +81,6 @@ def update_role(request, pk):
         organization=request.organization
     )
 
-    # 🔒 No tocar owner
     if membership.role == Membership.Roles.OWNER:
         return redirect("members_list")
 
@@ -107,10 +91,6 @@ def update_role(request, pk):
 
     return redirect("members_list")
 
-
-# ==========================================
-# 🔄 ACTIVAR / DESACTIVAR
-# ==========================================
 
 @login_required
 def toggle_member(request, pk):
@@ -123,7 +103,6 @@ def toggle_member(request, pk):
         organization=request.organization
     )
 
-    # 🔒 No tocar owner
     if membership.role == Membership.Roles.OWNER:
         return redirect("members_list")
 
@@ -133,14 +112,24 @@ def toggle_member(request, pk):
     return redirect("members_list")
 
 
-# ==========================================
-# 🔥 SWITCH ORGANIZATION (NUEVO)
-# ==========================================
+# 🔥 NUEVO SWITCH SPA-COMPATIBLE
 
 @login_required
 def switch_organization(request, org_id):
-    """
-    Cambia organización activa (session-based)
-    """
-    request.session["active_organization_id"] = org_id
+    membership = get_object_or_404(
+        Membership,
+        user=request.user,
+        organization_id=org_id,
+        is_active=True
+    )
+
+    request.session["active_organization_id"] = membership.organization_id
+
+    # 🔥 HTMX → recargar app completa (SPA)
+    if request.headers.get("HX-Request"):
+        response = HttpResponse()
+        response["HX-Redirect"] = request.headers.get("HX-Current-URL", "/")
+        return response
+
+    # fallback clásico
     return redirect(request.META.get("HTTP_REFERER", "dashboard"))

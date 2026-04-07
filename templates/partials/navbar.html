@@ -16,7 +16,10 @@
                     {% for m in organizations %}
                         <li>
                             <a class="dropdown-item {% if m.organization.id == organization.id %}active{% endif %}"
-                               href="{% url 'switch_organization' m.organization.id %}">
+                            hx-post="{% url 'switch_organization' m.organization.id %}"
+                            hx-target="#app"
+                            hx-swap="innerHTML"
+                            hx-push-url="true">
                                 {{ m.organization.name }}
                                 <small class="text-muted">({{ m.role }})</small>
                             </a>
