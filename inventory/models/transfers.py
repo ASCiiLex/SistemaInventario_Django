@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
@@ -103,45 +103,45 @@ class StockTransfer(models.Model):
         if self.origin == self.destination:
             raise ValidationError("El origen y destino no pueden ser iguales.")
 
-        if self.status == "pending":
-            stock_item = StockItem.objects.filter(
-                organization=self.organization,
-                product=self.product,
-                location=self.origin
-            ).first()
-
-            if not stock_item or stock_item.quantity < self.quantity:
-                raise ValidationError("No hay suficiente stock en el almacén de origen.")
-
     # ==========================================
-    # 🔥 BUSINESS ACTIONS (AUDIT CLEAN)
+    # CORE CONFIRMACIÓN ROBUSTA
     # ==========================================
 
     def confirm(self, user):
         if self.status != "pending":
             raise ValidationError("Solo se pueden confirmar transferencias pendientes.")
 
-        old_status = self.status
+        with transaction.atomic():
+            stock_item = StockItem.objects.select_for_update().get(
+                organization=self.organization,
+                product=self.product,
+                location=self.origin
+            )
 
-        StockMovement.objects.create(
-            organization=self.organization,
-            product=self.product,
-            movement_type="TRANSFER",
-            origin=self.origin,
-            destination=self.destination,
-            quantity=self.quantity,
-            note=f"Transferencia #{self.id} confirmada",
-        )
+            if stock_item.quantity < self.quantity:
+                raise ValidationError("Stock insuficiente.")
 
-        self.status = "received"
-        self.confirmed_by = user
+            old_status = self.status
 
-        from django.utils import timezone
-        self.confirmed_at = timezone.now()
+            StockMovement.objects.create(
+                organization=self.organization,
+                product=self.product,
+                movement_type="TRANSFER",
+                origin=self.origin,
+                destination=self.destination,
+                quantity=self.quantity,
+                note=f"Transferencia #{self.id} confirmada",
+            )
 
-        self._skip_audit = True
-        self.save()
-        del self._skip_audit
+            self.status = "received"
+            self.confirmed_by = user
+
+            from django.utils import timezone
+            self.confirmed_at = timezone.now()
+
+            self._skip_audit = True
+            self.save(update_fields=["status", "confirmed_by", "confirmed_at"])
+            del self._skip_audit
 
         audit_transfer_confirmed(self, user, old_status)
 
@@ -155,7 +155,7 @@ class StockTransfer(models.Model):
         self.confirmed_by = user
 
         self._skip_audit = True
-        self.save()
+        self.save(update_fields=["status", "confirmed_by"])
         del self._skip_audit
 
         audit_transfer_cancelled(self, user, old_status)

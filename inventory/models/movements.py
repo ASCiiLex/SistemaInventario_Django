@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.core.exceptions import ValidationError
 
 from products.models import Product
@@ -56,6 +56,10 @@ class StockMovement(models.Model):
     def __str__(self):
         return f"{self.get_movement_type_display()} - {self.product.name} ({self.quantity})"
 
+    # ==========================================
+    # VALIDACIONES FUERTES
+    # ==========================================
+
     def clean(self):
         if self.quantity <= 0:
             raise ValidationError("La cantidad debe ser mayor que cero.")
@@ -81,60 +85,63 @@ class StockMovement(models.Model):
         if self.movement_type == "OUT":
             if not self.origin:
                 raise ValidationError("Las salidas requieren un almacén de origen.")
-            stock_item = StockItem.objects.filter(
-                organization=self.organization,
-                product=self.product,
-                location=self.origin
-            ).first()
-            if not stock_item or stock_item.quantity < self.quantity:
-                raise ValidationError("No hay suficiente stock en el almacén de origen.")
+
+    # ==========================================
+    # CORE STOCK ENGINE (ATÓMICO + LOCK)
+    # ==========================================
+
+    def _get_stock_for_update(self, location):
+        return StockItem.objects.select_for_update().get(
+            organization=self.organization,
+            product=self.product,
+            location=location,
+        )
+
+    def _get_or_create_stock_for_update(self, location):
+        item, _ = StockItem.objects.select_for_update().get_or_create(
+            organization=self.organization,
+            product=self.product,
+            location=location,
+            defaults={"quantity": 0},
+        )
+        return item
 
     def _apply_in(self):
-        stock_item, _ = StockItem.objects.get_or_create(
-            organization=self.organization,
-            product=self.product,
-            location=self.destination,
-            defaults={"quantity": 0},
-        )
+        stock_item = self._get_or_create_stock_for_update(self.destination)
         stock_item.quantity += self.quantity
-        stock_item.save()
+        stock_item.save(update_fields=["quantity"])
 
     def _apply_out(self):
-        stock_item = StockItem.objects.get(
-            organization=self.organization,
-            product=self.product,
-            location=self.origin,
-        )
+        stock_item = self._get_stock_for_update(self.origin)
+
+        if stock_item.quantity < self.quantity:
+            raise ValidationError("Stock insuficiente.")
+
         stock_item.quantity -= self.quantity
-        stock_item.quantity = max(stock_item.quantity, 0)
-        stock_item.save()
+        stock_item.save(update_fields=["quantity"])
 
     def _apply_transfer(self):
-        origin_item = StockItem.objects.get(
-            organization=self.organization,
-            product=self.product,
-            location=self.origin,
-        )
-        origin_item.quantity -= self.quantity
-        origin_item.quantity = max(origin_item.quantity, 0)
-        origin_item.save()
+        origin_item = self._get_stock_for_update(self.origin)
 
-        dest_item, _ = StockItem.objects.get_or_create(
-            organization=self.organization,
-            product=self.product,
-            location=self.destination,
-            defaults={"quantity": 0},
-        )
+        if origin_item.quantity < self.quantity:
+            raise ValidationError("Stock insuficiente para transferir.")
+
+        origin_item.quantity -= self.quantity
+        origin_item.save(update_fields=["quantity"])
+
+        dest_item = self._get_or_create_stock_for_update(self.destination)
         dest_item.quantity += self.quantity
-        dest_item.save()
+        dest_item.save(update_fields=["quantity"])
 
     def apply_to_stock(self):
-        if self.movement_type == "IN":
-            self._apply_in()
-        elif self.movement_type == "OUT":
-            self._apply_out()
-        elif self.movement_type == "TRANSFER":
-            self._apply_transfer()
+        with transaction.atomic():
+
+            if self.movement_type == "IN":
+                self._apply_in()
+            elif self.movement_type == "OUT":
+                self._apply_out()
+            elif self.movement_type == "TRANSFER":
+                self._apply_transfer()
 
         from notifications.events import emit_event
         from inventory.services.stock_alerts import sync_all_notifications
@@ -154,7 +161,7 @@ class StockMovement(models.Model):
             "message": f"Movimiento de stock en {self.product.name}",
         })
 
-        sync_all_notifications()
+        sync_all_notifications(self.organization)
 
     def save(self, *args, **kwargs):
         if self.product and not self.organization_id:
@@ -162,6 +169,7 @@ class StockMovement(models.Model):
 
         is_new = self.pk is None
         self.full_clean()
+
         super().save(*args, **kwargs)
 
         if is_new:
