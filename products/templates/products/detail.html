@@ -7,8 +7,8 @@
     <p><strong>SKU:</strong> {{ product.sku }}</p>
     <p><strong>Categoría:</strong> {{ product.category }}</p>
     <p><strong>Proveedor:</strong> {{ product.supplier }}</p>
-    <p><strong>Stock:</strong> {{ product.stock }}</p>
-    <p><strong>Mínimo:</strong> {{ product.min_stock }}</p>
+    <p><strong>Stock:</strong> {{ product.total_stock }}</p>
+    <p><strong>Mínimo:</strong> {{ product.total_min_stock }}</p>
 
     {% if product.image %}
         <img src="{{ product.image.url }}" class="img-fluid rounded mt-3">

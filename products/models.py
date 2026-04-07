@@ -2,8 +2,6 @@ from django.db import models
 from django.db.models import Sum
 from categories.models import Category
 from suppliers.models import Supplier
-from django.utils.timezone import now
-from django.apps import apps
 from organizations.models import Organization
 
 
@@ -37,7 +35,6 @@ class Product(models.Model):
         related_name='products'
     )
 
-    stock = models.IntegerField(default=0)
     min_stock = models.IntegerField(default=0)
 
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
