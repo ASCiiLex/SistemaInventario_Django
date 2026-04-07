@@ -9,12 +9,31 @@ def _get_membership(user):
     if not user or not user.is_authenticated:
         return None
 
-    return (
-        user.memberships
-        .select_related("organization")
-        .filter(is_active=True)
-        .first()
-    )
+    request = getattr(user, "_request", None)
+
+    print("---- DEBUG MEMBERSHIP ----")
+    print("USER:", user)
+    print("REQUEST:", request)
+
+    if request and hasattr(request, "organization"):
+        print("REQUEST ORG:", request.organization)
+
+        membership = (
+            user.memberships
+            .filter(organization=request.organization, is_active=True)
+            .first()
+        )
+
+        print("MEMBERSHIP FOUND:", membership)
+        print("--------------------------")
+
+        return membership
+
+    membership = user.memberships.filter(is_active=True).first()
+    print("FALLBACK MEMBERSHIP:", membership)
+    print("--------------------------")
+
+    return membership
 
 
 def _has_role(user, roles):

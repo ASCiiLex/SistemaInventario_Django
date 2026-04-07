@@ -2,7 +2,13 @@ from accounts.permissions import *
 
 
 def permissions_context(request):
-    user = request.user
+    user = getattr(request, "user", None)
+
+    # 🔒 Usuario no autenticado → todo False
+    if not user or not user.is_authenticated:
+        return {
+            "perm": {}
+        }
 
     perm = {
         # PRODUCTS

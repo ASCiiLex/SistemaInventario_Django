@@ -1,5 +1,7 @@
 from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+
+from accounts.permissions import can_view_audit
+from accounts.decorators import permission_required_custom
 
 from ..models.audit import AuditLog
 from ..utils.listing import ListViewMixin
@@ -7,7 +9,7 @@ from ..forms.audit import AuditFilterForm
 from inventory.services.audit import format_changes
 
 
-@login_required
+@permission_required_custom(can_view_audit)
 def audit_list(request):
     view = ListViewMixin()
     view.allowed_sort_fields = [

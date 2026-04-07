@@ -2,7 +2,7 @@
 
 {% block content %}
 
-{% if not can_view_audit %}
+{% if not perm.view_audit %}
     <div class="alert alert-danger mt-4">
         No tienes permisos para acceder a auditoría.
     </div>
