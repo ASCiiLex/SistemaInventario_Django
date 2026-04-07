@@ -6,10 +6,18 @@ from .forms import InviteUserForm, UpdateRoleForm
 from inventory.utils.listing import ListViewMixin
 
 
+# ==========================================
+# 🔐 PERMISOS
+# ==========================================
+
 def _can_manage(request):
     membership = request.membership
     return membership and membership.role in ["owner", "admin"]
 
+
+# ==========================================
+# 📋 LISTADO DE MIEMBROS
+# ==========================================
 
 @login_required
 def members_list(request):
@@ -47,6 +55,10 @@ def members_list(request):
     return render(request, "organizations/members/list.html", context)
 
 
+# ==========================================
+# ➕ INVITAR USUARIO
+# ==========================================
+
 @login_required
 def invite_member(request):
     if not _can_manage(request):
@@ -58,14 +70,20 @@ def invite_member(request):
         if form.is_valid():
             user = form.cleaned_data["user_instance"]
 
-            Membership.objects.create(
+            Membership.objects.get_or_create(
                 user=user,
                 organization=request.organization,
-                role=form.cleaned_data["role"],
+                defaults={
+                    "role": form.cleaned_data["role"],
+                },
             )
 
     return redirect("members_list")
 
+
+# ==========================================
+# 🔁 CAMBIAR ROL
+# ==========================================
 
 @login_required
 def update_role(request, pk):
@@ -78,7 +96,8 @@ def update_role(request, pk):
         organization=request.organization
     )
 
-    if membership.role == "owner":
+    # 🔒 No tocar owner
+    if membership.role == Membership.Roles.OWNER:
         return redirect("members_list")
 
     if request.method == "POST":
@@ -88,6 +107,10 @@ def update_role(request, pk):
 
     return redirect("members_list")
 
+
+# ==========================================
+# 🔄 ACTIVAR / DESACTIVAR
+# ==========================================
 
 @login_required
 def toggle_member(request, pk):
@@ -100,10 +123,24 @@ def toggle_member(request, pk):
         organization=request.organization
     )
 
-    if membership.role == "owner":
+    # 🔒 No tocar owner
+    if membership.role == Membership.Roles.OWNER:
         return redirect("members_list")
 
     membership.is_active = not membership.is_active
-    membership.save()
+    membership.save(update_fields=["is_active"])
 
     return redirect("members_list")
+
+
+# ==========================================
+# 🔥 SWITCH ORGANIZATION (NUEVO)
+# ==========================================
+
+@login_required
+def switch_organization(request, org_id):
+    """
+    Cambia organización activa (session-based)
+    """
+    request.session["active_organization_id"] = org_id
+    return redirect(request.META.get("HTTP_REFERER", "dashboard"))

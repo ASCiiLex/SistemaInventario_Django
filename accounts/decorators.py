@@ -7,14 +7,7 @@ def permission_required_custom(permission_func):
 
             request.user._request = request
 
-            print("------ DEBUG PERMISSIONS ------")
-            print("USER:", request.user)
-            print("ORG:", getattr(request, "organization", None))
-
             result = permission_func(request.user)
-
-            print("PERMISSION RESULT:", result)
-            print("-------------------------------")
 
             if not result:
                 return HttpResponseForbidden("No tienes permisos para acceder a auditoría.")

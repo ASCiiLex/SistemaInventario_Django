@@ -7,6 +7,25 @@
         </button>
 
         <div class="collapse navbar-collapse" id="navbarMain">
+
+            <!-- 🔥 SELECTOR ORGANIZACIÓN -->
+            <div class="dropdown me-3">
+                <button class="btn btn-sm btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
+                    {{ organization.name }}
+                </button>
+                <ul class="dropdown-menu">
+                    {% for m in organizations %}
+                        <li>
+                            <a class="dropdown-item {% if m.organization.id == organization.id %}active{% endif %}"
+                               href="{% url 'switch_organization' m.organization.id %}">
+                                {{ m.organization.name }}
+                                <small class="text-muted">({{ m.role }})</small>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
                 <li class="nav-item"><a href="/categorias/" class="nav-link">Categorías</a></li>

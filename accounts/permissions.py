@@ -11,10 +11,6 @@ def _get_membership(user):
 
     request = getattr(user, "_request", None)
 
-    print("---- DEBUG MEMBERSHIP ----")
-    print("USER:", user)
-    print("REQUEST:", request)
-
     if request and hasattr(request, "organization"):
         print("REQUEST ORG:", request.organization)
 
@@ -24,14 +20,10 @@ def _get_membership(user):
             .first()
         )
 
-        print("MEMBERSHIP FOUND:", membership)
-        print("--------------------------")
-
         return membership
 
     membership = user.memberships.filter(is_active=True).first()
-    print("FALLBACK MEMBERSHIP:", membership)
-    print("--------------------------")
+
 
     return membership
 

@@ -3,14 +3,14 @@ from .models import Membership, Organization
 
 class OrganizationMiddleware:
     """
-    🔥 Middleware multi-tenant definitivo
+    🔥 Middleware multi-tenant PRO
 
-    - Inyecta:
-        request.organization
-        request.membership
-
-    - Bootstrap automático seguro (owner obligatorio)
+    - Soporta múltiples organizaciones por usuario
+    - Permite selección activa vía sesión
+    - Fallback automático seguro
     """
+
+    SESSION_KEY = "active_organization_id"
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -23,25 +23,35 @@ class OrganizationMiddleware:
 
         if user.is_authenticated:
 
-            membership = (
+            memberships = (
                 Membership.objects
                 .select_related("organization")
                 .filter(user=user, is_active=True)
                 .order_by("id")
-                .first()
             )
 
-            # 🔥 BOOTSTRAP correcto (con owner obligatorio)
+            membership = None
+
+            # 🔥 1. Intentar desde sesión
+            org_id = request.session.get(self.SESSION_KEY)
+
+            if org_id:
+                membership = memberships.filter(organization_id=org_id).first()
+
+            # 🔥 2. Fallback → primera activa
             if not membership:
-                organization, created = Organization.objects.get_or_create(
+                membership = memberships.first()
+
+            # 🔥 3. Bootstrap seguro
+            if not membership:
+                organization, _ = Organization.objects.get_or_create(
                     slug="default",
                     defaults={
                         "name": "Default Organization",
-                        "owner": user,  # 🔥 clave para evitar IntegrityError
+                        "owner": user,
                     }
                 )
 
-                # si existía sin owner (edge case)
                 if not organization.owner:
                     organization.owner = user
                     organization.save(update_fields=["owner"])
@@ -51,6 +61,9 @@ class OrganizationMiddleware:
                     organization=organization,
                     role=Membership.Roles.OWNER
                 )
+
+            # 🔥 Persistir en sesión
+            request.session[self.SESSION_KEY] = membership.organization_id
 
             request.organization = membership.organization
             request.membership = membership
