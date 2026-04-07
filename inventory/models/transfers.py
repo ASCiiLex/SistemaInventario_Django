@@ -51,7 +51,12 @@ class StockTransfer(models.Model):
     quantity = models.PositiveIntegerField()
     note = models.TextField(blank=True)
 
-    idempotency_key = models.CharField(max_length=64, null=True, blank=True, db_index=True)
+    idempotency_key = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        db_index=True
+    )
 
     status = models.CharField(
         max_length=20,
@@ -79,53 +84,85 @@ class StockTransfer(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "idempotency_key"],
+                name="unique_transfer_idempotency_per_org",
+                condition=~models.Q(idempotency_key=None)
+            )
+        ]
 
     def __str__(self):
         return f"Transferencia #{self.id} - {self.product.name}"
 
     def confirm(self, user):
+
         if self.status != "pending":
-            return
+            return self  # idempotente real
 
-        with transaction.atomic():
+        try:
+            with transaction.atomic():
 
-            stock_item = StockItem.objects.select_for_update().get(
-                organization=self.organization,
-                product=self.product,
-                location=self.origin
-            )
+                # 🔒 LOCK DEL PROPIO TRANSFER (evita doble confirm concurrente)
+                locked = StockTransfer.objects.select_for_update().get(pk=self.pk)
 
-            if stock_item.quantity < self.quantity:
-                raise ValidationError("Stock insuficiente.")
+                if locked.status != "pending":
+                    return locked
 
-            old_status = self.status
+                # 🔒 LOCK GLOBAL POR PRODUCTO (todas las ubicaciones)
+                StockItem.objects.select_for_update().filter(
+                    organization=self.organization,
+                    product=self.product
+                )
 
-            StockMovement.objects.create(
-                organization=self.organization,
-                product=self.product,
-                movement_type="TRANSFER",
-                origin=self.origin,
-                destination=self.destination,
-                quantity=self.quantity,
-                note=f"Transferencia #{self.id} confirmada",
-                idempotency_key=f"transfer:{self.id}"
-            )
+                # 🔒 VALIDACIÓN STOCK
+                stock_item = StockItem.objects.get(
+                    organization=self.organization,
+                    product=self.product,
+                    location=self.origin
+                )
 
-            self.status = "received"
-            self.confirmed_by = user
+                if stock_item.quantity < self.quantity:
+                    raise ValidationError("Stock insuficiente.")
 
-            from django.utils import timezone
-            self.confirmed_at = timezone.now()
+                old_status = locked.status
 
-            self._skip_audit = True
-            self.save(update_fields=["status", "confirmed_by", "confirmed_at"])
-            del self._skip_audit
+                # 🔒 MOVEMENT IDEMPOTENTE
+                movement = StockMovement(
+                    organization=self.organization,
+                    product=self.product,
+                    movement_type="TRANSFER",
+                    origin=self.origin,
+                    destination=self.destination,
+                    quantity=self.quantity,
+                    note=f"Transferencia #{self.id} confirmada",
+                    idempotency_key=f"transfer:{self.id}"
+                )
+
+                movement.save()
+
+                # 🔒 UPDATE ESTADO
+                locked.status = "received"
+                locked.confirmed_by = user
+
+                from django.utils import timezone
+                locked.confirmed_at = timezone.now()
+
+                locked._skip_audit = True
+                locked.save(update_fields=["status", "confirmed_by", "confirmed_at"])
+                del locked._skip_audit
+
+        except Exception:
+            raise
 
         audit_transfer_confirmed(self, user, old_status)
 
+        return self
+
     def cancel(self, user):
+
         if self.status != "pending":
-            return
+            return self
 
         old_status = self.status
 
@@ -137,6 +174,8 @@ class StockTransfer(models.Model):
         del self._skip_audit
 
         audit_transfer_cancelled(self, user, old_status)
+
+        return self
 
     def save(self, *args, **kwargs):
         if self.product and not self.organization_id:
