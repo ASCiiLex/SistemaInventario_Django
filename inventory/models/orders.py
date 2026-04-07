@@ -67,7 +67,7 @@ class Order(models.Model):
         return sum(item.total_cost for item in self.items.all())
 
     # ==========================================
-    # 🔥 BUSINESS ACTIONS (AUDIT READY)
+    # 🔥 BUSINESS ACTIONS (AUDIT CLEAN)
     # ==========================================
 
     def mark_as_sent(self, user):
@@ -79,7 +79,10 @@ class Order(models.Model):
         from django.utils import timezone
         self.status = "sent"
         self.sent_at = timezone.now()
+
+        self._skip_audit = True
         self.save()
+        del self._skip_audit
 
         audit_order_sent(self, user, old_status)
 
@@ -92,7 +95,10 @@ class Order(models.Model):
         from django.utils import timezone
         self.status = "received"
         self.received_at = timezone.now()
+
+        self._skip_audit = True
         self.save()
+        del self._skip_audit
 
         audit_order_received(self, user, old_status)
 
@@ -103,7 +109,10 @@ class Order(models.Model):
         old_status = self.status
 
         self.status = "cancelled"
+
+        self._skip_audit = True
         self.save()
+        del self._skip_audit
 
         audit_order_cancelled(self, user, old_status)
 

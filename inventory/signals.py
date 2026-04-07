@@ -32,6 +32,9 @@ def store_old_instance(sender, instance, **kwargs):
     if sender not in AUDITED_MODELS:
         return
 
+    if getattr(instance, "_skip_audit", False):
+        return
+
     if instance.pk:
         try:
             old = sender.objects.get(pk=instance.pk)
@@ -45,6 +48,9 @@ def store_old_instance(sender, instance, **kwargs):
 @receiver(post_save)
 def log_create_update(sender, instance, created, **kwargs):
     if sender not in AUDITED_MODELS:
+        return
+
+    if getattr(instance, "_skip_audit", False):
         return
 
     user = get_current_user()
@@ -73,6 +79,9 @@ def log_create_update(sender, instance, created, **kwargs):
 @receiver(post_delete)
 def log_delete(sender, instance, **kwargs):
     if sender not in AUDITED_MODELS:
+        return
+
+    if getattr(instance, "_skip_audit", False):
         return
 
     user = get_current_user()

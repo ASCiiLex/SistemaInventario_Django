@@ -114,7 +114,7 @@ class StockTransfer(models.Model):
                 raise ValidationError("No hay suficiente stock en el almacén de origen.")
 
     # ==========================================
-    # 🔥 BUSINESS ACTIONS (AUDIT READY)
+    # 🔥 BUSINESS ACTIONS (AUDIT CLEAN)
     # ==========================================
 
     def confirm(self, user):
@@ -138,7 +138,10 @@ class StockTransfer(models.Model):
 
         from django.utils import timezone
         self.confirmed_at = timezone.now()
+
+        self._skip_audit = True
         self.save()
+        del self._skip_audit
 
         audit_transfer_confirmed(self, user, old_status)
 
@@ -150,7 +153,10 @@ class StockTransfer(models.Model):
 
         self.status = "cancelled"
         self.confirmed_by = user
+
+        self._skip_audit = True
         self.save()
+        del self._skip_audit
 
         audit_transfer_cancelled(self, user, old_status)
 
