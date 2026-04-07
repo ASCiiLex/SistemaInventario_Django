@@ -4,15 +4,20 @@ from django.core.exceptions import ValidationError
 
 class StockDomainService:
     """
-    🔥 CORE DEL DOMINIO DE INVENTARIO
+    🔥 CORE DEL DOMINIO DE INVENTARIO (ORQUESTADOR)
+
+    - Sin lógica duplicada
+    - Sin efectos secundarios en models
+    - Flujo controlado
     """
 
     @staticmethod
     def execute(movement, user=None):
 
-        # 🔥 IMPORTS LAZY (rompe ciclo)
-        from inventory.models import StockItem
+        # 🔥 imports lazy
+        from inventory.models.stock import StockItem
 
+        # 🔒 idempotencia
         if movement.idempotency_key:
             existing = movement.__class__.objects.filter(
                 organization=movement.organization,
@@ -24,7 +29,7 @@ class StockDomainService:
 
         with transaction.atomic():
             movement.full_clean()
-            movement.save_base(raw=True)
+            movement.save()  # 🔥 IMPORTANTE → signals funcionan
 
             StockDomainService._apply_stock(movement, StockItem)
 
@@ -99,15 +104,14 @@ class StockDomainService:
     @staticmethod
     def _post_commit(movement, user):
 
-        # 🔥 IMPORTS LAZY
         from notifications.events import emit_event
+        from notifications.constants import Events
         from inventory.services.stock_alerts import sync_all_notifications
-        from inventory.services.audit import log_action, serialize_instance
 
-        log_action(user, "CREATE", movement, serialize_instance(movement))
+        # 🔥 SOLO EVENTOS → nada de lógica duplicada
 
         emit_event(
-            "inventory:movement",
+            Events.MOVEMENT_CREATED,
             {
                 "product": movement.product,
                 "message": f"Movimiento de stock en {movement.product.name}",

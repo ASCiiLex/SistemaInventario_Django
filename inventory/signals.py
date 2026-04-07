@@ -66,11 +66,9 @@ def log_create_update(sender, instance, created, **kwargs):
             changes=serialize_instance(instance),
         )
 
+        # 🔥 SOLO EVENTOS REALES
         if isinstance(instance, StockItem):
             emit_event(Events.STOCK_CHANGED, {"instance": instance})
-
-        if isinstance(instance, StockMovement):
-            emit_event(Events.MOVEMENT_CREATED, {"instance": instance})
 
         if isinstance(instance, Order):
             emit_event(Events.ORDERS_UPDATED, {"instance": instance})
