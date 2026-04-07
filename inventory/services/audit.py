@@ -1,6 +1,10 @@
 from inventory.models.audit import AuditLog
 
 
+# ==========================================
+# SERIALIZACIÓN / DIFF (EXISTENTE)
+# ==========================================
+
 def serialize_instance(instance):
     data = {}
     for field in instance._meta.fields:
@@ -31,6 +35,10 @@ def get_instance_changes(old_data, new_instance):
     return changes
 
 
+# ==========================================
+# CORE
+# ==========================================
+
 def _resolve_organization(instance, organization):
     if organization:
         return organization
@@ -46,7 +54,7 @@ def log_action(user, action, instance, changes=None, organization=None):
     organization = _resolve_organization(instance, organization)
 
     if not organization:
-        return  # 🔥 fail-safe: nunca registrar sin org
+        return
 
     AuditLog.objects.create(
         organization=organization,
@@ -57,6 +65,76 @@ def log_action(user, action, instance, changes=None, organization=None):
         changes=changes,
     )
 
+
+# ==========================================
+# 🔥 BUSINESS EVENTS (NUEVO)
+# ==========================================
+
+def log_status_change(user, instance, field, old, new):
+    log_action(
+        user=user,
+        action="STATUS_CHANGE",
+        instance=instance,
+        changes={
+            field: {
+                "old": old,
+                "new": new,
+            }
+        },
+    )
+
+
+def log_business_event(user, action, instance, extra=None):
+    log_action(
+        user=user,
+        action=action,
+        instance=instance,
+        changes=extra or {},
+    )
+
+
+# ==========================================
+# HELPERS SEMÁNTICOS (SaaS)
+# ==========================================
+
+def audit_order_sent(order, user, old_status):
+    log_status_change(user, order, "status", old_status, "sent")
+
+
+def audit_order_received(order, user, old_status):
+    log_status_change(user, order, "status", old_status, "received")
+
+
+def audit_order_cancelled(order, user, old_status):
+    log_status_change(user, order, "status", old_status, "cancelled")
+
+
+def audit_transfer_confirmed(transfer, user, old_status):
+    log_business_event(
+        user,
+        "TRANSFER_CONFIRMED",
+        transfer,
+        {
+            "status": {"old": old_status, "new": "received"},
+            "quantity": transfer.quantity,
+        },
+    )
+
+
+def audit_transfer_cancelled(transfer, user, old_status):
+    log_business_event(
+        user,
+        "TRANSFER_CANCELLED",
+        transfer,
+        {
+            "status": {"old": old_status, "new": "cancelled"},
+        },
+    )
+
+
+# ==========================================
+# FORMATO UI
+# ==========================================
 
 def format_changes(changes: dict):
     if not changes:

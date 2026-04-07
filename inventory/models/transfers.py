@@ -8,6 +8,11 @@ from .stock import StockItem
 from .movements import StockMovement
 from organizations.models import Organization
 
+from inventory.services.audit import (
+    audit_transfer_confirmed,
+    audit_transfer_cancelled,
+)
+
 
 class StockTransfer(models.Model):
     STATUS_CHOICES = (
@@ -108,9 +113,15 @@ class StockTransfer(models.Model):
             if not stock_item or stock_item.quantity < self.quantity:
                 raise ValidationError("No hay suficiente stock en el almacén de origen.")
 
+    # ==========================================
+    # 🔥 BUSINESS ACTIONS (AUDIT READY)
+    # ==========================================
+
     def confirm(self, user):
         if self.status != "pending":
             raise ValidationError("Solo se pueden confirmar transferencias pendientes.")
+
+        old_status = self.status
 
         StockMovement.objects.create(
             organization=self.organization,
@@ -129,13 +140,19 @@ class StockTransfer(models.Model):
         self.confirmed_at = timezone.now()
         self.save()
 
+        audit_transfer_confirmed(self, user, old_status)
+
     def cancel(self, user):
         if self.status != "pending":
             raise ValidationError("Solo se pueden cancelar transferencias pendientes.")
 
+        old_status = self.status
+
         self.status = "cancelled"
         self.confirmed_by = user
         self.save()
+
+        audit_transfer_cancelled(self, user, old_status)
 
     def save(self, *args, **kwargs):
         if self.product and not self.organization_id:

@@ -4,6 +4,12 @@ from products.models import Product
 from .locations import Location
 from organizations.models import Organization
 
+from inventory.services.audit import (
+    audit_order_sent,
+    audit_order_received,
+    audit_order_cancelled,
+)
+
 
 class Order(models.Model):
     STATUS_CHOICES = (
@@ -59,6 +65,47 @@ class Order(models.Model):
     @property
     def total_cost(self):
         return sum(item.total_cost for item in self.items.all())
+
+    # ==========================================
+    # 🔥 BUSINESS ACTIONS (AUDIT READY)
+    # ==========================================
+
+    def mark_as_sent(self, user):
+        if self.status != "pending":
+            return
+
+        old_status = self.status
+
+        from django.utils import timezone
+        self.status = "sent"
+        self.sent_at = timezone.now()
+        self.save()
+
+        audit_order_sent(self, user, old_status)
+
+    def mark_as_received(self, user):
+        if self.status not in ["sent", "partially_received", "backordered"]:
+            return
+
+        old_status = self.status
+
+        from django.utils import timezone
+        self.status = "received"
+        self.received_at = timezone.now()
+        self.save()
+
+        audit_order_received(self, user, old_status)
+
+    def mark_as_cancelled(self, user):
+        if self.status in ["received", "cancelled"]:
+            return
+
+        old_status = self.status
+
+        self.status = "cancelled"
+        self.save()
+
+        audit_order_cancelled(self, user, old_status)
 
 
 class OrderItem(models.Model):
