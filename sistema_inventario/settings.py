@@ -62,6 +62,9 @@ MIDDLEWARE = [
     'accounts.middleware.LoginRequiredMiddleware',
     'organizations.middleware.OrganizationMiddleware',
 
+    "inventory.middleware.audit_middleware.AuditUserMiddleware",
+
+
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

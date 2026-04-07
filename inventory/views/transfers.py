@@ -15,8 +15,6 @@ from accounts.permissions import (
 )
 from accounts.decorators import permission_required_custom
 
-from inventory.services.audit import log_action, serialize_instance, get_instance_changes
-
 
 def transfer_list(request):
     view = ListViewMixin()
@@ -84,8 +82,6 @@ def transfer_create(request):
             transfer.created_by = request.user
             transfer.save()
 
-            log_action(request.user, "CREATE", transfer, serialize_instance(transfer))
-
             messages.success(request, "Transferencia creada correctamente.")
             return redirect("transfer_list")
     else:
@@ -115,15 +111,10 @@ def transfer_confirm(request, pk):
         organization=request.organization
     )
 
-    old_data = serialize_instance(transfer)
-
     if request.method == "POST":
         form = StockTransferConfirmForm(request.POST)
         if form.is_valid():
             transfer.confirm(request.user)
-
-            changes = get_instance_changes(old_data, transfer)
-            log_action(request.user, "STATUS_CHANGE", transfer, changes)
 
             messages.success(request, "Transferencia confirmada correctamente.")
             return redirect("transfer_detail", pk=pk)
@@ -145,12 +136,7 @@ def transfer_cancel(request, pk):
         organization=request.organization
     )
 
-    old_data = serialize_instance(transfer)
-
     transfer.cancel(request.user)
-
-    changes = get_instance_changes(old_data, transfer)
-    log_action(request.user, "STATUS_CHANGE", transfer, changes)
 
     messages.success(request, "Transferencia cancelada correctamente.")
     return redirect("transfer_detail", pk=pk)
