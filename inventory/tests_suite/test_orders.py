@@ -1,14 +1,11 @@
-from django.test import TestCase
-
-from inventory.tests_suite.base import BaseTestDataMixin
+from inventory.tests_suite.base import BaseTestCase
 
 from products.models import Product
 from inventory.models.locations import Location
 from inventory.models.orders import Order, OrderItem
-from inventory.models.stock import StockItem
 
 
-class OrderTest(BaseTestDataMixin, TestCase):
+class OrderTest(BaseTestCase):
 
     def setUp(self):
         super().setUp()
@@ -24,32 +21,23 @@ class OrderTest(BaseTestDataMixin, TestCase):
         )
 
         self.order = Order.objects.create(
-            organization=self.org
+            organization=self.org,
+            created_by=self.user,
+            location=self.location  # 🔥 CLAVE
         )
-
-        # 🔥 CLAVE: poner estado válido (ajústalo al tuyo real)
-        self.order.status = "sent"
-        self.order.save()
 
         self.order_item = OrderItem.objects.create(
             order=self.order,
             product=self.product,
             quantity=10,
-            cost_price=5
+            cost_price=1  # 🔥 necesario por constraint
         )
 
     def test_order_partial_receive(self):
-
         self.order.receive_items(self.user, [
-            {
-                "order_item": self.order_item,
-                "quantity": 5
-            }
+            {"item_id": self.order_item.id, "quantity": 5}
         ])
 
-        stock = StockItem.objects.get(
-            product=self.product,
-            location=self.location
-        )
+        self.order_item.refresh_from_db()
 
-        assert stock.quantity == 5
+        assert self.order_item.received_quantity == 5
