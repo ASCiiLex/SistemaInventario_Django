@@ -1,6 +1,7 @@
 from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
+from django.utils import timezone
 
 from django.db import connection
 
@@ -24,13 +25,18 @@ class StockDomainService:
         try:
             with transaction.atomic():
 
-                # 🔒 LOCK DURO POR PRODUCTO (fila lógica)
+                # 🔒 LOCK DURO POR PRODUCTO
                 StockDomainService._lock_product_scope(movement)
 
                 movement.full_clean()
-                movement.save_base(raw=True)  # ⚠️ evita recursión
 
-                # 🔒 LOCK GLOBAL TODAS LAS LOCATIONS DEL PRODUCTO
+                # ✅ FIX: asegurar created_at antes de save_base
+                if not movement.created_at:
+                    movement.created_at = timezone.now()
+
+                movement.save_base(raw=True)
+
+                # 🔒 LOCK GLOBAL
                 StockItem.objects.select_for_update().filter(
                     organization=movement.organization,
                     product=movement.product
@@ -38,7 +44,6 @@ class StockDomainService:
 
                 StockDomainService._apply_stock(movement, StockItem)
 
-                # 🔒 VALIDACIÓN GLOBAL (dentro del lock)
                 StockDomainService._validate_global_stock(movement, StockItem)
 
         except IntegrityError:
@@ -55,10 +60,6 @@ class StockDomainService:
 
     @staticmethod
     def _lock_product_scope(movement):
-        """
-        🔥 LOCK LÓGICO POR PRODUCTO (evita race conditions cross-location)
-        Funciona incluso si no existen filas en StockItem
-        """
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT pg_advisory_xact_lock(%s)",
