@@ -1,25 +1,37 @@
-from django.forms.models import model_to_dict
-
-
 def serialize_instance(instance):
-    data = model_to_dict(instance)
+    data = {}
 
-    for field, value in data.items():
+    for field in instance._meta.fields:
+        value = getattr(instance, field.name)
 
-        # 🔥 Files → string
-        if hasattr(value, "url"):
-            data[field] = value.url
+        if value is None:
+            data[field.name] = None
+            continue
 
-        # 🔥 FK → id
-        elif hasattr(value, "pk"):
-            data[field] = value.pk
-
-        # 🔥 Otros no serializables
-        else:
+        # 🔥 File/ImageField seguro
+        if hasattr(value, "name"):
             try:
-                import json
-                json.dumps(value)
-            except TypeError:
-                data[field] = str(value)
+                data[field.name] = value.url if value.name else None
+            except Exception:
+                data[field.name] = value.name or None
+            continue
+
+        # 🔥 FK
+        if hasattr(value, "pk"):
+            data[field.name] = value.pk
+            continue
+
+        # 🔥 Tipos primitivos
+        if isinstance(value, (int, float, str, bool)):
+            data[field.name] = value
+            continue
+
+        # 🔥 Fallback seguro
+        try:
+            import json
+            json.dumps(value)
+            data[field.name] = value
+        except Exception:
+            data[field.name] = str(value)
 
     return data
