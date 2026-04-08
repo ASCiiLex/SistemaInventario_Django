@@ -1,8 +1,6 @@
 import threading
 
-from django.test import TransactionTestCase
-
-from inventory.tests_suite.base import BaseTestDataMixin
+from inventory.tests_suite.base import BaseTestCase
 
 from products.models import Product
 from inventory.models.locations import Location
@@ -10,7 +8,7 @@ from inventory.models.stock import StockItem
 from inventory.models.movements import StockMovement
 
 
-class StockConcurrencyTest(BaseTestDataMixin, TransactionTestCase):
+class StockConcurrencyTest(BaseTestCase):
 
     def setUp(self):
         super().setUp()

@@ -1,14 +1,11 @@
-from django.test import TestCase
-
-from inventory.tests_suite.base import BaseTestDataMixin
+from inventory.tests_suite.base import BaseTestCase
 
 from products.models import Product
 from inventory.models.locations import Location
-from inventory.models.stock import StockItem
 from inventory.models.transfers import StockTransfer
 
 
-class DoubleClickTest(BaseTestDataMixin, TestCase):
+class DoubleClickTest(BaseTestCase):
 
     def setUp(self):
         super().setUp()
@@ -26,14 +23,6 @@ class DoubleClickTest(BaseTestDataMixin, TestCase):
         self.dest = Location.objects.create(
             name="B",
             organization=self.org
-        )
-
-        # 🔥 FIX: crear stock inicial
-        StockItem.objects.create(
-            organization=self.org,
-            product=self.product,
-            location=self.origin,
-            quantity=20
         )
 
         self.transfer = StockTransfer.objects.create(

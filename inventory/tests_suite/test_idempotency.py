@@ -1,13 +1,11 @@
-from django.test import TransactionTestCase
-
-from inventory.tests_suite.base import BaseTestDataMixin
+from inventory.tests_suite.base import BaseTestCase
 
 from products.models import Product
 from inventory.models.locations import Location
 from inventory.models.movements import StockMovement
 
 
-class IdempotencyTest(BaseTestDataMixin, TransactionTestCase):
+class IdempotencyTest(BaseTestCase):
 
     def setUp(self):
         super().setUp()

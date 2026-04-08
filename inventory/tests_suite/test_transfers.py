@@ -1,6 +1,4 @@
-from django.test import TestCase
-
-from inventory.tests_suite.base import BaseTestDataMixin
+from inventory.tests_suite.base import BaseTestCase
 
 from products.models import Product
 from inventory.models.locations import Location
@@ -8,7 +6,7 @@ from inventory.models.stock import StockItem
 from inventory.models.transfers import StockTransfer
 
 
-class TransferTest(BaseTestDataMixin, TestCase):
+class TransferTest(BaseTestCase):
 
     def setUp(self):
         super().setUp()

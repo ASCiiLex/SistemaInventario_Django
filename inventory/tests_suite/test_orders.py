@@ -22,8 +22,12 @@ class OrderTest(BaseTestCase):
 
         self.order = Order.objects.create(
             organization=self.org,
-            location=self.location  # 🔥 SIN created_by
+            location=self.location
         )
+
+        # 🔥 estado requerido por dominio
+        self.order.status = "sent"
+        self.order.save()
 
         self.order_item = OrderItem.objects.create(
             order=self.order,
