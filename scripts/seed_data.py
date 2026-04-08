@@ -7,21 +7,36 @@ from organizations.models import Organization, Membership
 from products.models import Product
 from categories.models import Category
 from suppliers.models import Supplier
-from inventory.models import Location, StockItem, StockMovement, Order, OrderItem
+
+from inventory.models import (
+    Location,
+    StockMovement,
+    Order,
+    OrderItem,
+    StockTransfer,
+)
 
 from notifications.models import Notification, UserNotification
 
 
+def get_or_create_org(model, org, **kwargs):
+    return model.objects.get_or_create(
+        organization=org,
+        **kwargs
+    )[0]
+
+
 def run():
-    print("🔄 Generando datos PRO SaaS...")
+    print("🔄 Seed PRO (multi-tenant + dominio real + auditoría)")
 
     # =====================
-    # USERS (PRIMERO 🔥)
+    # USERS
     # =====================
-    if not User.objects.filter(username="admin").exists():
-        admin = User.objects.create_superuser("admin", "admin@test.com", "admin1234")
-    else:
-        admin = User.objects.get(username="admin")
+    admin, _ = User.objects.get_or_create(username="alex")
+    admin.set_password("admin123")
+    admin.is_superuser = True
+    admin.is_staff = True
+    admin.save()
 
     users = []
     roles = [
@@ -39,9 +54,9 @@ def run():
     all_users = [admin] + users
 
     # =====================
-    # ORGANIZATION (AHORA CON OWNER ✅)
+    # ORGANIZATION
     # =====================
-    org, created = Organization.objects.get_or_create(
+    org, _ = Organization.objects.get_or_create(
         slug="default",
         defaults={
             "name": "Default Organization",
@@ -49,14 +64,10 @@ def run():
         }
     )
 
-    # 🔥 asegurar owner si ya existía
     if not org.owner:
         org.owner = admin
         org.save()
 
-    # =====================
-    # MEMBERSHIPS
-    # =====================
     Membership.objects.get_or_create(
         user=admin,
         organization=org,
@@ -71,25 +82,25 @@ def run():
         )
 
     # =====================
-    # CATEGORIES & SUPPLIERS
+    # CATEGORIES & SUPPLIERS (🔥 FIX multi-tenant)
     # =====================
-    categories = []
-    for name in ["Electrónica", "Ropa", "Hogar"]:
-        c, _ = Category.objects.get_or_create(name=name)
-        categories.append(c)
+    categories = [
+        get_or_create_org(Category, org, name=n)
+        for n in ["Electrónica", "Ropa", "Hogar"]
+    ]
 
-    suppliers = []
-    for name in ["Amazon", "Ikea", "Zara"]:
-        s, _ = Supplier.objects.get_or_create(name=name)
-        suppliers.append(s)
+    suppliers = [
+        get_or_create_org(Supplier, org, name=n)
+        for n in ["Amazon", "Ikea", "Zara"]
+    ]
 
     # =====================
     # LOCATIONS
     # =====================
-    locations = []
-    for name in ["Madrid", "Barcelona", "Valencia"]:
-        loc, _ = Location.objects.get_or_create(name=name)
-        locations.append(loc)
+    locations = [
+        get_or_create_org(Location, org, name=n)
+        for n in ["Madrid", "Barcelona", "Valencia"]
+    ]
 
     # =====================
     # PRODUCTS
@@ -98,11 +109,12 @@ def run():
     for i in range(20):
         p, _ = Product.objects.get_or_create(
             sku=f"SKU{i}",
+            organization=org,
             defaults={
                 "name": f"Producto {i}",
                 "category": random.choice(categories),
                 "supplier": random.choice(suppliers),
-                "min_stock": 0,
+                "min_stock": 5,
                 "cost_price": random.uniform(5, 50),
                 "sale_price": random.uniform(60, 120),
             }
@@ -110,92 +122,114 @@ def run():
         products.append(p)
 
     # =====================
-    # STOCK INICIAL
+    # STOCK INICIAL (DOMINIO REAL)
     # =====================
     for p in products:
         for loc in locations:
-
-            qty = random.randint(10, 50)
-            min_stock = random.randint(5, 15)
-
-            stock_item, _ = StockItem.objects.get_or_create(
-                product=p,
-                location=loc,
-                defaults={
-                    "quantity": 0,
-                    "min_stock": min_stock,
-                }
-            )
-
-            stock_item.min_stock = min_stock
-            stock_item.save()
-
-            StockMovement.objects.create(
-                product=p,
-                movement_type="IN",
-                destination=loc,
-                quantity=qty,
-                note="Stock inicial",
-            )
+            try:
+                StockMovement(
+                    organization=org,
+                    product=p,
+                    movement_type="IN",
+                    destination=loc,
+                    quantity=random.randint(10, 50),
+                    note="Stock inicial",
+                ).save()
+            except:
+                continue
 
     # =====================
     # MOVIMIENTOS
     # =====================
     for _ in range(200):
         p = random.choice(products)
-        movement_type = random.choice(["OUT", "TRANSFER"])
 
-        if movement_type == "OUT":
+        if random.choice(["OUT", "TRANSFER"]) == "OUT":
             origin = random.choice(locations)
 
-            stock = StockItem.objects.filter(product=p, location=origin).first()
-            if not stock or stock.quantity <= 1:
+            try:
+                StockMovement(
+                    organization=org,
+                    product=p,
+                    movement_type="OUT",
+                    origin=origin,
+                    quantity=random.randint(1, 5),
+                ).save()
+            except:
                 continue
-
-            qty = random.randint(1, stock.quantity)
-
-            StockMovement.objects.create(
-                product=p,
-                movement_type="OUT",
-                origin=origin,
-                quantity=qty,
-            )
-
-        elif movement_type == "TRANSFER":
+        else:
             origin, destination = random.sample(locations, 2)
 
-            stock = StockItem.objects.filter(product=p, location=origin).first()
-            if not stock or stock.quantity <= 1:
+            try:
+                StockMovement(
+                    organization=org,
+                    product=p,
+                    movement_type="TRANSFER",
+                    origin=origin,
+                    destination=destination,
+                    quantity=random.randint(1, 5),
+                ).save()
+            except:
                 continue
 
-            qty = random.randint(1, stock.quantity)
-
-            StockMovement.objects.create(
-                product=p,
-                movement_type="TRANSFER",
-                origin=origin,
-                destination=destination,
-                quantity=qty,
-            )
-
     # =====================
-    # ORDERS
+    # ORDERS (FLUJO REAL)
     # =====================
     for _ in range(10):
+        user = random.choice(all_users)
+
         order = Order.objects.create(
+            organization=org,
             supplier=random.choice(suppliers),
             location=random.choice(locations),
-            status=random.choice(["pending", "sent", "received"]),
-            created_at=timezone.now(),
         )
 
+        items = []
+
         for _ in range(random.randint(1, 5)):
+            product = random.choice(products)
+            qty = random.randint(1, 10)
+
             OrderItem.objects.create(
+                organization=org,
                 order=order,
-                product=random.choice(products),
-                quantity=random.randint(1, 10),
+                product=product,
+                quantity=qty,
                 cost_price=random.uniform(5, 50),
             )
+
+            items.append({
+                "product": product,
+                "quantity": qty
+            })
+
+        try:
+            order.mark_as_sent(user)
+            order.receive_items(user, items)
+        except:
+            continue
+
+    # =====================
+    # TRANSFERS (FLUJO REAL)
+    # =====================
+    for _ in range(20):
+        user = random.choice(all_users)
+        product = random.choice(products)
+        origin, destination = random.sample(locations, 2)
+
+        transfer = StockTransfer.objects.create(
+            organization=org,
+            product=product,
+            origin=origin,
+            destination=destination,
+            quantity=random.randint(1, 5),
+            created_by=user,
+        )
+
+        try:
+            transfer.confirm(user)
+        except:
+            continue
 
     # =====================
     # NOTIFICATIONS
@@ -215,9 +249,7 @@ def run():
             UserNotification.objects.get_or_create(
                 user=user,
                 notification=notif,
-                defaults={
-                    "seen": random.choice([True, False])
-                }
+                defaults={"seen": random.choice([True, False])}
             )
 
-    print("✅ Seed PRO SaaS completado")
+    print("✅ Seed completo (auditoría incluida)")
