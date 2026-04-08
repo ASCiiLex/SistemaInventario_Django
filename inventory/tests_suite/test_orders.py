@@ -25,7 +25,6 @@ class OrderTest(BaseTestCase):
             location=self.location
         )
 
-        # 🔥 estado requerido por dominio
         self.order.status = "sent"
         self.order.save()
 
@@ -38,7 +37,10 @@ class OrderTest(BaseTestCase):
 
     def test_order_partial_receive(self):
         self.order.receive_items(self.user, [
-            {"item_id": self.order_item.id, "quantity": 5}
+            {
+                "product": self.product,  # 🔥 CONTRATO REAL
+                "quantity": 5
+            }
         ])
 
         self.order_item.refresh_from_db()
