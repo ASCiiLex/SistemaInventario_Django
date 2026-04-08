@@ -23,9 +23,9 @@ class OrderTest(BaseTestDataMixin, TestCase):
             organization=self.org
         )
 
+        # 🔥 FIX: crear order sin campos inexistentes
         self.order = Order.objects.create(
-            organization=self.org,
-            created_by=self.user
+            organization=self.org
         )
 
         self.order_item = OrderItem.objects.create(
