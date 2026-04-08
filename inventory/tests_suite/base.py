@@ -1,12 +1,13 @@
+from django.test import TransactionTestCase
 from django.contrib.auth.models import User
+
 from organizations.models import Organization
 
 
-class BaseTestDataMixin:
+class BaseTestCase(TransactionTestCase):
+    reset_sequences = True  # 🔥 importante para consistencia en tests
 
     def setUp(self):
-        super().setUp()
-
         self.user = User.objects.create_user(
             username="test_user",
             password="test123"
