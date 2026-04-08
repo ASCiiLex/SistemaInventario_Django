@@ -22,15 +22,14 @@ class OrderTest(BaseTestCase):
 
         self.order = Order.objects.create(
             organization=self.org,
-            created_by=self.user,
-            location=self.location  # 🔥 CLAVE
+            location=self.location  # 🔥 SIN created_by
         )
 
         self.order_item = OrderItem.objects.create(
             order=self.order,
             product=self.product,
             quantity=10,
-            cost_price=1  # 🔥 necesario por constraint
+            cost_price=1
         )
 
     def test_order_partial_receive(self):
