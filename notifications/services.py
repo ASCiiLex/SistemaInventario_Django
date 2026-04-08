@@ -10,6 +10,10 @@ from .constants import Events
 from organizations.models import Membership
 
 
+# ==========================================
+# CONFIG
+# ==========================================
+
 COOLDOWNS = {
     Events.STOCK_LOW: 30,
     Events.PRODUCT_RISK: 60,
@@ -23,6 +27,18 @@ PRIORITY_MAP = {
     Events.ORDERS_UPDATED: "info",
 }
 
+
+MESSAGE_TEMPLATES = {
+    Events.STOCK_LOW: lambda p, l: f"Stock bajo en {l.name}: {p.name}",
+    Events.PRODUCT_RISK: lambda p, l: f"Producto en riesgo: {p.name}",
+    Events.MOVEMENT_CREATED: lambda p, l: f"Movimiento de stock: {p.name}",
+    Events.ORDERS_UPDATED: lambda p, l: "Actualización de pedidos",
+}
+
+
+# ==========================================
+# HELPERS
+# ==========================================
 
 def _get_priority(type_):
     return PRIORITY_MAP.get(type_, "info")
@@ -43,7 +59,7 @@ def _is_duplicate(organization, product=None, location=None, type_=None):
     qs = Notification.objects.filter(
         organization=organization,
         type=type_,
-        created_at__gte=since
+        created_at__gte=since,
     )
 
     if product:
@@ -72,7 +88,20 @@ def _get_target_users(organization):
     return users
 
 
-def create_notification(*, product=None, location=None, type_, message):
+def _build_message(type_, product=None, location=None):
+    template = MESSAGE_TEMPLATES.get(type_)
+
+    if template:
+        return template(product, location)
+
+    return type_
+
+
+# ==========================================
+# CORE
+# ==========================================
+
+def create_notification(*, product=None, location=None, type_):
     organization = _resolve_organization(product, location)
 
     if not organization:
@@ -80,6 +109,8 @@ def create_notification(*, product=None, location=None, type_, message):
 
     if _is_duplicate(organization, product=product, location=location, type_=type_):
         return None
+
+    message = _build_message(type_, product, location)
 
     notification = Notification.objects.create(
         organization=organization,
@@ -111,7 +142,7 @@ def create_notification(*, product=None, location=None, type_, message):
             {
                 "event": type_,
                 "message": message,
-                "product": product.id if product else None,
+                "priority": notification.priority,
             }
         )
 
@@ -120,13 +151,16 @@ def create_notification(*, product=None, location=None, type_, message):
     return notification
 
 
+# ==========================================
+# EVENT HANDLERS
+# ==========================================
+
 @register_event(Events.STOCK_LOW)
 def handle_stock_low(payload: dict):
     create_notification(
         product=payload.get("product"),
         location=payload.get("location"),
         type_=Events.STOCK_LOW,
-        message=payload.get("message"),
     )
 
 
@@ -135,5 +169,4 @@ def handle_product_risk(payload: dict):
     create_notification(
         product=payload.get("product"),
         type_=Events.PRODUCT_RISK,
-        message=payload.get("message"),
     )

@@ -7,6 +7,8 @@ from organizations.models import Organization
 from products.models import Product
 from inventory.models import Location
 
+from notifications.constants import Events
+
 
 class Notification(models.Model):
 
@@ -18,12 +20,10 @@ class Notification(models.Model):
     )
 
     TYPE_CHOICES = [
-        ("movement", "Movimiento"),
-        ("stock_item_low", "Incidencia almacén"),
-        ("product_risk", "Producto en riesgo"),
-        ("order", "Pedido"),
-        ("alert", "Alerta"),
-        ("info", "Información"),
+        (Events.MOVEMENT_CREATED, "Movimiento"),
+        (Events.STOCK_LOW, "Stock bajo"),
+        (Events.PRODUCT_RISK, "Producto en riesgo"),
+        (Events.ORDERS_UPDATED, "Pedido"),
     ]
 
     PRIORITY_CHOICES = [
@@ -51,9 +51,8 @@ class Notification(models.Model):
     )
 
     type = models.CharField(
-        max_length=30,
+        max_length=50,
         choices=TYPE_CHOICES,
-        default="info",
         db_index=True,
     )
 
@@ -66,8 +65,6 @@ class Notification(models.Model):
     message = models.CharField(max_length=255)
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-
-    seen = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         ordering = ["-created_at"]

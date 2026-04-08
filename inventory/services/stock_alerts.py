@@ -6,6 +6,10 @@ from notifications.events import emit_event
 from notifications.constants import Events
 
 
+# ==========================================
+# CACHE
+# ==========================================
+
 def invalidate_dashboard_cache(org_id=None):
     if not org_id:
         return
@@ -23,6 +27,10 @@ def invalidate_dashboard_cache(org_id=None):
     cache.delete_many(keys)
 
 
+# ==========================================
+# ALERTS
+# ==========================================
+
 def sync_stock_item_notifications(organization):
     items = (
         StockItem.objects
@@ -37,7 +45,6 @@ def sync_stock_item_notifications(organization):
                 {
                     "product": item.product,
                     "location": item.location,
-                    "message": f"Stock bajo en {item.location.name}: {item.product.name}",
                 }
             )
 
@@ -51,7 +58,6 @@ def sync_product_risk_notifications(organization):
                 Events.PRODUCT_RISK,
                 {
                     "product": p,
-                    "message": f"Producto en riesgo: {p.name}",
                 }
             )
 

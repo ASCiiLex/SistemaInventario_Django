@@ -3,6 +3,7 @@ from django.conf import settings
 from django.db.models import Count, Q
 
 from notifications.models import UserNotification
+from notifications.constants import Events
 
 
 def _cache_key(user_id, org_id, suffix):
@@ -15,6 +16,14 @@ def invalidate_notifications_cache(user_id=None, org_id=None):
         cache.delete(_cache_key(user_id, org_id, "recent"))
     else:
         cache.clear()
+
+
+TYPE_LABELS = {
+    Events.STOCK_LOW: "Stock bajo",
+    Events.PRODUCT_RISK: "Producto en riesgo",
+    Events.MOVEMENT_CREATED: "Movimiento",
+    Events.ORDERS_UPDATED: "Pedido",
+}
 
 
 def get_notifications_summary(user, organization):
@@ -36,13 +45,6 @@ def get_notifications_summary(user, organization):
         total=Count("id"),
         unread=Count("id", filter=Q(seen=False)),
     )
-
-    TYPE_LABELS = {
-        "stock_item_low": "Incidencia almacén",
-        "product_risk": "Producto en riesgo",
-        "order": "Pedido",
-        "movement": "Movimiento",
-    }
 
     by_type_raw = (
         qs.values("notification__type")
