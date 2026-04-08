@@ -1,4 +1,6 @@
-from django.db import models
+from django.db import models, transaction
+from django.core.exceptions import ValidationError
+
 from suppliers.models import Supplier
 from products.models import Product
 from .locations import Location
@@ -9,6 +11,8 @@ from inventory.services.audit import (
     audit_order_received,
     audit_order_cancelled,
 )
+
+from inventory.models.movements import StockMovement
 
 
 class Order(models.Model):
@@ -34,6 +38,7 @@ class Order(models.Model):
         null=True,
         related_name="orders",
     )
+
     location = models.ForeignKey(
         Location,
         on_delete=models.SET_NULL,
@@ -63,55 +68,108 @@ class Order(models.Model):
         return sum(item.quantity for item in self.items.all())
 
     @property
-    def total_cost(self):
-        return sum(item.total_cost for item in self.items.all())
+    def total_received(self):
+        """
+        🔥 Total realmente recibido vía movimientos (source of truth real)
+        """
+        return sum(
+            StockMovement.objects.filter(
+                organization=self.organization,
+                movement_type="IN",
+                destination=self.location,
+                note__startswith=f"order:{self.id}"
+            ).values_list("quantity", flat=True)
+        )
 
     # ==========================================
-    # 🔥 BUSINESS ACTIONS (AUDIT CLEAN)
+    # 🔥 BUSINESS ACTIONS (STRICT)
     # ==========================================
 
     def mark_as_sent(self, user):
         if self.status != "pending":
-            return
-
-        old_status = self.status
+            raise ValidationError("Solo pedidos pendientes pueden enviarse.")
 
         from django.utils import timezone
+
+        old_status = self.status
         self.status = "sent"
         self.sent_at = timezone.now()
 
         self._skip_audit = True
-        self.save()
+        self.save(update_fields=["status", "sent_at"])
         del self._skip_audit
 
         audit_order_sent(self, user, old_status)
 
-    def mark_as_received(self, user):
+    def receive_items(self, user, items_data):
+        """
+        🔥 RECEPCIÓN REAL → CREA MOVIMIENTOS
+        items_data = [{product, quantity}]
+        """
+
         if self.status not in ["sent", "partially_received", "backordered"]:
-            return
+            raise ValidationError("Pedido no receivable.")
 
-        old_status = self.status
+        if not self.location:
+            raise ValidationError("Pedido sin ubicación.")
 
-        from django.utils import timezone
-        self.status = "received"
-        self.received_at = timezone.now()
+        with transaction.atomic():
 
-        self._skip_audit = True
-        self.save()
-        del self._skip_audit
+            for item_data in items_data:
+                product = item_data["product"]
+                qty = item_data["quantity"]
+
+                order_item = self.items.filter(product=product).first()
+                if not order_item:
+                    raise ValidationError("Producto no pertenece al pedido.")
+
+                if qty <= 0:
+                    raise ValidationError("Cantidad inválida.")
+
+                # 🔒 CREAR MOVIMIENTO REAL
+                movement = StockMovement(
+                    organization=self.organization,
+                    product=product,
+                    movement_type="IN",
+                    destination=self.location,
+                    quantity=qty,
+                    note=f"order:{self.id}:{product.id}",
+                    idempotency_key=f"order:{self.id}:{product.id}"
+                )
+                movement.save()
+
+            # 🔥 REEVALUAR ESTADO
+            total_expected = sum(i.quantity for i in self.items.all())
+            total_received = self.total_received
+
+            old_status = self.status
+
+            if total_received == 0:
+                self.status = "sent"
+            elif total_received < total_expected:
+                self.status = "partially_received"
+            else:
+                self.status = "received"
+
+                from django.utils import timezone
+                self.received_at = timezone.now()
+
+            self._skip_audit = True
+            self.save(update_fields=["status", "received_at"])
+            del self._skip_audit
 
         audit_order_received(self, user, old_status)
 
     def mark_as_cancelled(self, user):
         if self.status in ["received", "cancelled"]:
-            return
+            raise ValidationError("No se puede cancelar.")
 
         old_status = self.status
 
         self.status = "cancelled"
 
         self._skip_audit = True
-        self.save()
+        self.save(update_fields=["status"])
         del self._skip_audit
 
         audit_order_cancelled(self, user, old_status)
@@ -130,12 +188,14 @@ class OrderItem(models.Model):
         on_delete=models.CASCADE,
         related_name="items",
     )
+
     product = models.ForeignKey(
         Product,
         on_delete=models.SET_NULL,
         null=True,
         related_name="order_items",
     )
+
     quantity = models.PositiveIntegerField()
     cost_price = models.DecimalField(max_digits=10, decimal_places=2)
 
