@@ -54,11 +54,14 @@ def _is_duplicate(organization, product=None, location=None, type_=None):
         created_at__gte=since,
     )
 
-    if product:
+    # 🔥 CLAVE: lógica distinta según tipo
+    if type_ == Events.PRODUCT_RISK:
         qs = qs.filter(product=product)
-
-    if location:
-        qs = qs.filter(location=location)
+    else:
+        if product:
+            qs = qs.filter(product=product)
+        if location:
+            qs = qs.filter(location=location)
 
     return qs.exists()
 

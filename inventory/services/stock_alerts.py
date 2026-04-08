@@ -1,5 +1,5 @@
 from django.core.cache import cache
-from django.db.models import Sum
+from django.db.models import Sum, F
 
 from inventory.models import StockItem
 from products.models import Product
@@ -55,11 +55,12 @@ def sync_stock_item_notifications(organization):
 
 def sync_product_risk_notifications(organization):
     """
-    🔥 NIVEL GLOBAL (derivado)
+    🔥 NIVEL GLOBAL (derivado + consistente)
     """
     products = Product.objects.filter(organization=organization)
 
     for p in products:
+
         agg = (
             StockItem.objects
             .filter(organization=organization, product=p)
@@ -72,7 +73,14 @@ def sync_product_risk_notifications(organization):
         total_qty = agg["total_qty"] or 0
         total_min = agg["total_min"] or 0
 
-        if total_qty <= total_min:
+        # 🔥 CLAVE: debe existir problema local
+        has_local_issue = StockItem.objects.filter(
+            organization=organization,
+            product=p,
+            quantity__lte=F("min_stock")
+        ).exists()
+
+        if has_local_issue and total_qty <= total_min:
             emit_event(
                 Events.PRODUCT_RISK,
                 {

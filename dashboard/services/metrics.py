@@ -79,8 +79,8 @@ def get_dashboard_metrics(organization):
         "total_products": Product.objects.filter(organization=organization).count(),
         "total_suppliers": Supplier.objects.filter(organization=organization).count(),
         "total_stock": total_stock,
-        "low_stock_count": len(low_stock),
-        "product_risk_count": products_at_risk.count(),
+        "low_stock_locations_count": len(low_stock),  # 🔥 granular
+        "product_risk_count": products_at_risk.count(),  # 🔥 global
     }
 
     cache.set(cache_key, result, settings.CACHE_TTL["metrics"])
