@@ -2,10 +2,6 @@ from inventory.models.audit import AuditLog
 from inventory.services.audit_serializer import serialize_instance
 
 
-# ==========================================
-# DIFF
-# ==========================================
-
 def get_instance_changes(old_data, new_instance):
     new_data = serialize_instance(new_instance)
     changes = {}
@@ -20,10 +16,6 @@ def get_instance_changes(old_data, new_instance):
 
     return changes
 
-
-# ==========================================
-# CORE
-# ==========================================
 
 def _resolve_organization(instance, organization):
     if organization:
@@ -52,10 +44,6 @@ def log_action(user, action, instance, changes=None, organization=None):
     )
 
 
-# ==========================================
-# BUSINESS EVENTS
-# ==========================================
-
 def log_status_change(user, instance, field, old, new):
     log_action(
         user=user,
@@ -78,10 +66,6 @@ def log_business_event(user, action, instance, extra=None):
         changes=extra or {},
     )
 
-
-# ==========================================
-# HELPERS
-# ==========================================
 
 def audit_order_sent(order, user, old_status):
     log_status_change(user, order, "status", old_status, "sent")
@@ -119,8 +103,18 @@ def audit_transfer_cancelled(transfer, user, old_status):
 
 
 # ==========================================
-# FORMATO UI
+# 🔥 NUEVO → NORMALIZACIÓN + UX
 # ==========================================
+
+def normalize_value(value):
+    if value in [None, "", [], {}]:
+        return "—"
+
+    if isinstance(value, bool):
+        return "Sí" if value else "No"
+
+    return value
+
 
 def format_changes(changes: dict):
     if not changes:
@@ -130,16 +124,25 @@ def format_changes(changes: dict):
 
     for field, values in changes.items():
         if isinstance(values, dict) and "old" in values and "new" in values:
+            old = normalize_value(values["old"])
+            new = normalize_value(values["new"])
+
+            if old == new:
+                continue
+
             formatted.append({
-                "field": field,
-                "old": values["old"],
-                "new": values["new"],
+                "field": field.replace("_", " ").capitalize(),
+                "old": old,
+                "new": new,
+                "type": "change",
             })
+
         else:
             formatted.append({
-                "field": field,
-                "old": None,
-                "new": values,
+                "field": field.replace("_", " ").capitalize(),
+                "old": "—",
+                "new": normalize_value(values),
+                "type": "create",
             })
 
     return formatted

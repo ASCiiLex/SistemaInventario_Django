@@ -21,8 +21,10 @@ def audit_list(request):
     ]
     view.default_ordering = "-created_at"
 
-    qs = AuditLog.objects.select_related("user").filter(
-        organization=request.organization
+    qs = (
+        AuditLog.objects
+        .select_related("user")
+        .filter(organization=request.organization)
     )
 
     filter_form = AuditFilterForm(request.GET or None)
@@ -51,12 +53,14 @@ def audit_list(request):
     logs = []
     for log in page_obj:
         log.formatted_changes = format_changes(log.changes)
+        log.has_changes = bool(log.formatted_changes)
         logs.append(log)
 
     context = {
         "logs": logs,
         "page_obj": page_obj,
         "filter_form": filter_form,
+        "total_count": qs.count(),
         **view.get_ordering_context(request),
     }
 

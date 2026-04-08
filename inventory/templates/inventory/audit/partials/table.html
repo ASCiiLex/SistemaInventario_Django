@@ -8,7 +8,7 @@
             {% include "partials/sortable_th.html" with field="action" label="Acción" target="#audit-table" %}
             {% include "partials/sortable_th.html" with field="model_name" label="Modelo" target="#audit-table" %}
             <th>Objeto</th>
-            <th>Cambios</th>
+            <th style="min-width: 300px;">Cambios</th>
         </tr>
     </thead>
 
@@ -33,15 +33,25 @@
             <td>#{{ log.object_id }}</td>
 
             <td>
-                {% if log.formatted_changes %}
-                    <ul class="mb-0 ps-3">
-                        {% for change in log.formatted_changes %}
-                            <li>
+                {% if log.has_changes %}
+                    <div class="small">
+
+                        {% for change in log.formatted_changes|slice:":3" %}
+                            <div>
                                 <strong>{{ change.field }}</strong>:
-                                {{ change.old|default:"-" }} → {{ change.new|default:"-" }}
-                            </li>
+                                <span class="text-muted">{{ change.old }}</span>
+                                →
+                                <span class="fw-semibold">{{ change.new }}</span>
+                            </div>
                         {% endfor %}
-                    </ul>
+
+                        {% if log.formatted_changes|length > 3 %}
+                            <div class="text-muted">
+                                +{{ log.formatted_changes|length|add:"-3" }} cambios más
+                            </div>
+                        {% endif %}
+
+                    </div>
                 {% else %}
                     <span class="text-muted">—</span>
                 {% endif %}
