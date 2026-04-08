@@ -18,6 +18,8 @@ Incremental==24.11.0
 msgpack==1.1.2
 packaging==26.0
 pillow==12.1.1
+psycopg==3.3.3
+psycopg-binary==3.3.3
 py-ubjson==0.16.1
 pyasn1==0.6.3
 pyasn1_modules==0.4.2
