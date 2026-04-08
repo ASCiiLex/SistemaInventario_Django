@@ -10,10 +10,6 @@ from .constants import Events
 from organizations.models import Membership
 
 
-# ==========================================
-# CONFIG
-# ==========================================
-
 COOLDOWNS = {
     Events.STOCK_LOW: 30,
     Events.PRODUCT_RISK: 60,
@@ -21,8 +17,8 @@ COOLDOWNS = {
 
 
 PRIORITY_MAP = {
-    Events.STOCK_LOW: "critical",
-    Events.PRODUCT_RISK: "warning",
+    Events.STOCK_LOW: "warning",
+    Events.PRODUCT_RISK: "critical",
     Events.MOVEMENT_CREATED: "info",
     Events.ORDERS_UPDATED: "info",
 }
@@ -35,10 +31,6 @@ MESSAGE_TEMPLATES = {
     Events.ORDERS_UPDATED: lambda p, l: "Actualización de pedidos",
 }
 
-
-# ==========================================
-# HELPERS
-# ==========================================
 
 def _get_priority(type_):
     return PRIORITY_MAP.get(type_, "info")
@@ -97,10 +89,6 @@ def _build_message(type_, product=None, location=None):
     return type_
 
 
-# ==========================================
-# CORE
-# ==========================================
-
 def create_notification(*, product=None, location=None, type_):
     organization = _resolve_organization(product, location)
 
@@ -150,10 +138,6 @@ def create_notification(*, product=None, location=None, type_):
 
     return notification
 
-
-# ==========================================
-# EVENT HANDLERS
-# ==========================================
 
 @register_event(Events.STOCK_LOW)
 def handle_stock_low(payload: dict):

@@ -253,31 +253,6 @@ def run():
         except:
             continue
 
-    # =====================
-    # NOTIFICATIONS (ALINEADAS AL SISTEMA REAL)
-    # =====================
-    for _ in range(20):
-        product = random.choice(products)
-        location = random.choice(locations)
 
-        notif = Notification.objects.create(
-            organization=org,
-            product=product,
-            location=location,
-            type=random.choice([
-                Events.STOCK_LOW,
-                Events.PRODUCT_RISK,
-                Events.ORDERS_UPDATED,
-            ]),
-            priority=random.choice(["critical", "warning", "info"]),
-            message=f"Seed: {product.name}",
-        )
-
-        for user in all_users:
-            UserNotification.objects.get_or_create(
-                user=user,
-                notification=notif,
-                defaults={"seen": random.choice([True, False])}
-            )
 
     print("✅ Seed completo (coherente + multi-location)")

@@ -51,6 +51,15 @@ def get_low_stock(organization):
     return result
 
 
+def get_products_at_risk(organization):
+    return Product.objects.filter(
+        organization=organization
+    ).annotate(
+        total_stock=Coalesce(Sum("stock_items__quantity"), Value(0)),
+        total_min=Coalesce(Sum("stock_items__min_stock"), Value(0)),
+    ).filter(total_stock__lte=F("total_min"))
+
+
 def get_dashboard_metrics(organization):
     cache_key = f"dashboard:metrics:{organization.id}"
     cached = cache.get(cache_key)
@@ -64,12 +73,14 @@ def get_dashboard_metrics(organization):
     )["total"]
 
     low_stock = get_low_stock(organization)
+    products_at_risk = get_products_at_risk(organization)
 
     result = {
         "total_products": Product.objects.filter(organization=organization).count(),
         "total_suppliers": Supplier.objects.filter(organization=organization).count(),
         "total_stock": total_stock,
         "low_stock_count": len(low_stock),
+        "product_risk_count": products_at_risk.count(),
     }
 
     cache.set(cache_key, result, settings.CACHE_TTL["metrics"])
