@@ -66,6 +66,9 @@ class Notification(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
+    # 🔥 CONSISTENCIA CON DB
+    seen = models.BooleanField(default=False, db_index=True)
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
