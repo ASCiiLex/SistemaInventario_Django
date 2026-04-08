@@ -1,6 +1,5 @@
 import random
 from django.contrib.auth.models import User
-from django.utils import timezone
 
 from organizations.models import Organization, Membership
 
@@ -14,9 +13,11 @@ from inventory.models import (
     Order,
     OrderItem,
     StockTransfer,
+    StockItem,
 )
 
 from notifications.models import Notification, UserNotification
+from notifications.constants import Events
 
 
 def get_or_create_org(model, org, **kwargs):
@@ -82,7 +83,14 @@ def run():
         )
 
     # =====================
-    # CATEGORIES & SUPPLIERS (🔥 FIX multi-tenant)
+    # CLEAN DOMAIN (CRÍTICO)
+    # =====================
+    UserNotification.objects.all().delete()
+    Notification.objects.all().delete()
+    StockItem.objects.all().delete()
+
+    # =====================
+    # CATEGORIES & SUPPLIERS
     # =====================
     categories = [
         get_or_create_org(Category, org, name=n)
@@ -114,7 +122,7 @@ def run():
                 "name": f"Producto {i}",
                 "category": random.choice(categories),
                 "supplier": random.choice(suppliers),
-                "min_stock": 5,
+                "min_stock": 0,  # 🔥 GLOBAL NO SE USA
                 "cost_price": random.uniform(5, 50),
                 "sale_price": random.uniform(60, 120),
             }
@@ -122,38 +130,35 @@ def run():
         products.append(p)
 
     # =====================
-    # STOCK INICIAL (DOMINIO REAL)
+    # STOCK INICIAL + MIN POR ALMACÉN (CLAVE)
     # =====================
     for p in products:
-    for loc in locations:
-        try:
-            # 🔥 asegurar min_stock consistente
-            from inventory.models import StockItem
+        for loc in locations:
+            try:
+                qty = random.randint(10, 50)
+                min_stock = random.randint(5, 15)
 
-            stock_item, _ = StockItem.objects.get_or_create(
-                organization=org,
-                product=p,
-                location=loc,
-                defaults={
-                    "quantity": 0,
-                    "min_stock": p.min_stock,
-                }
-            )
+                movement = StockMovement(
+                    organization=org,
+                    product=p,
+                    movement_type="IN",
+                    destination=loc,
+                    quantity=qty,
+                    note="Stock inicial",
+                )
+                movement.save()
 
-            stock_item.min_stock = p.min_stock
-            stock_item.save(update_fields=["min_stock"])
+                item = StockItem.objects.get(
+                    organization=org,
+                    product=p,
+                    location=loc
+                )
 
-            StockMovement(
-                organization=org,
-                product=p,
-                movement_type="IN",
-                destination=loc,
-                quantity=random.randint(10, 50),
-                note="Stock inicial",
-            ).save()
+                item.min_stock = min_stock
+                item.save(update_fields=["min_stock"])
 
-        except:
-            continue
+            except:
+                continue
 
     # =====================
     # MOVIMIENTOS
@@ -190,7 +195,7 @@ def run():
                 continue
 
     # =====================
-    # ORDERS (FLUJO REAL)
+    # ORDERS
     # =====================
     for _ in range(10):
         user = random.choice(all_users)
@@ -227,7 +232,7 @@ def run():
             continue
 
     # =====================
-    # TRANSFERS (FLUJO REAL)
+    # TRANSFERS
     # =====================
     for _ in range(20):
         user = random.choice(all_users)
@@ -249,17 +254,23 @@ def run():
             continue
 
     # =====================
-    # NOTIFICATIONS
+    # NOTIFICATIONS (ALINEADAS AL SISTEMA REAL)
     # =====================
-    for _ in range(30):
+    for _ in range(20):
         product = random.choice(products)
+        location = random.choice(locations)
 
         notif = Notification.objects.create(
             organization=org,
             product=product,
-            type=random.choice(["stock_item_low", "product_risk", "order"]),
+            location=location,
+            type=random.choice([
+                Events.STOCK_LOW,
+                Events.PRODUCT_RISK,
+                Events.ORDERS_UPDATED,
+            ]),
             priority=random.choice(["critical", "warning", "info"]),
-            message=f"Alerta en {product.name}",
+            message=f"Seed: {product.name}",
         )
 
         for user in all_users:
@@ -269,4 +280,4 @@ def run():
                 defaults={"seen": random.choice([True, False])}
             )
 
-    print("✅ Seed completo (auditoría incluida)")
+    print("✅ Seed completo (coherente + multi-location)")

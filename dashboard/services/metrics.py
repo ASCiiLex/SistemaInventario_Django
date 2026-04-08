@@ -23,23 +23,28 @@ def get_low_stock(organization):
         return cached
 
     qs = (
-        Product.objects
-        .filter(organization=organization)
-        .annotate(
-            total_stock=Coalesce(Sum("stock_items__quantity"), Value(0)),
-            total_min_stock=Coalesce(Sum("stock_items__min_stock"), Value(0)),
+        StockItem.objects
+        .select_related("product", "location")
+        .filter(
+            organization=organization,
+            quantity__lte=F("min_stock")
         )
-        .filter(total_stock__lte=F("total_min_stock"))
-        .values("id", "name", "total_stock", "total_min_stock")
     )
 
     result = [
         {
-            "product": {"id": row["id"], "name": row["name"]},
-            "quantity": row["total_stock"],
-            "min_stock": row["total_min_stock"],
+            "product": {
+                "id": item.product.id,
+                "name": item.product.name,
+            },
+            "location": {
+                "id": item.location.id,
+                "name": item.location.name,
+            },
+            "quantity": item.quantity,
+            "min_stock": item.min_stock,
         }
-        for row in qs
+        for item in qs
     ]
 
     cache.set(cache_key, result, settings.CACHE_TTL["low_stock"])
@@ -58,11 +63,13 @@ def get_dashboard_metrics(organization):
         .aggregate(total=Coalesce(Sum("quantity"), Value(0)))
     )["total"]
 
+    low_stock = get_low_stock(organization)
+
     result = {
         "total_products": Product.objects.filter(organization=organization).count(),
         "total_suppliers": Supplier.objects.filter(organization=organization).count(),
         "total_stock": total_stock,
-        "low_stock_count": len(get_low_stock(organization)),
+        "low_stock_count": len(low_stock),
     }
 
     cache.set(cache_key, result, settings.CACHE_TTL["metrics"])

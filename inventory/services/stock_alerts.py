@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from django.db.models import Sum
 
 from inventory.models import StockItem
 from products.models import Product
@@ -32,6 +33,9 @@ def invalidate_dashboard_cache(org_id=None):
 # ==========================================
 
 def sync_stock_item_notifications(organization):
+    """
+    🔥 NIVEL ALMACÉN (fuente de verdad)
+    """
     items = (
         StockItem.objects
         .select_related("product", "location")
@@ -50,10 +54,25 @@ def sync_stock_item_notifications(organization):
 
 
 def sync_product_risk_notifications(organization):
+    """
+    🔥 NIVEL GLOBAL (derivado)
+    """
     products = Product.objects.filter(organization=organization)
 
     for p in products:
-        if p.total_stock <= p.total_min_stock:
+        agg = (
+            StockItem.objects
+            .filter(organization=organization, product=p)
+            .aggregate(
+                total_qty=Sum("quantity"),
+                total_min=Sum("min_stock"),
+            )
+        )
+
+        total_qty = agg["total_qty"] or 0
+        total_min = agg["total_min"] or 0
+
+        if total_qty <= total_min:
             emit_event(
                 Events.PRODUCT_RISK,
                 {
