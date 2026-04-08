@@ -27,12 +27,15 @@ class OrderTest(BaseTestDataMixin, TestCase):
             organization=self.org
         )
 
-        # 🔥 FIX: añadir cost_price obligatorio
+        # 🔥 CLAVE: poner estado válido (ajústalo al tuyo real)
+        self.order.status = "sent"
+        self.order.save()
+
         self.order_item = OrderItem.objects.create(
             order=self.order,
             product=self.product,
             quantity=10,
-            cost_price=5  # 👈 clave
+            cost_price=5
         )
 
     def test_order_partial_receive(self):
