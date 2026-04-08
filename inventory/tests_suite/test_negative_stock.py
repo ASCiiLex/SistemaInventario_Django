@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.test import TransactionTestCase
 
 from inventory.tests_suite.base import BaseTestCase
 
@@ -7,7 +8,7 @@ from inventory.models.locations import Location
 from inventory.models.movements import StockMovement
 
 
-class NegativeStockTest(BaseTestCase):
+class NegativeStockTest(TransactionTestCase, BaseTestCase):
 
     def setUp(self):
         super().setUp()
