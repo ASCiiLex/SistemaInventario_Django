@@ -46,7 +46,6 @@ class StockConcurrencyTest(BaseTestCase):
             except Exception:
                 pass
             finally:
-                # 🔥 CRÍTICO: cerrar conexión por thread
                 connection.close()
 
         t1 = threading.Thread(target=do_movement)
