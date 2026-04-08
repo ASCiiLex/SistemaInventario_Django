@@ -23,15 +23,16 @@ class OrderTest(BaseTestDataMixin, TestCase):
             organization=self.org
         )
 
-        # 🔥 FIX: crear order sin campos inexistentes
         self.order = Order.objects.create(
             organization=self.org
         )
 
+        # 🔥 FIX: añadir cost_price obligatorio
         self.order_item = OrderItem.objects.create(
             order=self.order,
             product=self.product,
-            quantity=10
+            quantity=10,
+            cost_price=5  # 👈 clave
         )
 
     def test_order_partial_receive(self):
