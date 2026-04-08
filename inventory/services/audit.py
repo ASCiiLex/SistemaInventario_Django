@@ -1,24 +1,10 @@
 from inventory.models.audit import AuditLog
+from inventory.services.audit_serializer import serialize_instance
 
 
 # ==========================================
-# SERIALIZACIÓN / DIFF (EXISTENTE)
+# DIFF
 # ==========================================
-
-def serialize_instance(instance):
-    data = {}
-    for field in instance._meta.fields:
-        field_name = field.name
-        try:
-            value = getattr(instance, field_name)
-            if hasattr(value, "pk"):
-                data[field_name] = value.pk
-            else:
-                data[field_name] = value
-        except Exception:
-            continue
-    return data
-
 
 def get_instance_changes(old_data, new_instance):
     new_data = serialize_instance(new_instance)
@@ -67,7 +53,7 @@ def log_action(user, action, instance, changes=None, organization=None):
 
 
 # ==========================================
-# 🔥 BUSINESS EVENTS (NUEVO)
+# BUSINESS EVENTS
 # ==========================================
 
 def log_status_change(user, instance, field, old, new):
@@ -94,7 +80,7 @@ def log_business_event(user, action, instance, extra=None):
 
 
 # ==========================================
-# HELPERS SEMÁNTICOS (SaaS)
+# HELPERS
 # ==========================================
 
 def audit_order_sent(order, user, old_status):

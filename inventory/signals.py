@@ -3,9 +3,10 @@ from django.dispatch import receiver
 
 from inventory.services.audit import (
     log_action,
-    serialize_instance,
     get_instance_changes,
 )
+from inventory.services.audit_serializer import serialize_instance
+
 from inventory.middleware.audit_user import get_current_user
 
 from notifications.events import emit_event
@@ -66,7 +67,6 @@ def log_create_update(sender, instance, created, **kwargs):
             changes=serialize_instance(instance),
         )
 
-        # 🔥 SOLO EVENTOS REALES
         if isinstance(instance, StockItem):
             emit_event(Events.STOCK_CHANGED, {"instance": instance})
 
