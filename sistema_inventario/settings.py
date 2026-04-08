@@ -124,7 +124,7 @@ DATABASES = {
         "PASSWORD": "inventario_pass",
         "HOST": "localhost",
         "PORT": "5432",
-        "CONN_MAX_AGE": 60,
+        "CONN_MAX_AGE": 0,
     }
 }
 

@@ -1,5 +1,7 @@
 import threading
 
+from django.db import connection
+
 from inventory.tests_suite.base import BaseTestCase
 
 from products.models import Product
@@ -43,6 +45,9 @@ class StockConcurrencyTest(BaseTestCase):
                 ).save()
             except Exception:
                 pass
+            finally:
+                # 🔥 CRÍTICO: cerrar conexión por thread
+                connection.close()
 
         t1 = threading.Thread(target=do_movement)
         t2 = threading.Thread(target=do_movement)
