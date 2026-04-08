@@ -3,6 +3,7 @@ from inventory.tests_suite.base import BaseTestCase
 from products.models import Product
 from inventory.models.locations import Location
 from inventory.models.orders import Order, OrderItem
+from inventory.models.stock import StockItem
 
 
 class OrderTest(BaseTestCase):
@@ -38,11 +39,15 @@ class OrderTest(BaseTestCase):
     def test_order_partial_receive(self):
         self.order.receive_items(self.user, [
             {
-                "product": self.product,  # 🔥 CONTRATO REAL
+                "product": self.product,
                 "quantity": 5
             }
         ])
 
-        self.order_item.refresh_from_db()
+        # 🔥 VALIDAMOS EFECTO REAL → STOCK
+        stock = StockItem.objects.get(
+            product=self.product,
+            location=self.location
+        )
 
-        assert self.order_item.received_quantity == 5
+        assert stock.quantity == 5
