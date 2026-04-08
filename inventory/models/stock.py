@@ -48,6 +48,13 @@ class StockItem(models.Model):
         if self.min_stock < 0:
             raise ValidationError("El mínimo no puede ser negativo.")
 
+    def save(self, *args, **kwargs):
+        # 🔥 SOURCE OF TRUTH: heredar min_stock del producto SIEMPRE
+        if self.product and self.min_stock == 0:
+            self.min_stock = self.product.min_stock
+
+        super().save(*args, **kwargs)
+
     @property
     def is_below_minimum(self):
         return self.quantity <= self.min_stock

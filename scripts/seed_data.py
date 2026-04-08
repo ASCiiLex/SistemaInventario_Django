@@ -125,18 +125,35 @@ def run():
     # STOCK INICIAL (DOMINIO REAL)
     # =====================
     for p in products:
-        for loc in locations:
-            try:
-                StockMovement(
-                    organization=org,
-                    product=p,
-                    movement_type="IN",
-                    destination=loc,
-                    quantity=random.randint(10, 50),
-                    note="Stock inicial",
-                ).save()
-            except:
-                continue
+    for loc in locations:
+        try:
+            # 🔥 asegurar min_stock consistente
+            from inventory.models import StockItem
+
+            stock_item, _ = StockItem.objects.get_or_create(
+                organization=org,
+                product=p,
+                location=loc,
+                defaults={
+                    "quantity": 0,
+                    "min_stock": p.min_stock,
+                }
+            )
+
+            stock_item.min_stock = p.min_stock
+            stock_item.save(update_fields=["min_stock"])
+
+            StockMovement(
+                organization=org,
+                product=p,
+                movement_type="IN",
+                destination=loc,
+                quantity=random.randint(10, 50),
+                note="Stock inicial",
+            ).save()
+
+        except:
+            continue
 
     # =====================
     # MOVIMIENTOS
