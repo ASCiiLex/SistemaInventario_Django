@@ -98,62 +98,54 @@ class StockTransfer(models.Model):
     def confirm(self, user):
 
         if self.status != "pending":
-            return self  # idempotente real
+            return self
 
-        try:
-            with transaction.atomic():
+        with transaction.atomic():
 
-                # 🔒 LOCK DEL PROPIO TRANSFER (evita doble confirm concurrente)
-                locked = StockTransfer.objects.select_for_update().get(pk=self.pk)
+            locked = StockTransfer.objects.select_for_update().get(pk=self.pk)
 
-                if locked.status != "pending":
-                    return locked
+            if locked.status != "pending":
+                return locked
 
-                # 🔒 LOCK GLOBAL POR PRODUCTO (todas las ubicaciones)
-                StockItem.objects.select_for_update().filter(
-                    organization=self.organization,
-                    product=self.product
-                )
+            StockItem.objects.select_for_update().filter(
+                organization=self.organization,
+                product=self.product
+            )
 
-                # 🔒 VALIDACIÓN STOCK
-                stock_item = StockItem.objects.get(
-                    organization=self.organization,
-                    product=self.product,
-                    location=self.origin
-                )
+            stock_item = StockItem.objects.get(
+                organization=self.organization,
+                product=self.product,
+                location=self.origin
+            )
 
-                if stock_item.quantity < self.quantity:
-                    raise ValidationError("Stock insuficiente.")
+            if stock_item.quantity < self.quantity:
+                raise ValidationError("Stock insuficiente.")
 
-                old_status = locked.status
+            old_status = locked.status
 
-                # 🔒 MOVEMENT IDEMPOTENTE
-                movement = StockMovement(
-                    organization=self.organization,
-                    product=self.product,
-                    movement_type="TRANSFER",
-                    origin=self.origin,
-                    destination=self.destination,
-                    quantity=self.quantity,
-                    note=f"Transferencia #{self.id} confirmada",
-                    idempotency_key=f"transfer:{self.id}"
-                )
+            movement = StockMovement(
+                organization=self.organization,
+                product=self.product,
+                movement_type="TRANSFER",
+                source_type="transfer",
+                transfer=self,
+                origin=self.origin,
+                destination=self.destination,
+                quantity=self.quantity,
+                idempotency_key=f"transfer:{self.id}"
+            )
 
-                movement.save()
+            movement.save()
 
-                # 🔒 UPDATE ESTADO
-                locked.status = "received"
-                locked.confirmed_by = user
+            locked.status = "received"
+            locked.confirmed_by = user
 
-                from django.utils import timezone
-                locked.confirmed_at = timezone.now()
+            from django.utils import timezone
+            locked.confirmed_at = timezone.now()
 
-                locked._skip_audit = True
-                locked.save(update_fields=["status", "confirmed_by", "confirmed_at"])
-                del locked._skip_audit
-
-        except Exception:
-            raise
+            locked._skip_audit = True
+            locked.save(update_fields=["status", "confirmed_by", "confirmed_at"])
+            del locked._skip_audit
 
         audit_transfer_confirmed(self, user, old_status)
 

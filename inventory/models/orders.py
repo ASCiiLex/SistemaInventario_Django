@@ -69,16 +69,8 @@ class Order(models.Model):
 
     @property
     def total_received(self):
-        """
-        🔥 Total realmente recibido vía movimientos (source of truth real)
-        """
         return sum(
-            StockMovement.objects.filter(
-                organization=self.organization,
-                movement_type="IN",
-                destination=self.location,
-                note__startswith=f"order:{self.id}"
-            ).values_list("quantity", flat=True)
+            self.movements.filter(movement_type="IN").values_list("quantity", flat=True)
         )
 
     # ==========================================
@@ -102,10 +94,6 @@ class Order(models.Model):
         audit_order_sent(self, user, old_status)
 
     def receive_items(self, user, items_data):
-        """
-        🔥 RECEPCIÓN REAL → CREA MOVIMIENTOS
-        items_data = [{product, quantity}]
-        """
 
         if self.status not in ["sent", "partially_received", "backordered"]:
             raise ValidationError("Pedido no receivable.")
@@ -126,19 +114,20 @@ class Order(models.Model):
                 if qty <= 0:
                     raise ValidationError("Cantidad inválida.")
 
-                # 🔒 CREAR MOVIMIENTO REAL
+                key = f"order:{self.id}:{product.id}"
+
                 movement = StockMovement(
                     organization=self.organization,
                     product=product,
                     movement_type="IN",
+                    source_type="order",
+                    order=self,
                     destination=self.location,
                     quantity=qty,
-                    note=f"order:{self.id}:{product.id}",
-                    idempotency_key=f"order:{self.id}:{product.id}"
+                    idempotency_key=key
                 )
                 movement.save()
 
-            # 🔥 REEVALUAR ESTADO
             total_expected = sum(i.quantity for i in self.items.all())
             total_received = self.total_received
 

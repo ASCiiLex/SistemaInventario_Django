@@ -15,6 +15,12 @@ class StockMovement(models.Model):
         ("TRANSFER", "Transferencia"),
     )
 
+    SOURCE_TYPES = (
+        ("manual", "Manual"),
+        ("order", "Pedido"),
+        ("transfer", "Transferencia"),
+    )
+
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
@@ -29,6 +35,30 @@ class StockMovement(models.Model):
     )
 
     movement_type = models.CharField(max_length=10, choices=MOVEMENT_TYPES)
+
+    source_type = models.CharField(
+        max_length=20,
+        choices=SOURCE_TYPES,
+        default="manual",
+        db_index=True,
+    )
+
+    # 🔥 RELACIONES REALES
+    order = models.ForeignKey(
+        "inventory.Order",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movements",
+    )
+
+    transfer = models.ForeignKey(
+        "inventory.StockTransfer",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movements",
+    )
 
     origin = models.ForeignKey(
         Location,
@@ -87,6 +117,16 @@ class StockMovement(models.Model):
 
         if self.destination and self.destination.organization_id != self.organization_id:
             raise ValidationError("El destino no pertenece a la organización.")
+
+        # 🔥 VALIDACIÓN SOURCE
+        if self.source_type == "order" and not self.order:
+            raise ValidationError("Movimiento de pedido sin order.")
+
+        if self.source_type == "transfer" and not self.transfer:
+            raise ValidationError("Movimiento de transferencia sin transfer.")
+
+        if self.source_type == "manual" and (self.order or self.transfer):
+            raise ValidationError("Movimiento manual no puede tener relaciones.")
 
         if self.movement_type == "TRANSFER":
             if not self.origin or not self.destination:
