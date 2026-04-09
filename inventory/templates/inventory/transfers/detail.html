@@ -62,11 +62,26 @@
 
         {% if transfer.status == "in_transit" %}
             <form method="post"
-                  action="{% url 'transfer_complete' transfer.id %}"
-                  onsubmit="return handleSubmit(this)">
+                action="{% url 'transfer_receive' transfer.id %}"
+                class="d-flex gap-2 align-items-end"
+                onsubmit="return handleSubmit(this)">
                 {% csrf_token %}
+
+                <div>
+                    <label>Cantidad a recibir</label>
+                    <input type="number"
+                        name="quantity"
+                        class="form-control"
+                        min="1"
+                        max="{{ transfer.pending_quantity }}"
+                        required>
+                    <small class="text-muted">
+                        Pendiente: {{ transfer.pending_quantity }}
+                    </small>
+                </div>
+
                 <button class="btn btn-success">
-                    Marcar como recibida (entrada en destino)
+                    Recibir parcialmente
                 </button>
             </form>
         {% endif %}

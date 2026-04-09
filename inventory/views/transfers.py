@@ -143,7 +143,7 @@ def transfer_cancel(request, pk):
 
 
 @permission_required_custom(can_confirm_inventory)
-def transfer_complete(request, pk):
+def transfer_receive(request, pk):
     transfer = get_object_or_404(
         StockTransfer,
         pk=pk,
@@ -152,8 +152,11 @@ def transfer_complete(request, pk):
 
     if request.method == "POST":
         try:
-            transfer.complete(request.user)
-            messages.success(request, "Transferencia completada.")
+            qty = int(request.POST.get("quantity", 0))
+
+            transfer.receive_partial(request.user, qty)
+
+            messages.success(request, "Recepción procesada correctamente.")
         except Exception as e:
             messages.error(request, str(e))
 

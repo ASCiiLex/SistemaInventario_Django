@@ -50,6 +50,8 @@ class StockTransfer(models.Model):
     )
 
     quantity = models.PositiveIntegerField()
+    received_quantity = models.PositiveIntegerField(default=0)  # 🔥 NUEVO
+
     note = models.TextField(blank=True)
 
     idempotency_key = models.CharField(
@@ -86,20 +88,26 @@ class StockTransfer(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["organization", "idempotency_key"],
-                name="unique_transfer_idempotency_per_org",
-                condition=~models.Q(idempotency_key=None)
-            )
-        ]
 
     def __str__(self):
         return f"Transfer #{self.id} - {self.product.name}"
 
     # ==========================================
-    # 🔥 CONFIRM → SALE DE ORIGEN (IN TRANSIT)
+    # PROPERTIES
     # ==========================================
+
+    @property
+    def pending_quantity(self):
+        return self.quantity - self.received_quantity
+
+    @property
+    def is_fully_received(self):
+        return self.received_quantity >= self.quantity
+
+    # ==========================================
+    # CONFIRM (OUT)
+    # ==========================================
+
     def confirm(self, user):
 
         if self.status != "pending":
@@ -114,8 +122,7 @@ class StockTransfer(models.Model):
             if locked.status != "pending":
                 return locked
 
-            # 🔥 MOVIMIENTO OUT
-            movement = StockMovement(
+            StockMovement(
                 organization=self.organization,
                 product=self.product,
                 movement_type="OUT",
@@ -124,62 +131,63 @@ class StockTransfer(models.Model):
                 origin=self.origin,
                 quantity=self.quantity,
                 idempotency_key=f"transfer:{self.id}:out"
-            )
-
-            movement.save()
+            ).save()
 
             locked.status = "in_transit"
             locked.confirmed_by = user
             locked.confirmed_at = timezone.now()
 
-            locked._skip_audit = True
             locked.save(update_fields=["status", "confirmed_by", "confirmed_at"])
-            del locked._skip_audit
 
         audit_transfer_confirmed(self, user, old_status)
 
         return self
 
     # ==========================================
-    # 🔥 COMPLETE → LLEGA A DESTINO
+    # 🔥 RECEIVE PARTIAL (CORE)
     # ==========================================
-    def complete(self, user):
+
+    def receive_partial(self, user, qty):
 
         if self.status != "in_transit":
             raise ValidationError("La transferencia no está en tránsito.")
+
+        if qty <= 0:
+            raise ValidationError("Cantidad inválida.")
 
         with transaction.atomic():
 
             locked = StockTransfer.objects.select_for_update().get(pk=self.pk)
 
-            if locked.status != "in_transit":
-                return locked
+            if qty > locked.pending_quantity:
+                raise ValidationError("No puedes recibir más de lo pendiente.")
 
-            movement = StockMovement(
+            # 🔥 MOVIMIENTO IN
+            StockMovement(
                 organization=self.organization,
                 product=self.product,
                 movement_type="IN",
                 source_type="transfer",
                 transfer=self,
                 destination=self.destination,
-                quantity=self.quantity,
-                idempotency_key=f"transfer:{self.id}:in"
-            )
+                quantity=qty,
+                idempotency_key=f"transfer:{self.id}:in:{locked.received_quantity}"
+            ).save()
 
-            movement.save()
+            locked.received_quantity += qty
 
-            locked.status = "completed"
-            locked.completed_at = timezone.now()
+            if locked.is_fully_received:
+                locked.status = "completed"
+                locked.completed_at = timezone.now()
 
-            locked._skip_audit = True
-            locked.save(update_fields=["status", "completed_at"])
-            del locked._skip_audit
+            locked.save(update_fields=["received_quantity", "status", "completed_at"])
 
         return self
 
     # ==========================================
-    # 🔥 CANCEL
+    # CANCEL
     # ==========================================
+
     def cancel(self, user):
 
         if self.status != "pending":
@@ -189,10 +197,7 @@ class StockTransfer(models.Model):
 
         self.status = "cancelled"
         self.confirmed_by = user
-
-        self._skip_audit = True
         self.save(update_fields=["status", "confirmed_by"])
-        del self._skip_audit
 
         audit_transfer_cancelled(self, user, old_status)
 
@@ -201,5 +206,4 @@ class StockTransfer(models.Model):
     def save(self, *args, **kwargs):
         if self.product and not self.organization_id:
             self.organization = self.product.organization
-
         super().save(*args, **kwargs)
