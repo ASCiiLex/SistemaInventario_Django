@@ -3,6 +3,7 @@ import csv
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponse
+from django.db.models import Q
 
 from ..models import StockMovement
 from ..forms import StockMovementForm, StockMovementFilterForm
@@ -26,7 +27,7 @@ class StockMovementListView(ListViewMixin):
             .select_related("product", "origin", "destination")
             .filter(
                 organization=request.organization,
-                source_type="manual"  # 🔥 SOLO AJUSTES
+                source_type="manual"
             )
         )
 
@@ -40,16 +41,23 @@ class StockMovementListView(ListViewMixin):
 
             if data.get("product"):
                 qs = qs.filter(product=data["product"])
+
             if data.get("movement_type"):
                 qs = qs.filter(movement_type=data["movement_type"])
-            if data.get("origin"):
-                qs = qs.filter(origin=data["origin"])
-            if data.get("destination"):
-                qs = qs.filter(destination=data["destination"])
+
+            # 🔥 FILTRO UNIFICADO POR LOCATION
+            if data.get("location"):
+                qs = qs.filter(
+                    Q(origin=data["location"]) |
+                    Q(destination=data["location"])
+                )
+
             if data.get("q"):
                 qs = qs.filter(product__name__icontains=data["q"])
+
             if data.get("date_from"):
                 qs = qs.filter(created_at__date__gte=data["date_from"])
+
             if data.get("date_to"):
                 qs = qs.filter(created_at__date__lte=data["date_to"])
 
@@ -86,7 +94,10 @@ def stockmovement_create(request):
 
         if form.is_valid():
             movement = form.save(commit=False)
-            movement.source_type = "manual"  # 🔥 FORZADO
+
+            # 🔥 FORZAR SOURCE TYPE
+            movement.source_type = "manual"
+
             movement.save()
             return redirect(reverse("stockmovement_list"))
     else:
@@ -104,7 +115,7 @@ def export_stockmovements_csv(request):
     response["Content-Disposition"] = "attachment; filename=ajustes_stock.csv"
 
     writer = csv.writer(response)
-    writer.writerow(["Producto", "Tipo", "Origen", "Destino", "Cantidad", "Fecha"])
+    writer.writerow(["Producto", "Tipo", "Almacén", "Cantidad", "Fecha"])
 
     for m in StockMovement.objects.select_related(
         "product", "origin", "destination"
@@ -112,11 +123,13 @@ def export_stockmovements_csv(request):
         organization=request.organization,
         source_type="manual"
     ):
+        # 🔥 UNIFICAMOS LOCATION
+        location = m.destination if m.movement_type == "IN" else m.origin
+
         writer.writerow([
             m.product.name,
             m.get_movement_type_display(),
-            m.origin.name if m.origin else "-",
-            m.destination.name if m.destination else "-",
+            location.name if location else "-",
             m.quantity,
             m.created_at.strftime("%d/%m/%Y %H:%M"),
         ])

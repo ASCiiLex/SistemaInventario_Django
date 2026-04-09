@@ -13,6 +13,10 @@ class StockDomainService:
 
         from inventory.models.stock import StockItem
 
+        # 🔥 GARANTIZAR ORGANIZATION ANTES DE TODO
+        if not movement.organization and movement.product:
+            movement.organization = movement.product.organization
+
         if movement.idempotency_key:
             existing = movement.__class__.objects.filter(
                 organization=movement.organization,
@@ -30,13 +34,11 @@ class StockDomainService:
 
                 movement.full_clean()
 
-                # ✅ FIX: asegurar created_at antes de save_base
                 if not movement.created_at:
                     movement.created_at = timezone.now()
 
                 movement.save_base(raw=True)
 
-                # 🔒 LOCK GLOBAL
                 StockItem.objects.select_for_update().filter(
                     organization=movement.organization,
                     product=movement.product
