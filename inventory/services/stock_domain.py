@@ -2,8 +2,11 @@ from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.utils import timezone
-
 from django.db import connection
+
+import logging
+
+logger = logging.getLogger("inventory.domain")
 
 
 class StockDomainService:
@@ -13,7 +16,13 @@ class StockDomainService:
 
         from inventory.models.stock import StockItem
 
-        # 🔥 GARANTIZAR ORGANIZATION ANTES DE TODO
+        logger.info("stock.execute.start", extra={
+            "product_id": movement.product_id,
+            "org_id": getattr(movement.organization, "id", None),
+            "type": movement.movement_type,
+            "qty": movement.quantity,
+        })
+
         if not movement.organization and movement.product:
             movement.organization = movement.product.organization
 
@@ -24,12 +33,15 @@ class StockDomainService:
             ).first()
 
             if existing:
+                logger.warning("stock.idempotent.hit", extra={
+                    "movement_id": existing.id,
+                    "key": movement.idempotency_key
+                })
                 return existing
 
         try:
             with transaction.atomic():
 
-                # 🔒 LOCK DURO POR PRODUCTO
                 StockDomainService._lock_product_scope(movement)
 
                 movement.full_clean()
@@ -48,7 +60,17 @@ class StockDomainService:
 
                 StockDomainService._validate_global_stock(movement, StockItem)
 
+        except ValidationError as e:
+            logger.warning("stock.validation.error", extra={
+                "errors": str(e),
+                "product_id": movement.product_id,
+                "type": movement.movement_type,
+            })
+            raise
+
         except IntegrityError:
+            logger.exception("stock.integrity.error")
+
             if movement.idempotency_key:
                 return movement.__class__.objects.get(
                     organization=movement.organization,
@@ -57,6 +79,11 @@ class StockDomainService:
             raise
 
         transaction.on_commit(lambda: StockDomainService._post_commit(movement, user))
+
+        logger.info("stock.execute.success", extra={
+            "movement_id": movement.id,
+            "product_id": movement.product_id,
+        })
 
         return movement
 
@@ -77,6 +104,10 @@ class StockDomainService:
                 location=location,
             )
         except StockItem.DoesNotExist:
+            logger.error("stock.not_found", extra={
+                "location_id": getattr(location, "id", None),
+                "product_id": movement.product_id
+            })
             raise ValidationError("Stock no existente para la operación.")
 
     @staticmethod
@@ -112,6 +143,11 @@ class StockDomainService:
 
         StockDomainService._validate_business_rules(movement)
 
+        logger.info("stock.apply.start", extra={
+            "type": movement.movement_type,
+            "qty": movement.quantity
+        })
+
         if movement.movement_type == "IN":
 
             item = StockDomainService._get_or_create_stock_for_update(
@@ -128,6 +164,10 @@ class StockDomainService:
             )
 
             if item.quantity < movement.quantity:
+                logger.warning("stock.insufficient", extra={
+                    "available": item.quantity,
+                    "requested": movement.quantity
+                })
                 raise ValidationError("Stock insuficiente.")
 
             item.quantity -= movement.quantity
@@ -151,6 +191,10 @@ class StockDomainService:
             dest = locked_items[movement.destination.id]
 
             if origin.quantity < movement.quantity:
+                logger.warning("stock.transfer.insufficient", extra={
+                    "available": origin.quantity,
+                    "requested": movement.quantity
+                })
                 raise ValidationError("Stock insuficiente para transferir.")
 
             origin.quantity -= movement.quantity
@@ -167,6 +211,10 @@ class StockDomainService:
         ).aggregate(total=Sum("quantity"))["total"] or 0
 
         if total < 0:
+            logger.critical("stock.global.negative", extra={
+                "product_id": movement.product_id,
+                "total": total
+            })
             raise ValidationError("Inconsistencia detectada: stock total negativo.")
 
     @staticmethod
@@ -175,6 +223,10 @@ class StockDomainService:
         from notifications.events import emit_event
         from notifications.constants import Events
         from inventory.services.stock_alerts import sync_all_notifications
+
+        logger.info("stock.post_commit", extra={
+            "movement_id": movement.id
+        })
 
         emit_event(
             Events.MOVEMENT_CREATED,
