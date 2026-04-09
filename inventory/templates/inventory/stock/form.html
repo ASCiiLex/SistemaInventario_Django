@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4" x-data="stockForm()">
     <h1>{{ title }}</h1>
 
     <div class="alert alert-info">
@@ -25,13 +25,14 @@
 
         <div class="mb-3">
             <label>Tipo</label>
-            {{ form.movement_type }}
+            {{ form.movement_type|add_class:"form-control" }}
             {{ form.movement_type.errors }}
         </div>
 
         <div class="mb-3">
-            <label>Almacén</label>
+            <label x-text="locationLabel"></label>
             {{ form.location }}
+            <small class="text-muted d-block" x-text="locationHelp"></small>
             {{ form.location.errors }}
         </div>
 
@@ -57,12 +58,43 @@
 </div>
 
 <script>
-function handleSubmit(form) {
-    const btn = form.querySelector("button[type=submit]");
-    btn.disabled = true;
-    btn.innerText = "Guardando...";
-    return true;
+function stockForm() {
+    return {
+        movementType: "IN",
+
+        init() {
+            const select = document.querySelector('[name="movement_type"]');
+            if (select) {
+                this.movementType = select.value;
+
+                select.addEventListener("change", (e) => {
+                    this.movementType = e.target.value;
+                });
+            }
+        },
+
+        get locationLabel() {
+            return this.movementType === "OUT"
+                ? "Almacén origen"
+                : "Almacén destino";
+        },
+
+        get locationHelp() {
+            return this.movementType === "OUT"
+                ? "Desde dónde sale el stock"
+                : "Dónde se añade el stock";
+        }
+    }
 }
+
+// 🔥 UX: focus automático al primer error
+document.addEventListener("DOMContentLoaded", () => {
+    const firstError = document.querySelector(".text-danger, .errorlist li");
+    if (firstError) {
+        const field = firstError.closest(".mb-3")?.querySelector("input, select, textarea");
+        if (field) field.focus();
+    }
+});
 </script>
 
 {% endblock %}
