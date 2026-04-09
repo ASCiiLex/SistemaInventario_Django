@@ -33,10 +33,20 @@ MESSAGE_TEMPLATES = {
 }
 
 
+def _safe_delete_pattern(pattern):
+    try:
+        cache.delete_pattern(pattern)
+    except AttributeError:
+        # Fallback seguro si backend no soporta delete_pattern
+        pass
+
+
 def _invalidate_user_cache(user_id, org_id):
     cache.delete(f"notifications:unread_count:{user_id}:{org_id}")
     cache.delete(f"dashboard:notifications:{user_id}:{org_id}:summary")
-    cache.delete_pattern(f"dashboard:notifications:{user_id}:{org_id}:recent*")
+
+    # 🔥 ahora seguro siempre
+    _safe_delete_pattern(f"dashboard:notifications:{user_id}:{org_id}:recent*")
 
 
 def _get_priority(type_):
