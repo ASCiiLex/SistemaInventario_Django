@@ -282,7 +282,9 @@ def lowstock_counter(request):
         {"count": count}
     )
 
-    return HttpResponse(html)
+    response = HttpResponse(html)
+    response["HX-Trigger"] = '{"inventory:stock_changed": true}'
+    return response
 
 
 def stockitem_counter(request):
@@ -298,7 +300,9 @@ def stockitem_counter(request):
         {"count": count}
     )
 
-    return HttpResponse(html)
+    response = HttpResponse(html)
+    response["HX-Trigger"] = '{"inventory:stock_changed": true}'
+    return response
 
 
 # ==========================================

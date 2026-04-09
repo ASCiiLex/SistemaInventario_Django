@@ -230,7 +230,7 @@ def order_cancel(request, pk):
 def orders_counter(request):
     pending = Order.objects.filter(
         organization=request.organization,
-        status="pending"
+        status__in=["pending", "partially_received", "backordered"]
     ).count()
 
     html = render_to_string(
@@ -238,4 +238,6 @@ def orders_counter(request):
         {"pending": pending}
     )
 
-    return HttpResponse(html)
+    response = HttpResponse(html)
+    response["HX-Trigger"] = '{"orders:updated": true}'
+    return response

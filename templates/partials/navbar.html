@@ -73,17 +73,18 @@
                 </div>
 
                 <div id="stockitem-counter"
-                    hx-get="{% url 'stockitem_counter' %}"
-                    hx-trigger="load, inventory:stock_changed from:body"
-                    hx-target="this"
-                    hx-swap="outerHTML">
-                </div>      
+                     hx-get="{% url 'stockitem_counter' %}"
+                     hx-trigger="load, inventory:stock_changed from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML">
+                </div>
 
                 <div id="notifications-bell"
-                    hx-get="{% url 'notifications:notifications_counter' %}"
-                    hx-trigger="load, inventory:notifications_updated from:body"
-                    hx-target="this"
-                    hx-swap="outerHTML">
+                     hx-get="{% url 'notifications:notifications_counter' %}"
+                     hx-trigger="load, inventory:notifications_updated from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML">
+                </div>
 
                 <a href="{% url 'notification_preferences' %}"
                    class="btn btn-sm btn-outline-light"

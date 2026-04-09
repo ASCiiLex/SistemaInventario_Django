@@ -87,11 +87,14 @@ def notifications_toggle_all(request):
 def notifications_counter(request):
     unread = user_qs(request).filter(seen=False).count()
 
-    return render(
+    response = render(
         request,
         "notifications/partials/bell.html",
         {"unread": unread}
     )
+
+    response["HX-Trigger"] = '{"inventory:notifications_updated": true}'
+    return response
 
 
 @require_POST
