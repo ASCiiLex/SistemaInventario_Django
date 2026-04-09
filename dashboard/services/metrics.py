@@ -1,6 +1,6 @@
 from django.core.cache import cache
 from django.conf import settings
-from django.db.models import Sum, Value, F, DecimalField
+from django.db.models import Sum, Value, F, DecimalField, ExpressionWrapper, IntegerField
 from django.db.models.functions import Coalesce
 
 from products.models import Product
@@ -55,8 +55,8 @@ def get_products_at_risk(organization):
     return Product.objects.filter(
         organization=organization
     ).annotate(
-        total_stock=Coalesce(Sum("stock_items__quantity"), Value(0)),
-        total_min=Coalesce(Sum("stock_items__min_stock"), Value(0)),
+        total_stock=Coalesce(Sum("stock_items__quantity"), Value(0, output_field=IntegerField())),
+        total_min=Coalesce(Sum("stock_items__min_stock"), Value(0, output_field=IntegerField())),
     ).filter(total_stock__lte=F("total_min"))
 
 
@@ -66,40 +66,51 @@ def get_dashboard_metrics(organization):
     if cached:
         return cached
 
-    # 🔥 UNIDADES TOTALES
+    # 🔥 UNIDADES (FIX)
     total_units = (
         StockItem.objects
         .filter(organization=organization)
-        .aggregate(total=Coalesce(Sum("quantity"), Value(0)))
-    )["total"]
-
-    # 🔥 VALOR INVENTARIO
-    inventory_value = (
-        StockItem.objects
-        .select_related("product")
-        .filter(organization=organization)
         .aggregate(
             total=Coalesce(
-                Sum(F("quantity") * F("product__cost_price"), output_field=DecimalField()),
-                Value(0)
+                Sum("quantity"),
+                Value(0, output_field=IntegerField())
             )
         )
     )["total"]
 
-    # 🔥 PEDIDOS PENDIENTES (incluye parciales)
+    # 🔥 VALOR INVENTARIO (FIX COMPLETO)
+    inventory_value = (
+        StockItem.objects
+        .select_related("product")
+        .filter(organization=organization)
+        .annotate(
+            total_value=ExpressionWrapper(
+                F("quantity") * F("product__cost_price"),
+                output_field=DecimalField(max_digits=12, decimal_places=2)
+            )
+        )
+        .aggregate(
+            total=Coalesce(
+                Sum("total_value"),
+                Value(0, output_field=DecimalField(max_digits=12, decimal_places=2))
+            )
+        )
+    )["total"]
+
+    # 🔥 PEDIDOS
     pending_orders = Order.objects.filter(
         organization=organization,
         status__in=["pending", "partially_received", "backordered"]
     ).count()
 
-    # 🔥 PRODUCTOS EN RIESGO
-    products_at_risk = get_products_at_risk(organization)
+    # 🔥 PRODUCT RISK
+    product_risk_count = get_products_at_risk(organization).count()
 
     result = {
         "total_units": total_units,
         "inventory_value": inventory_value,
         "pending_orders": pending_orders,
-        "product_risk_count": products_at_risk.count(),
+        "product_risk_count": product_risk_count,
     }
 
     cache.set(cache_key, result, settings.CACHE_TTL["metrics"])
