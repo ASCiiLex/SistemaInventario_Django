@@ -1,8 +1,9 @@
 from django.utils import timezone
 from datetime import timedelta
+from django.core.cache import cache
 
 from .models import Notification, UserNotification
-from .utils import send_to_user
+from .utils import send_to_user, send_ui_event_to_all
 from .events import register_event
 from .preferences import is_event_enabled
 from .constants import Events
@@ -32,6 +33,12 @@ MESSAGE_TEMPLATES = {
 }
 
 
+def _invalidate_user_cache(user_id, org_id):
+    cache.delete(f"notifications:unread_count:{user_id}:{org_id}")
+    cache.delete(f"dashboard:notifications:{user_id}:{org_id}:summary")
+    cache.delete_pattern(f"dashboard:notifications:{user_id}:{org_id}:recent*")
+
+
 def _get_priority(type_):
     return PRIORITY_MAP.get(type_, "info")
 
@@ -54,7 +61,6 @@ def _is_duplicate(organization, product=None, location=None, type_=None):
         created_at__gte=since,
     )
 
-    # 🔥 CLAVE: lógica distinta según tipo
     if type_ == Events.PRODUCT_RISK:
         qs = qs.filter(product=product)
     else:
@@ -85,11 +91,7 @@ def _get_target_users(organization):
 
 def _build_message(type_, product=None, location=None):
     template = MESSAGE_TEMPLATES.get(type_)
-
-    if template:
-        return template(product, location)
-
-    return type_
+    return template(product, location) if template else type_
 
 
 def create_notification(*, product=None, location=None, type_):
@@ -137,7 +139,13 @@ def create_notification(*, product=None, location=None, type_):
             }
         )
 
+        _invalidate_user_cache(user.id, organization.id)
+
     UserNotification.objects.bulk_create(bulk, ignore_conflicts=True)
+
+    send_ui_event_to_all({
+        "event": Events.NOTIFICATIONS_UPDATED
+    })
 
     return notification
 

@@ -2,6 +2,7 @@
     <thead class="table-danger">
         <tr>
             <th>Producto</th>
+            <th>Almacén</th>
             <th>Mínimo</th>
             <th>Stock</th>
         </tr>
@@ -11,13 +12,14 @@
             {% for item in low_stock %}
             <tr>
                 <td>{{ item.product.name }}</td>
+                <td>{{ item.location.name }}</td>
                 <td>{{ item.min_stock }}</td>
                 <td>{{ item.quantity }}</td>
             </tr>
             {% endfor %}
         {% else %}
             <tr>
-                <td colspan="3" class="text-center">No hay productos bajo mínimo.</td>
+                <td colspan="4" class="text-center">No hay productos bajo mínimo.</td>
             </tr>
         {% endif %}
     </tbody>
