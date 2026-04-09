@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4" x-data="stockForm()">
+<div class="container mt-4" x-data="stockForm()" x-init="init()">
     <h1>{{ title }}</h1>
 
     <div class="alert alert-info">
@@ -25,7 +25,7 @@
 
         <div class="mb-3">
             <label>Tipo</label>
-            {{ form.movement_type}}
+            {{ form.movement_type }}
             {{ form.movement_type.errors }}
         </div>
 
@@ -61,14 +61,25 @@
 function stockForm() {
     return {
         movementType: "IN",
+        quantity: 0,
+        errors: {},
 
         init() {
-            const select = document.querySelector('[name="movement_type"]');
-            if (select) {
-                this.movementType = select.value;
+            const typeEl = document.querySelector('[name="movement_type"]');
+            const qtyEl = document.querySelector('[name="quantity"]');
 
-                select.addEventListener("change", (e) => {
+            if (typeEl) {
+                this.movementType = typeEl.value;
+                typeEl.addEventListener("change", e => {
                     this.movementType = e.target.value;
+                });
+            }
+
+            if (qtyEl) {
+                this.quantity = qtyEl.value;
+                qtyEl.addEventListener("input", e => {
+                    this.quantity = e.target.value;
+                    this.validateQuantity();
                 });
             }
         },
@@ -83,17 +94,42 @@ function stockForm() {
             return this.movementType === "OUT"
                 ? "Desde dónde sale el stock"
                 : "Dónde se añade el stock";
+        },
+
+        validateQuantity() {
+            if (!this.quantity || this.quantity <= 0) {
+                this.errors.quantity = "Debe ser mayor que 0";
+            } else {
+                delete this.errors.quantity;
+            }
+        },
+
+        isValid() {
+            this.validateQuantity();
+            return Object.keys(this.errors).length === 0;
         }
     }
 }
 
-// 🔥 UX: focus automático al primer error
+// 🔥 Hook submit real (sin romper backend)
 document.addEventListener("DOMContentLoaded", () => {
-    const firstError = document.querySelector(".text-danger, .errorlist li");
-    if (firstError) {
-        const field = firstError.closest(".mb-3")?.querySelector("input, select, textarea");
-        if (field) field.focus();
-    }
+    const form = document.querySelector("form");
+
+    if (!form) return;
+
+    form.addEventListener("submit", function (e) {
+        const alpine = form.closest("[x-data]").__x.$data;
+
+        if (!alpine.isValid()) {
+            e.preventDefault();
+
+            if (alpine.errors.quantity) {
+                showToast(alpine.errors.quantity);
+            }
+
+            return false;
+        }
+    });
 });
 </script>
 
