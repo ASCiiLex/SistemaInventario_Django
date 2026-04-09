@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.utils import timezone
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 
@@ -9,7 +8,6 @@ from ..forms import (
     OrderForm,
     OrderItemFormSet,
     OrderFilterForm,
-    OrderReceiveForm,
 )
 from ..utils.listing import ListViewMixin
 
@@ -20,6 +18,10 @@ from accounts.permissions import (
 )
 from accounts.decorators import permission_required_custom
 
+
+# ==========================================
+# LIST
+# ==========================================
 
 def order_list(request):
     view = ListViewMixin()
@@ -67,6 +69,10 @@ def order_list(request):
     return render(request, "inventory/orders/list.html", context)
 
 
+# ==========================================
+# CREATE
+# ==========================================
+
 @permission_required_custom(can_create_inventory)
 def order_create(request):
     if request.method == "POST":
@@ -101,6 +107,10 @@ def order_create(request):
     )
 
 
+# ==========================================
+# DETAIL
+# ==========================================
+
 def order_detail(request, pk):
     order = get_object_or_404(
         Order.objects.select_related("supplier", "location")
@@ -121,6 +131,10 @@ def order_detail(request, pk):
         },
     )
 
+
+# ==========================================
+# EDIT
+# ==========================================
 
 @permission_required_custom(can_edit_inventory)
 def order_edit(request, pk):
@@ -169,6 +183,10 @@ def order_edit(request, pk):
     )
 
 
+# ==========================================
+# SEND (DOMAIN SAFE)
+# ==========================================
+
 @permission_required_custom(can_confirm_inventory)
 def order_send(request, pk):
     order = get_object_or_404(Order, pk=pk, organization=request.organization)
@@ -182,6 +200,10 @@ def order_send(request, pk):
     return redirect("order_detail", pk=pk)
 
 
+# ==========================================
+# RECEIVE (🔥 PRO + HARDENED)
+# ==========================================
+
 @permission_required_custom(can_confirm_inventory)
 def order_receive(request, pk):
     order = get_object_or_404(Order, pk=pk, organization=request.organization)
@@ -194,7 +216,13 @@ def order_receive(request, pk):
         items_data = []
 
         for item in order.items.all():
-            qty = int(request.POST.get(f"qty_{item.id}", 0))
+            raw_value = request.POST.get(f"qty_{item.id}", "0")
+
+            # 🔥 HARDENING → evita crash por inputs corruptos
+            try:
+                qty = int(raw_value)
+            except (TypeError, ValueError):
+                qty = 0
 
             if qty > 0:
                 items_data.append({
@@ -207,9 +235,12 @@ def order_receive(request, pk):
             return redirect("order_receive", pk=pk)
 
         try:
+            # 🔥 DOMINIO MANDA
             order.receive_items(request.user, items_data)
+
             messages.success(request, "Recepción procesada correctamente.")
             return redirect("order_detail", pk=pk)
+
         except Exception as e:
             messages.error(request, str(e))
 
@@ -218,6 +249,11 @@ def order_receive(request, pk):
         "inventory/orders/receive.html",
         {"order": order},
     )
+
+
+# ==========================================
+# CANCEL (DOMAIN SAFE)
+# ==========================================
 
 @permission_required_custom(can_confirm_inventory)
 def order_cancel(request, pk):
@@ -231,6 +267,10 @@ def order_cancel(request, pk):
 
     return redirect("order_detail", pk=pk)
 
+
+# ==========================================
+# COUNTER (HTMX)
+# ==========================================
 
 def orders_counter(request):
     pending = Order.objects.filter(

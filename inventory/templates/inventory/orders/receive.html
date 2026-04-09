@@ -1,16 +1,30 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4" x-data="receiveForm()">
     <h2 class="mb-3">Recepción pedido #{{ order.id }}</h2>
+
+    <!-- 🔥 PROGRESS -->
+    <div class="mb-3">
+        <label class="form-label">Progreso recepción</label>
+        <div class="progress">
+            <div class="progress-bar bg-success"
+                 role="progressbar"
+                 :style="'width: ' + progress + '%'">
+                <span x-text="progress + '%'"></span>
+            </div>
+        </div>
+    </div>
 
     <form method="post" class="card card-body">
         {% csrf_token %}
 
-        <table class="table">
+        <table class="table align-middle">
             <thead>
                 <tr>
                     <th>Producto</th>
+                    <th>Pedido</th>
+                    <th>Recibido</th>
                     <th>Pendiente</th>
                     <th>Recibir ahora</th>
                 </tr>
@@ -20,12 +34,20 @@
                 <tr>
                     <td>{{ item.product }}</td>
                     <td>{{ item.quantity }}</td>
+                    <td>{{ item.received_quantity }}</td>
+                    <td>
+                        <span class="badge bg-warning text-dark">
+                            {{ item.pending_quantity }}
+                        </span>
+                    </td>
                     <td>
                         <input type="number"
                                name="qty_{{ item.id }}"
                                min="0"
-                               max="{{ item.quantity }}"
-                               class="form-control">
+                               max="{{ item.pending_quantity }}"
+                               class="form-control"
+                               x-model.number="inputs[{{ item.id }}]"
+                               @input="updateProgress()">
                     </td>
                 </tr>
                 {% endfor %}
@@ -33,9 +55,54 @@
         </table>
 
         <div class="d-flex gap-2">
-            <button class="btn btn-success">Confirmar recepción</button>
-            <a href="{% url 'order_detail' order.id %}" class="btn btn-secondary">Cancelar</a>
+            <button class="btn btn-success"
+                    :disabled="!hasChanges">
+                Confirmar recepción
+            </button>
+
+            <a href="{% url 'order_detail' order.id %}" class="btn btn-secondary">
+                Cancelar
+            </a>
         </div>
     </form>
 </div>
+
+<script>
+function receiveForm() {
+    return {
+        inputs: {},
+        totalPending: 0,
+        totalReceiving: 0,
+
+        init() {
+            const rows = document.querySelectorAll("tbody tr");
+
+            rows.forEach(row => {
+                const input = row.querySelector("input");
+                if (!input) return;
+
+                const max = parseInt(input.getAttribute("max") || 0);
+
+                this.totalPending += max;
+                this.inputs[input.name.split("_")[1]] = 0;
+            });
+        },
+
+        updateProgress() {
+            this.totalReceiving = Object.values(this.inputs)
+                .reduce((a, b) => a + (b || 0), 0);
+        },
+
+        get progress() {
+            if (!this.totalPending) return 0;
+            return Math.round((this.totalReceiving / this.totalPending) * 100);
+        },
+
+        get hasChanges() {
+            return this.totalReceiving > 0;
+        }
+    }
+}
+</script>
+
 {% endblock %}

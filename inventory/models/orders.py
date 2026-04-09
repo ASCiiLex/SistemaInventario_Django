@@ -1,5 +1,6 @@
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from suppliers.models import Supplier
 from products.models import Product
@@ -74,14 +75,12 @@ class Order(models.Model):
         )
 
     # ==========================================
-    # 🔥 BUSINESS ACTIONS (FIX DOMINIO REAL)
+    # 🔥 BUSINESS ACTIONS
     # ==========================================
 
     def mark_as_sent(self, user):
         if self.status != "pending":
             raise ValidationError("Solo pedidos pendientes pueden enviarse.")
-
-        from django.utils import timezone
 
         old_status = self.status
         self.status = "sent"
@@ -94,7 +93,6 @@ class Order(models.Model):
         audit_order_sent(self, user, old_status)
 
     def receive_items(self, user, items_data):
-
         if self.status not in ["sent", "partially_received", "backordered"]:
             raise ValidationError("Pedido no receivable.")
 
@@ -110,15 +108,20 @@ class Order(models.Model):
                 qty = item_data["quantity"]
 
                 order_item = self.items.filter(product=product).first()
+
                 if not order_item:
                     raise ValidationError("Producto no pertenece al pedido.")
 
                 if qty <= 0:
                     raise ValidationError("Cantidad inválida.")
 
+                # 🔥 VALIDACIÓN CLAVE
+                if qty > order_item.pending_quantity:
+                    raise ValidationError("No puedes recibir más de lo pendiente.")
+
+                # 🔥 IDMPOTENCIA CORRECTA (permite múltiples recepciones)
                 key = f"order:{self.id}:{product.id}:{timezone.now().timestamp()}"
 
-                # 🔥 CRÍTICO: ejecutar dominio (NO save directo)
                 movement = StockMovement(
                     organization=self.organization,
                     product=product,
@@ -127,10 +130,10 @@ class Order(models.Model):
                     order=self,
                     destination=self.location,
                     quantity=qty,
-                    idempotency_key=key
+                    idempotency_key=key,
                 )
 
-                movement.save()  # -> ya pasa por DomainService
+                movement.save()
 
             total_expected = sum(i.quantity for i in self.items.all())
             total_received = self.total_received
@@ -141,8 +144,6 @@ class Order(models.Model):
                 self.status = "partially_received"
             else:
                 self.status = "received"
-
-                from django.utils import timezone
                 self.received_at = timezone.now()
 
             self._skip_audit = True
@@ -201,6 +202,20 @@ class OrderItem(models.Model):
     @property
     def total_cost(self):
         return self.quantity * self.cost_price
+
+    # 🔥 NUEVO → RECEPCIÓN REAL
+    @property
+    def received_quantity(self):
+        return sum(
+            self.order.movements.filter(
+                product=self.product,
+                movement_type="IN"
+            ).values_list("quantity", flat=True)
+        )
+
+    @property
+    def pending_quantity(self):
+        return max(self.quantity - self.received_quantity, 0)
 
     def save(self, *args, **kwargs):
         if self.order and not self.organization_id:
