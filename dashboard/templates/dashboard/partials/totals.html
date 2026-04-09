@@ -3,8 +3,8 @@
     <div class="col-md-6">
         <div class="card text-bg-primary">
             <div class="card-body text-center">
-                <h5>Productos</h5>
-                <p class="fs-3">{{ total_products }}</p>
+                <h5>Unidades en stock</h5>
+                <p class="fs-3">{{ total_units }}</p>
             </div>
         </div>
     </div>
@@ -12,8 +12,8 @@
     <div class="col-md-6">
         <div class="card text-bg-success">
             <div class="card-body text-center">
-                <h5>Stock Total</h5>
-                <p class="fs-3">{{ total_stock }}</p>
+                <h5>Valor inventario</h5>
+                <p class="fs-3">{{ inventory_value|floatformat:2 }} €</p>
             </div>
         </div>
     </div>
@@ -21,8 +21,8 @@
     <div class="col-md-6">
         <div class="card text-bg-warning">
             <div class="card-body text-center">
-                <h5>Proveedores</h5>
-                <p class="fs-3">{{ total_suppliers }}</p>
+                <h5>Pedidos pendientes</h5>
+                <p class="fs-3">{{ pending_orders }}</p>
             </div>
         </div>
     </div>
@@ -30,8 +30,8 @@
     <div class="col-md-6">
         <div class="card text-bg-danger">
             <div class="card-body text-center">
-                <h5>Bajo Mínimo</h5>
-                <p class="fs-3">{{ low_stock_count }}</p>
+                <h5>Productos en riesgo</h5>
+                <p class="fs-3">{{ product_risk_count }}</p>
             </div>
         </div>
     </div>

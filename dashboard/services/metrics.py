@@ -1,11 +1,11 @@
 from django.core.cache import cache
 from django.conf import settings
-from django.db.models import Sum, Value, F
+from django.db.models import Sum, Value, F, DecimalField
 from django.db.models.functions import Coalesce
 
 from products.models import Product
-from suppliers.models import Supplier
 from inventory.models import StockItem
+from inventory.models import Order
 
 
 def invalidate_metrics_cache(org_id=None):
@@ -66,21 +66,40 @@ def get_dashboard_metrics(organization):
     if cached:
         return cached
 
-    total_stock = (
+    # 🔥 UNIDADES TOTALES
+    total_units = (
         StockItem.objects
         .filter(organization=organization)
         .aggregate(total=Coalesce(Sum("quantity"), Value(0)))
     )["total"]
 
-    low_stock = get_low_stock(organization)
+    # 🔥 VALOR INVENTARIO
+    inventory_value = (
+        StockItem.objects
+        .select_related("product")
+        .filter(organization=organization)
+        .aggregate(
+            total=Coalesce(
+                Sum(F("quantity") * F("product__cost_price"), output_field=DecimalField()),
+                Value(0)
+            )
+        )
+    )["total"]
+
+    # 🔥 PEDIDOS PENDIENTES (incluye parciales)
+    pending_orders = Order.objects.filter(
+        organization=organization,
+        status__in=["pending", "partially_received", "backordered"]
+    ).count()
+
+    # 🔥 PRODUCTOS EN RIESGO
     products_at_risk = get_products_at_risk(organization)
 
     result = {
-        "total_products": Product.objects.filter(organization=organization).count(),
-        "total_suppliers": Supplier.objects.filter(organization=organization).count(),
-        "total_stock": total_stock,
-        "low_stock_locations_count": len(low_stock),  # 🔥 granular
-        "product_risk_count": products_at_risk.count(),  # 🔥 global
+        "total_units": total_units,
+        "inventory_value": inventory_value,
+        "pending_orders": pending_orders,
+        "product_risk_count": products_at_risk.count(),
     }
 
     cache.set(cache_key, result, settings.CACHE_TTL["metrics"])
