@@ -24,7 +24,10 @@ class StockMovementListView(ListViewMixin):
         qs = (
             StockMovement.objects
             .select_related("product", "origin", "destination")
-            .filter(organization=request.organization)
+            .filter(
+                organization=request.organization,
+                source_type="manual"  # 🔥 SOLO AJUSTES
+            )
         )
 
         filter_form = StockMovementFilterForm(
@@ -82,7 +85,9 @@ def stockmovement_create(request):
         )
 
         if form.is_valid():
-            form.save()
+            movement = form.save(commit=False)
+            movement.source_type = "manual"  # 🔥 FORZADO
+            movement.save()
             return redirect(reverse("stockmovement_list"))
     else:
         form = StockMovementForm(organization=request.organization)
@@ -90,20 +95,23 @@ def stockmovement_create(request):
     return render(
         request,
         "inventory/stock/form.html",
-        {"form": form, "title": "Nuevo movimiento de stock"},
+        {"form": form, "title": "Nuevo ajuste de stock"},
     )
 
 
 def export_stockmovements_csv(request):
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = "attachment; filename=movimientos_stock.csv"
+    response["Content-Disposition"] = "attachment; filename=ajustes_stock.csv"
 
     writer = csv.writer(response)
     writer.writerow(["Producto", "Tipo", "Origen", "Destino", "Cantidad", "Fecha"])
 
     for m in StockMovement.objects.select_related(
         "product", "origin", "destination"
-    ).filter(organization=request.organization):
+    ).filter(
+        organization=request.organization,
+        source_type="manual"
+    ):
         writer.writerow([
             m.product.name,
             m.get_movement_type_display(),

@@ -43,7 +43,6 @@ class StockMovement(models.Model):
         db_index=True,
     )
 
-    # 🔥 RELACIONES REALES
     order = models.ForeignKey(
         "inventory.Order",
         on_delete=models.SET_NULL,
@@ -118,7 +117,10 @@ class StockMovement(models.Model):
         if self.destination and self.destination.organization_id != self.organization_id:
             raise ValidationError("El destino no pertenece a la organización.")
 
-        # 🔥 VALIDACIÓN SOURCE
+        # 🔥 BLOQUEO: manual no puede ser TRANSFER
+        if self.source_type == "manual" and self.movement_type == "TRANSFER":
+            raise ValidationError("Las transferencias no pueden crearse manualmente.")
+
         if self.source_type == "order" and not self.order:
             raise ValidationError("Movimiento de pedido sin order.")
 
@@ -127,12 +129,6 @@ class StockMovement(models.Model):
 
         if self.source_type == "manual" and (self.order or self.transfer):
             raise ValidationError("Movimiento manual no puede tener relaciones.")
-
-        if self.movement_type == "TRANSFER":
-            if not self.origin or not self.destination:
-                raise ValidationError("Las transferencias requieren origen y destino.")
-            if self.origin == self.destination:
-                raise ValidationError("El origen y destino no pueden ser iguales.")
 
         if self.movement_type == "IN" and not self.destination:
             raise ValidationError("Las entradas requieren destino.")

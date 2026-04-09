@@ -4,13 +4,17 @@
 <div class="container mt-4">
     <h1>{{ title }}</h1>
 
+    <div class="alert alert-info">
+        Ajuste manual de inventario (corrección, pérdida, regularización).
+    </div>
+
     <form method="post" class="mt-3 card card-body" onsubmit="return handleSubmit(this)">
         {% csrf_token %}
         {{ form.as_p }}
 
         <div class="d-flex gap-2 mt-2">
             <button type="submit" class="btn btn-primary" data-loading-text="Guardando...">
-                Guardar
+                Guardar ajuste
             </button>
             <a href="{% url 'stockmovement_list' %}" class="btn btn-secondary">Cancelar</a>
         </div>

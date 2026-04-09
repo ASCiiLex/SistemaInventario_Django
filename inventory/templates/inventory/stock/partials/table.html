@@ -17,7 +17,13 @@
         <tr>
             <td>{{ m.created_at|date:"d/m/Y H:i" }}</td>
             <td>{{ m.product }}</td>
-            <td>{{ m.get_movement_type_display }}</td>
+            <td>
+                {% if m.movement_type == "IN" %}
+                    <span class="badge bg-success">Entrada</span>
+                {% else %}
+                    <span class="badge bg-danger">Salida</span>
+                {% endif %}
+            </td>
             <td>{{ m.origin|default:"-" }}</td>
             <td>{{ m.destination|default:"-" }}</td>
             <td>{{ m.quantity }}</td>
@@ -25,7 +31,7 @@
         </tr>
         {% empty %}
         <tr>
-            <td colspan="7" class="text-center">No hay movimientos.</td>
+            <td colspan="7" class="text-center">No hay ajustes.</td>
         </tr>
         {% endfor %}
     </tbody>
