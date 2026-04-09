@@ -15,8 +15,8 @@
 
             <form method="post"
                   hx-post="{% url 'notifications:notifications_panel_toggle_all' %}"
-                  hx-target="#notificationsPanelBody"
-                  hx-swap="innerHTML">
+                  hx-target="closest #notificationsPanelBody"
+                  hx-swap="outerHTML">
                 {% csrf_token %}
 
                 <button class="btn btn-sm btn-outline-primary">
@@ -79,16 +79,16 @@
                             {% if not un.seen %}
                                 <form method="post"
                                       hx-post="{% url 'notifications:notifications_panel_mark_one' un.pk %}"
-                                      hx-target="#notificationsPanelBody"
-                                      hx-swap="innerHTML">
+                                      hx-target="closest #notificationsPanelBody"
+                                      hx-swap="outerHTML">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-success">✓</button>
                                 </form>
                             {% else %}
                                 <form method="post"
                                       hx-post="{% url 'notifications:notifications_panel_mark_unread' un.pk %}"
-                                      hx-target="#notificationsPanelBody"
-                                      hx-swap="innerHTML">
+                                      hx-target="closest #notificationsPanelBody"
+                                      hx-swap="outerHTML">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-secondary">↺</button>
                                 </form>
