@@ -47,7 +47,6 @@ class StockMovementForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
 
-        # 🔥 CLAVE: inyectar organization ANTES del full_clean del modelo
         if self.instance and self.organization:
             self.instance.organization = self.organization
 
@@ -76,3 +75,58 @@ class StockMovementForm(forms.ModelForm):
             instance.save()
 
         return instance
+
+
+# 🔥 NUEVO FORM (EL QUE FALTABA)
+class StockMovementFilterForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+
+        self.fields["product"].queryset = Product.objects.none()
+        self.fields["location"].queryset = Location.objects.none()
+
+        if self.organization:
+            self.fields["product"].queryset = Product.objects.filter(
+                organization=self.organization
+            )
+            self.fields["location"].queryset = Location.objects.filter(
+                organization=self.organization
+            )
+
+    product = forms.ModelChoiceField(
+        queryset=Product.objects.none(),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control select2"})
+    )
+
+    movement_type = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("", "---------"),
+            ("IN", "Entrada"),
+            ("OUT", "Salida"),
+        ],
+        widget=forms.Select(attrs={"class": "form-control"})
+    )
+
+    location = forms.ModelChoiceField(
+        queryset=Location.objects.none(),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control select2"})
+    )
+
+    q = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Buscar producto..."})
+    )
+
+    date_from = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"})
+    )
+
+    date_to = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"})
+    )
