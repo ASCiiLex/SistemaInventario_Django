@@ -11,7 +11,18 @@
         hx-swap="outerHTML"
     >
         {% csrf_token %}
-        {{ form.as_p }}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        {{ form.product.label_tag }} {{ form.product }} {{ form.product.errors }}
+        {{ form.movement_type.label_tag }} {{ form.movement_type }} {{ form.movement_type.errors }}
+        {{ form.location.label_tag }} {{ form.location }} {{ form.location.errors }}
+        {{ form.quantity.label_tag }} {{ form.quantity }} {{ form.quantity.errors }}
+        {{ form.note.label_tag }} {{ form.note }} {{ form.note.errors }}
 
         <div class="mt-3 d-flex justify-content-end" style="gap: 10px;">
             <button class="btn btn-success">Guardar</button>

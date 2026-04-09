@@ -5,26 +5,26 @@ from ..models import StockMovement, Location
 
 
 class StockMovementForm(forms.ModelForm):
+    # 🔥 Campo virtual declarado correctamente (fuera de Meta)
+    location = forms.ModelChoiceField(
+        queryset=Location.objects.none(),
+        required=True,
+        label="Almacén",
+        widget=forms.Select(attrs={"class": "form-control"})
+    )
+
+    class Meta:
+        model = StockMovement
+        fields = ["product", "movement_type", "quantity", "note"]  # ⚠️ NO incluir location
+
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
 
-        # 🔥 IN / OUT
         self.fields["movement_type"].choices = [
             ("IN", "Entrada"),
             ("OUT", "Salida"),
         ]
-
-        # 🔥 Campo virtual
-        self.fields["location"] = forms.ModelChoiceField(
-            queryset=Location.objects.none(),
-            required=True,
-            label="Almacén",
-            widget=forms.Select(attrs={"class": "form-control select2"})
-        )
-
-        self.fields.pop("destination", None)
-        self.fields.pop("origin", None)
 
         if self.organization:
             self.fields["product"].queryset = Product.objects.filter(
@@ -34,15 +34,8 @@ class StockMovementForm(forms.ModelForm):
                 organization=self.organization
             )
 
-    class Meta:
-        model = StockMovement
-        fields = ["product", "movement_type", "quantity", "note"]
-        widgets = {
-            "product": forms.Select(attrs={"class": "form-control select2"}),
-            "movement_type": forms.Select(attrs={"class": "form-control"}),
-            "quantity": forms.NumberInput(attrs={"class": "form-control"}),
-            "note": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-        }
+        for field in self.fields.values():
+            field.widget.attrs.setdefault("class", "form-control")
 
     def clean(self):
         cleaned = super().clean()
@@ -50,12 +43,10 @@ class StockMovementForm(forms.ModelForm):
         location = cleaned.get("location")
         movement_type = cleaned.get("movement_type")
 
-        # 🔥 Asignar BEFORE model validation
         if location and movement_type:
             if movement_type == "IN":
                 self.instance.destination = location
                 self.instance.origin = None
-
             elif movement_type == "OUT":
                 self.instance.origin = location
                 self.instance.destination = None
@@ -80,7 +71,6 @@ class StockMovementForm(forms.ModelForm):
         return instance
 
 
-# 🔥 NUEVO FORM (EL QUE FALTABA)
 class StockMovementFilterForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)
@@ -100,7 +90,7 @@ class StockMovementFilterForm(forms.Form):
     product = forms.ModelChoiceField(
         queryset=Product.objects.none(),
         required=False,
-        widget=forms.Select(attrs={"class": "form-control select2"})
+        widget=forms.Select(attrs={"class": "form-control"})
     )
 
     movement_type = forms.ChoiceField(
@@ -116,7 +106,7 @@ class StockMovementFilterForm(forms.Form):
     location = forms.ModelChoiceField(
         queryset=Location.objects.none(),
         required=False,
-        widget=forms.Select(attrs={"class": "form-control select2"})
+        widget=forms.Select(attrs={"class": "form-control"})
     )
 
     q = forms.CharField(

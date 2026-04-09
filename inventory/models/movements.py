@@ -105,12 +105,11 @@ class StockMovement(models.Model):
         return f"{self.get_movement_type_display()} - {self.product.name} ({self.quantity})"
 
     def clean(self):
-        # 🔥 GARANTIZAR ORGANIZATION SI FALTA
         if not self.organization and self.product:
             self.organization = self.product.organization
 
         if self.quantity <= 0:
-            raise ValidationError("La cantidad debe ser mayor que cero.")
+            raise ValidationError({"quantity": "La cantidad debe ser mayor que cero."})
 
         if self.product and self.product.organization_id != self.organization_id:
             raise ValidationError("El producto no pertenece a la organización.")
@@ -121,7 +120,6 @@ class StockMovement(models.Model):
         if self.destination and self.destination.organization_id != self.organization_id:
             raise ValidationError("El destino no pertenece a la organización.")
 
-        # 🔥 BLOQUEO: manual no puede ser TRANSFER
         if self.source_type == "manual" and self.movement_type == "TRANSFER":
             raise ValidationError("Las transferencias no pueden crearse manualmente.")
 
@@ -134,11 +132,24 @@ class StockMovement(models.Model):
         if self.source_type == "manual" and (self.order or self.transfer):
             raise ValidationError("Movimiento manual no puede tener relaciones.")
 
-        if self.movement_type == "IN" and not self.destination:
-            raise ValidationError("Las entradas requieren destino.")
+        # 🔥 REGLAS CONSISTENTES COMPLETAS
+        if self.movement_type == "IN":
+            if not self.destination:
+                raise ValidationError({"destination": "Las entradas requieren destino."})
+            if self.origin:
+                raise ValidationError({"origin": "Las entradas no pueden tener origen."})
 
-        if self.movement_type == "OUT" and not self.origin:
-            raise ValidationError("Las salidas requieren origen.")
+        elif self.movement_type == "OUT":
+            if not self.origin:
+                raise ValidationError({"origin": "Las salidas requieren origen."})
+            if self.destination:
+                raise ValidationError({"destination": "Las salidas no pueden tener destino."})
+
+        elif self.movement_type == "TRANSFER":
+            if not self.origin or not self.destination:
+                raise ValidationError("Transferencia incompleta.")
+            if self.origin == self.destination:
+                raise ValidationError({"destination": "Origen y destino no pueden coincidir."})
 
     def save(self, *args, **kwargs):
         if self.product and not self.organization_id:
