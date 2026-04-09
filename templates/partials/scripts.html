@@ -166,7 +166,7 @@ function showToast(message) {
 }
 
 // ===============================
-// 🔥 WEBSOCKET → SINGLE SOURCE OF TRUTH
+// 🔥 WEBSOCKET → SINGLE SOURCE OF TRUTH (SIMPLIFICADO)
 // ===============================
 function connectWS() {
     const protocol = location.protocol === "https:" ? "wss://" : "ws://";
@@ -177,26 +177,8 @@ function connectWS() {
 
         if (!data.event) return;
 
-        // 🔥 ÚNICO FLUJO
         EventBus.emit(data.event, data);
         htmx.trigger(document.body, data.event);
-
-        // 🔥 NORMALIZACIÓN CENTRAL (SIN includes difusos)
-        switch (data.event) {
-            case "inventory:stock_low":
-            case "inventory:stock_changed":
-            case "inventory:movement_created":
-                htmx.trigger(document.body, "inventory:stock_changed");
-                break;
-
-            case "inventory:notifications_updated":
-                htmx.trigger(document.body, "inventory:notifications_updated");
-                break;
-
-            case "orders:updated":
-                htmx.trigger(document.body, "orders:updated");
-                break;
-        }
 
         if (data.message) showToast(data.message);
     };
