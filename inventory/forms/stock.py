@@ -47,7 +47,20 @@ class StockMovementForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
 
-        if self.instance and self.organization:
+        location = cleaned.get("location")
+        movement_type = cleaned.get("movement_type")
+
+        # 🔥 Asignar BEFORE model validation
+        if location and movement_type:
+            if movement_type == "IN":
+                self.instance.destination = location
+                self.instance.origin = None
+
+            elif movement_type == "OUT":
+                self.instance.origin = location
+                self.instance.destination = None
+
+        if self.organization:
             self.instance.organization = self.organization
 
         return cleaned
@@ -60,16 +73,6 @@ class StockMovementForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-
-        location = self.cleaned_data.get("location")
-
-        if instance.movement_type == "IN":
-            instance.destination = location
-            instance.origin = None
-
-        elif instance.movement_type == "OUT":
-            instance.origin = location
-            instance.destination = None
 
         if commit:
             instance.save()
