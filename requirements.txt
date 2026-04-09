@@ -11,6 +11,7 @@ cryptography==46.0.6
 daphne==4.2.1
 Django==6.0.3
 django-extensions==4.1
+django-redis==6.0.0
 django-widget-tweaks==1.5.1
 hyperlink==21.0.0
 idna==3.11
