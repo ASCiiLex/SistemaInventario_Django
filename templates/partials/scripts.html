@@ -63,6 +63,15 @@ function toggleLocationRow(id) {
 }
 
 // ===============================
+// 🔥 TOGGLE NOTIFICATIONS GROUP
+// ===============================
+function toggleNotificationGroup(el) {
+    const content = el.nextElementSibling;
+    if (!content) return;
+    content.classList.toggle("d-none");
+}
+
+// ===============================
 // SELECT2
 // ===============================
 function initSelect2(ctx) {
@@ -128,7 +137,7 @@ function syncSelect2(ctx) {
 document.addEventListener('DOMContentLoaded', () => {
     initSelect2(document);
     syncSelect2(document);
-    initNotificationsPanel();   // 🔥 NUEVO
+    initNotificationsPanel();
 });
 
 document.body.addEventListener('htmx:afterSwap', e => {
@@ -137,7 +146,7 @@ document.body.addEventListener('htmx:afterSwap', e => {
 });
 
 // ===============================
-// 🔥 NOTIFICATIONS PANEL LAZY LOAD (CORRECTO)
+// 🔥 NOTIFICATIONS PANEL LAZY LOAD
 // ===============================
 function initNotificationsPanel() {
     const panel = document.getElementById("notificationsPanelOffcanvas");
@@ -175,16 +184,7 @@ function showToast(message) {
 }
 
 // ===============================
-// MODAL
-// ===============================
-document.body.addEventListener('htmx:afterSwap', (e) => {
-    if (e.detail.target.id === 'mainModalContent') {
-        new bootstrap.Modal(document.getElementById('mainModal')).show();
-    }
-});
-
-// ===============================
-// WEBSOCKET → EVENT BUS (UNIFICADO)
+// 🔥 WEBSOCKET → EVENT BUS + HTMX (FIX REAL)
 // ===============================
 function connectWS() {
     const protocol = location.protocol === "https:" ? "wss://" : "ws://";
@@ -193,25 +193,28 @@ function connectWS() {
     socket.onmessage = (e) => {
         const data = JSON.parse(e.data);
 
-        // 🔥 EVENTO PRINCIPAL (source of truth)
         if (data.event) {
             EventBus.emit(data.event, data);
+
+            // 🔥 AQUÍ ESTÁ EL FIX REAL
+            htmx.trigger(document.body, data.event);
         }
 
-        // 🔥 COMPATIBILIDAD UI (navbar, panel, etc.)
         if (data.event && data.event.includes("notifications")) {
             EventBus.emit("inventory:notifications_updated");
+            htmx.trigger(document.body, "inventory:notifications_updated");
         }
 
         if (data.event && data.event.includes("stock")) {
             EventBus.emit("inventory:stock_updated");
+            htmx.trigger(document.body, "inventory:stock_changed");
         }
 
         if (data.event && data.event.includes("orders")) {
             EventBus.emit("inventory:orders_updated");
+            htmx.trigger(document.body, "orders:updated");
         }
 
-        // 🔥 TOAST
         if (data.message) showToast(data.message);
     };
 
@@ -265,7 +268,7 @@ document.body.addEventListener("htmx:afterSwap", () => {
 });
 
 // ===============================
-// 🔒 FORM LOCK (ANTI DOBLE SUBMIT)
+// 🔒 FORM LOCK
 // ===============================
 function handleSubmit(form) {
     if (form.dataset.submitted === "true") {
