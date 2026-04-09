@@ -100,6 +100,8 @@ class StockTransfer(models.Model):
         if self.status != "pending":
             return self
 
+        old_status = self.status
+
         with transaction.atomic():
 
             locked = StockTransfer.objects.select_for_update().get(pk=self.pk)
@@ -107,22 +109,7 @@ class StockTransfer(models.Model):
             if locked.status != "pending":
                 return locked
 
-            StockItem.objects.select_for_update().filter(
-                organization=self.organization,
-                product=self.product
-            )
-
-            stock_item = StockItem.objects.get(
-                organization=self.organization,
-                product=self.product,
-                location=self.origin
-            )
-
-            if stock_item.quantity < self.quantity:
-                raise ValidationError("Stock insuficiente.")
-
-            old_status = locked.status
-
+            # 🔥 ELIMINAMOS lógica manual → delegamos en dominio
             movement = StockMovement(
                 organization=self.organization,
                 product=self.product,
@@ -135,7 +122,7 @@ class StockTransfer(models.Model):
                 idempotency_key=f"transfer:{self.id}"
             )
 
-            movement.save()
+            movement.save()  # 🔥 DOMAIN SERVICE
 
             locked.status = "received"
             locked.confirmed_by = user

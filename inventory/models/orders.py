@@ -74,7 +74,7 @@ class Order(models.Model):
         )
 
     # ==========================================
-    # 🔥 BUSINESS ACTIONS (STRICT)
+    # 🔥 BUSINESS ACTIONS (FIX DOMINIO REAL)
     # ==========================================
 
     def mark_as_sent(self, user):
@@ -101,6 +101,8 @@ class Order(models.Model):
         if not self.location:
             raise ValidationError("Pedido sin ubicación.")
 
+        old_status = self.status
+
         with transaction.atomic():
 
             for item_data in items_data:
@@ -116,6 +118,7 @@ class Order(models.Model):
 
                 key = f"order:{self.id}:{product.id}"
 
+                # 🔥 CRÍTICO: ejecutar dominio (NO save directo)
                 movement = StockMovement(
                     organization=self.organization,
                     product=product,
@@ -126,12 +129,11 @@ class Order(models.Model):
                     quantity=qty,
                     idempotency_key=key
                 )
-                movement.save()
+
+                movement.save()  # -> ya pasa por DomainService
 
             total_expected = sum(i.quantity for i in self.items.all())
             total_received = self.total_received
-
-            old_status = self.status
 
             if total_received == 0:
                 self.status = "sent"
