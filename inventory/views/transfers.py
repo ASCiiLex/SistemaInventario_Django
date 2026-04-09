@@ -140,3 +140,21 @@ def transfer_cancel(request, pk):
 
     messages.success(request, "Transferencia cancelada correctamente.")
     return redirect("transfer_detail", pk=pk)
+
+
+@permission_required_custom(can_confirm_inventory)
+def transfer_complete(request, pk):
+    transfer = get_object_or_404(
+        StockTransfer,
+        pk=pk,
+        organization=request.organization
+    )
+
+    if request.method == "POST":
+        try:
+            transfer.complete(request.user)
+            messages.success(request, "Transferencia completada.")
+        except Exception as e:
+            messages.error(request, str(e))
+
+    return redirect("transfer_detail", pk=pk)

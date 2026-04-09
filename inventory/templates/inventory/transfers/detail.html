@@ -11,34 +11,62 @@
                 <li class="list-group-item"><strong>Origen:</strong> {{ transfer.origin.name }}</li>
                 <li class="list-group-item"><strong>Destino:</strong> {{ transfer.destination.name }}</li>
                 <li class="list-group-item"><strong>Cantidad:</strong> {{ transfer.quantity }}</li>
+
                 <li class="list-group-item">
                     <strong>Estado:</strong>
+
                     {% if transfer.status == "pending" %}
                         <span class="badge bg-warning">Pendiente</span>
-                    {% elif transfer.status == "received" %}
-                        <span class="badge bg-success">Recibida</span>
+
+                    {% elif transfer.status == "in_transit" %}
+                        <span class="badge bg-info">En tránsito</span>
+
+                    {% elif transfer.status == "completed" %}
+                        <span class="badge bg-success">Completada</span>
+
                     {% else %}
                         <span class="badge bg-danger">Cancelada</span>
                     {% endif %}
                 </li>
+
                 <li class="list-group-item"><strong>Creada por:</strong> {{ transfer.created_by }}</li>
                 <li class="list-group-item"><strong>Fecha:</strong> {{ transfer.created_at|date:"d/m/Y H:i" }}</li>
+
+                {% if transfer.confirmed_at %}
+                    <li class="list-group-item"><strong>Confirmada:</strong> {{ transfer.confirmed_at|date:"d/m/Y H:i" }}</li>
+                {% endif %}
+
+                {% if transfer.completed_at %}
+                    <li class="list-group-item"><strong>Completada:</strong> {{ transfer.completed_at|date:"d/m/Y H:i" }}</li>
+                {% endif %}
             </ul>
         </div>
     </div>
 
     <div class="d-flex gap-2 mb-3">
+
         {% if transfer.status == "pending" %}
-            <a href="{% url 'transfer_confirm' transfer.id %}" class="btn btn-success">
-                Confirmar recepción
+            <a href="{% url 'transfer_confirm' transfer.id %}" class="btn btn-primary">
+                Confirmar salida (enviar)
             </a>
 
             <form method="post"
                   action="{% url 'transfer_cancel' transfer.id %}"
                   onsubmit="return handleSubmit(this)">
                 {% csrf_token %}
-                <button class="btn btn-danger" data-loading-text="Cancelando...">
+                <button class="btn btn-danger">
                     Cancelar
+                </button>
+            </form>
+        {% endif %}
+
+        {% if transfer.status == "in_transit" %}
+            <form method="post"
+                  action="{% url 'transfer_complete' transfer.id %}"
+                  onsubmit="return handleSubmit(this)">
+                {% csrf_token %}
+                <button class="btn btn-success">
+                    Marcar como recibida (entrada en destino)
                 </button>
             </form>
         {% endif %}

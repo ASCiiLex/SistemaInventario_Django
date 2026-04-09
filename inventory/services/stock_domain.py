@@ -23,9 +23,11 @@ class StockDomainService:
             "qty": movement.quantity,
         })
 
+        # 🔥 Garantizar organización
         if not movement.organization and movement.product:
             movement.organization = movement.product.organization
 
+        # 🔁 Idempotencia
         if movement.idempotency_key:
             existing = movement.__class__.objects.filter(
                 organization=movement.organization,
@@ -42,6 +44,7 @@ class StockDomainService:
         try:
             with transaction.atomic():
 
+                # 🔒 Lock por producto
                 StockDomainService._lock_product_scope(movement)
 
                 movement.full_clean()
@@ -51,13 +54,16 @@ class StockDomainService:
 
                 movement.save_base(raw=True)
 
+                # 🔒 Lock stock rows
                 StockItem.objects.select_for_update().filter(
                     organization=movement.organization,
                     product=movement.product
                 )
 
+                # 🔥 Aplicar lógica
                 StockDomainService._apply_stock(movement, StockItem)
 
+                # 🔍 Validación global
                 StockDomainService._validate_global_stock(movement, StockItem)
 
         except ValidationError as e:
@@ -132,12 +138,6 @@ class StockDomainService:
         if movement.movement_type == "IN" and not movement.destination:
             raise ValidationError("Entrada sin destino.")
 
-        if movement.movement_type == "TRANSFER":
-            if not movement.origin or not movement.destination:
-                raise ValidationError("Transferencia incompleta.")
-            if movement.origin == movement.destination:
-                raise ValidationError("Origen y destino no pueden coincidir.")
-
     @staticmethod
     def _apply_stock(movement, StockItem):
 
@@ -148,6 +148,9 @@ class StockDomainService:
             "qty": movement.quantity
         })
 
+        # ===============================
+        # ➕ ENTRADA
+        # ===============================
         if movement.movement_type == "IN":
 
             item = StockDomainService._get_or_create_stock_for_update(
@@ -157,6 +160,9 @@ class StockDomainService:
             item.quantity += movement.quantity
             item.save(update_fields=["quantity"])
 
+        # ===============================
+        # ➖ SALIDA
+        # ===============================
         elif movement.movement_type == "OUT":
 
             item = StockDomainService._get_stock_for_update(
@@ -172,36 +178,6 @@ class StockDomainService:
 
             item.quantity -= movement.quantity
             item.save(update_fields=["quantity"])
-
-        elif movement.movement_type == "TRANSFER":
-
-            locations = sorted(
-                [movement.origin, movement.destination],
-                key=lambda l: l.id
-            )
-
-            locked_items = {}
-
-            for loc in locations:
-                locked_items[loc.id] = StockDomainService._get_or_create_stock_for_update(
-                    StockItem, movement, loc
-                )
-
-            origin = locked_items[movement.origin.id]
-            dest = locked_items[movement.destination.id]
-
-            if origin.quantity < movement.quantity:
-                logger.warning("stock.transfer.insufficient", extra={
-                    "available": origin.quantity,
-                    "requested": movement.quantity
-                })
-                raise ValidationError("Stock insuficiente para transferir.")
-
-            origin.quantity -= movement.quantity
-            origin.save(update_fields=["quantity"])
-
-            dest.quantity += movement.quantity
-            dest.save(update_fields=["quantity"])
 
     @staticmethod
     def _validate_global_stock(movement, StockItem):

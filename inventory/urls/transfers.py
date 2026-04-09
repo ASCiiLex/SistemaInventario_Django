@@ -5,6 +5,7 @@ from ..views.transfers import (
     transfer_detail,
     transfer_confirm,
     transfer_cancel,
+    transfer_complete,
 )
 
 urlpatterns = [
@@ -13,4 +14,5 @@ urlpatterns = [
     path("transferencias/<int:pk>/", transfer_detail, name="transfer_detail"),
     path("transferencias/<int:pk>/confirmar/", transfer_confirm, name="transfer_confirm"),
     path("transferencias/<int:pk>/cancelar/", transfer_cancel, name="transfer_cancel"),
+    path("transferencias/<int:pk>/completar/", transfer_complete, name="transfer_complete"),
 ]

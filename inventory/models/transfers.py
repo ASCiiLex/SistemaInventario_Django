@@ -1,10 +1,10 @@
 from django.db import models, transaction
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from products.models import Product
 from .locations import Location
-from .stock import StockItem
 from .movements import StockMovement
 from organizations.models import Organization
 
@@ -17,7 +17,8 @@ from inventory.services.audit import (
 class StockTransfer(models.Model):
     STATUS_CHOICES = (
         ("pending", "Pendiente"),
-        ("received", "Recibida"),
+        ("in_transit", "En tránsito"),
+        ("completed", "Completada"),
         ("cancelled", "Cancelada"),
     )
 
@@ -66,6 +67,7 @@ class StockTransfer(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     created_by = models.ForeignKey(
         User,
@@ -93,8 +95,11 @@ class StockTransfer(models.Model):
         ]
 
     def __str__(self):
-        return f"Transferencia #{self.id} - {self.product.name}"
+        return f"Transfer #{self.id} - {self.product.name}"
 
+    # ==========================================
+    # 🔥 CONFIRM → SALE DE ORIGEN (IN TRANSIT)
+    # ==========================================
     def confirm(self, user):
 
         if self.status != "pending":
@@ -109,25 +114,22 @@ class StockTransfer(models.Model):
             if locked.status != "pending":
                 return locked
 
-            # 🔥 ELIMINAMOS lógica manual → delegamos en dominio
+            # 🔥 MOVIMIENTO OUT
             movement = StockMovement(
                 organization=self.organization,
                 product=self.product,
-                movement_type="TRANSFER",
+                movement_type="OUT",
                 source_type="transfer",
                 transfer=self,
                 origin=self.origin,
-                destination=self.destination,
                 quantity=self.quantity,
-                idempotency_key=f"transfer:{self.id}"
+                idempotency_key=f"transfer:{self.id}:out"
             )
 
-            movement.save()  # 🔥 DOMAIN SERVICE
+            movement.save()
 
-            locked.status = "received"
+            locked.status = "in_transit"
             locked.confirmed_by = user
-
-            from django.utils import timezone
             locked.confirmed_at = timezone.now()
 
             locked._skip_audit = True
@@ -138,10 +140,50 @@ class StockTransfer(models.Model):
 
         return self
 
+    # ==========================================
+    # 🔥 COMPLETE → LLEGA A DESTINO
+    # ==========================================
+    def complete(self, user):
+
+        if self.status != "in_transit":
+            raise ValidationError("La transferencia no está en tránsito.")
+
+        with transaction.atomic():
+
+            locked = StockTransfer.objects.select_for_update().get(pk=self.pk)
+
+            if locked.status != "in_transit":
+                return locked
+
+            movement = StockMovement(
+                organization=self.organization,
+                product=self.product,
+                movement_type="IN",
+                source_type="transfer",
+                transfer=self,
+                destination=self.destination,
+                quantity=self.quantity,
+                idempotency_key=f"transfer:{self.id}:in"
+            )
+
+            movement.save()
+
+            locked.status = "completed"
+            locked.completed_at = timezone.now()
+
+            locked._skip_audit = True
+            locked.save(update_fields=["status", "completed_at"])
+            del locked._skip_audit
+
+        return self
+
+    # ==========================================
+    # 🔥 CANCEL
+    # ==========================================
     def cancel(self, user):
 
         if self.status != "pending":
-            return self
+            raise ValidationError("Solo transferencias pendientes pueden cancelarse.")
 
         old_status = self.status
 
