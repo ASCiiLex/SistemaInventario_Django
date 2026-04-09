@@ -105,6 +105,10 @@ class StockMovement(models.Model):
         return f"{self.get_movement_type_display()} - {self.product.name} ({self.quantity})"
 
     def clean(self):
+        # 🔥 GARANTIZAR ORGANIZATION SI FALTA
+        if not self.organization and self.product:
+            self.organization = self.product.organization
+
         if self.quantity <= 0:
             raise ValidationError("La cantidad debe ser mayor que cero.")
 
