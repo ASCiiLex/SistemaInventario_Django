@@ -2,23 +2,40 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-3">Marcar como recibido el pedido #{{ order.id }}</h2>
+    <h2 class="mb-3">Recepción pedido #{{ order.id }}</h2>
 
-    <div class="card mb-3">
-        <div class="card-body">
-            <p>¿Deseas marcar este pedido como recibido?</p>
-            <p><strong>Proveedor:</strong> {{ order.supplier }}</p>
-            <p><strong>Almacén:</strong> {{ order.location }}</p>
-            <p><strong>Items:</strong> {{ order.total_items }}</p>
-            <p><strong>Coste total:</strong> {{ order.total_cost }}</p>
-        </div>
-    </div>
-
-    <form method="post" class="d-inline">
+    <form method="post" class="card card-body">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button class="btn btn-success">Confirmar</button>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Pendiente</th>
+                    <th>Recibir ahora</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td>{{ item.product }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>
+                        <input type="number"
+                               name="qty_{{ item.id }}"
+                               min="0"
+                               max="{{ item.quantity }}"
+                               class="form-control">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-success">Confirmar recepción</button>
+            <a href="{% url 'order_detail' order.id %}" class="btn btn-secondary">Cancelar</a>
+        </div>
     </form>
-    <a href="{% url 'order_detail' order.id %}" class="btn btn-secondary ms-2">Cancelar</a>
 </div>
 {% endblock %}

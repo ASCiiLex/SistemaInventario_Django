@@ -116,7 +116,7 @@ class Order(models.Model):
                 if qty <= 0:
                     raise ValidationError("Cantidad inválida.")
 
-                key = f"order:{self.id}:{product.id}"
+                key = f"order:{self.id}:{product.id}:{timezone.now().timestamp()}"
 
                 # 🔥 CRÍTICO: ejecutar dominio (NO save directo)
                 movement = StockMovement(

@@ -173,15 +173,12 @@ def order_edit(request, pk):
 def order_send(request, pk):
     order = get_object_or_404(Order, pk=pk, organization=request.organization)
 
-    if order.status != "pending":
-        messages.error(request, "Solo se pueden marcar como enviados los pedidos pendientes.")
-        return redirect("order_detail", pk=pk)
+    try:
+        order.mark_as_sent(request.user)
+        messages.success(request, "Pedido marcado como enviado.")
+    except Exception as e:
+        messages.error(request, str(e))
 
-    order.status = "sent"
-    order.sent_at = timezone.now()
-    order.save()
-
-    messages.success(request, "Pedido marcado como enviado.")
     return redirect("order_detail", pk=pk)
 
 
@@ -190,40 +187,48 @@ def order_receive(request, pk):
     order = get_object_or_404(Order, pk=pk, organization=request.organization)
 
     if order.status not in ["sent", "partially_received", "backordered"]:
-        messages.error(request, "Este pedido no se puede marcar como recibido.")
+        messages.error(request, "Este pedido no se puede recibir.")
         return redirect("order_detail", pk=pk)
 
     if request.method == "POST":
-        form = OrderReceiveForm(request.POST)
-        if form.is_valid():
-            order.status = "received"
-            order.received_at = timezone.now()
-            order.save()
+        items_data = []
 
-            messages.success(request, "Pedido marcado como recibido.")
+        for item in order.items.all():
+            qty = int(request.POST.get(f"qty_{item.id}", 0))
+
+            if qty > 0:
+                items_data.append({
+                    "product": item.product,
+                    "quantity": qty,
+                })
+
+        if not items_data:
+            messages.error(request, "Debes recibir al menos un producto.")
+            return redirect("order_receive", pk=pk)
+
+        try:
+            order.receive_items(request.user, items_data)
+            messages.success(request, "Recepción procesada correctamente.")
             return redirect("order_detail", pk=pk)
-    else:
-        form = OrderReceiveForm()
+        except Exception as e:
+            messages.error(request, str(e))
 
     return render(
         request,
         "inventory/orders/receive.html",
-        {"order": order, "form": form},
+        {"order": order},
     )
-
 
 @permission_required_custom(can_confirm_inventory)
 def order_cancel(request, pk):
     order = get_object_or_404(Order, pk=pk, organization=request.organization)
 
-    if order.status in ["received", "cancelled"]:
-        messages.error(request, "Este pedido no se puede cancelar.")
-        return redirect("order_detail", pk=pk)
+    try:
+        order.mark_as_cancelled(request.user)
+        messages.success(request, "Pedido cancelado correctamente.")
+    except Exception as e:
+        messages.error(request, str(e))
 
-    order.status = "cancelled"
-    order.save()
-
-    messages.success(request, "Pedido cancelado correctamente.")
     return redirect("order_detail", pk=pk)
 
 
