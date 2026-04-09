@@ -5,8 +5,7 @@
             {% include "partials/sortable_th.html" with field="created_at" label="Fecha" target="#movements-table" %}
             {% include "partials/sortable_th.html" with field="product__name" label="Producto" target="#movements-table" %}
             {% include "partials/sortable_th.html" with field="movement_type" label="Tipo" target="#movements-table" %}
-            {% include "partials/sortable_th.html" with field="origin__name" label="Origen" target="#movements-table" %}
-            {% include "partials/sortable_th.html" with field="destination__name" label="Destino" target="#movements-table" %}
+            <th>Almacén</th>
             {% include "partials/sortable_th.html" with field="quantity" label="Cantidad" target="#movements-table" %}
             <th>Nota</th>
         </tr>
@@ -24,14 +23,19 @@
                     <span class="badge bg-danger">Salida</span>
                 {% endif %}
             </td>
-            <td>{{ m.origin|default:"-" }}</td>
-            <td>{{ m.destination|default:"-" }}</td>
+            <td>
+                {% if m.movement_type == "IN" %}
+                    {{ m.destination }}
+                {% else %}
+                    {{ m.origin }}
+                {% endif %}
+            </td>
             <td>{{ m.quantity }}</td>
             <td>{{ m.note|default:"-" }}</td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="7" class="text-center">No hay ajustes.</td>
+            <td colspan="6" class="text-center">No hay ajustes.</td>
         </tr>
         {% endfor %}
     </tbody>

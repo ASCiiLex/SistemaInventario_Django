@@ -9,13 +9,13 @@ class StockMovementForm(forms.ModelForm):
         self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
 
-        # 🔥 SOLO IN / OUT (no TRANSFER en UI)
+        # 🔥 SOLO IN / OUT
         self.fields["movement_type"].choices = [
             ("IN", "Entrada"),
             ("OUT", "Salida"),
         ]
 
-        # 🔥 Renombramos "origin" → location (UX limpia)
+        # 🔥 Campo virtual (NO en modelo)
         self.fields["location"] = forms.ModelChoiceField(
             queryset=Location.objects.none(),
             required=True,
@@ -23,8 +23,9 @@ class StockMovementForm(forms.ModelForm):
             widget=forms.Select(attrs={"class": "form-control select2"})
         )
 
-        # ❌ Eliminamos destination del formulario
-        self.fields.pop("destination")
+        # ❌ Eliminamos campos no usados en UI
+        self.fields.pop("destination", None)
+        self.fields.pop("origin", None)
 
         if self.organization:
             self.fields["product"].queryset = Product.objects.filter(
@@ -36,7 +37,7 @@ class StockMovementForm(forms.ModelForm):
 
     class Meta:
         model = StockMovement
-        fields = ["product", "movement_type", "location", "quantity", "note"]
+        fields = ["product", "movement_type", "quantity", "note"]  # 🔥 SIN location
         widgets = {
             "product": forms.Select(attrs={"class": "form-control select2"}),
             "movement_type": forms.Select(attrs={"class": "form-control"}),
@@ -55,7 +56,7 @@ class StockMovementForm(forms.ModelForm):
 
         location = self.cleaned_data.get("location")
 
-        # 🔥 MAPEO LIMPIO → DOMAIN
+        # 🔥 MAPEO UI → DOMAIN
         if instance.movement_type == "IN":
             instance.destination = location
             instance.origin = None
@@ -79,7 +80,11 @@ class StockMovementFilterForm(forms.Form):
         required=False,
         choices=[("", "Todos")] + list(StockMovement._meta.get_field("movement_type").choices),
     )
-    location = forms.ModelChoiceField(queryset=Location.objects.none(), required=False, label="Almacén")
+    location = forms.ModelChoiceField(
+        queryset=Location.objects.none(),
+        required=False,
+        label="Almacén"
+    )
     q = forms.CharField(required=False)
     date_from = forms.DateField(required=False)
     date_to = forms.DateField(required=False)
