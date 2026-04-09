@@ -9,37 +9,40 @@ class StockMovementForm(forms.ModelForm):
         self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
 
+        # 🔥 SOLO IN / OUT (no TRANSFER en UI)
         self.fields["movement_type"].choices = [
             ("IN", "Entrada"),
             ("OUT", "Salida"),
         ]
 
+        # 🔥 Renombramos "origin" → location (UX limpia)
+        self.fields["location"] = forms.ModelChoiceField(
+            queryset=Location.objects.none(),
+            required=True,
+            label="Almacén",
+            widget=forms.Select(attrs={"class": "form-control select2"})
+        )
+
+        # ❌ Eliminamos destination del formulario
+        self.fields.pop("destination")
+
         if self.organization:
-            self.fields["product"].queryset = Product.objects.filter(organization=self.organization)
-            self.fields["origin"].queryset = Location.objects.filter(organization=self.organization)
-            self.fields["destination"].queryset = Location.objects.filter(organization=self.organization)
+            self.fields["product"].queryset = Product.objects.filter(
+                organization=self.organization
+            )
+            self.fields["location"].queryset = Location.objects.filter(
+                organization=self.organization
+            )
 
     class Meta:
         model = StockMovement
-        fields = ["product", "movement_type", "origin", "destination", "quantity", "note"]
+        fields = ["product", "movement_type", "location", "quantity", "note"]
         widgets = {
             "product": forms.Select(attrs={"class": "form-control select2"}),
             "movement_type": forms.Select(attrs={"class": "form-control"}),
-            "origin": forms.Select(attrs={"class": "form-control select2"}),
-            "destination": forms.Select(attrs={"class": "form-control select2"}),
             "quantity": forms.NumberInput(attrs={"class": "form-control"}),
             "note": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
-
-    def clean(self):
-        cleaned = super().clean()
-        origin = cleaned.get("origin")
-        destination = cleaned.get("destination")
-
-        if origin and destination and origin == destination:
-            raise forms.ValidationError("Origen y destino no pueden ser iguales.")
-
-        return cleaned
 
     def clean_quantity(self):
         qty = self.cleaned_data["quantity"]
@@ -49,10 +52,24 @@ class StockMovementForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
+
+        location = self.cleaned_data.get("location")
+
+        # 🔥 MAPEO LIMPIO → DOMAIN
+        if instance.movement_type == "IN":
+            instance.destination = location
+            instance.origin = None
+
+        elif instance.movement_type == "OUT":
+            instance.origin = location
+            instance.destination = None
+
         if self.organization:
             instance.organization = self.organization
+
         if commit:
             instance.save()
+
         return instance
 
 
@@ -62,8 +79,7 @@ class StockMovementFilterForm(forms.Form):
         required=False,
         choices=[("", "Todos")] + list(StockMovement._meta.get_field("movement_type").choices),
     )
-    origin = forms.ModelChoiceField(queryset=Location.objects.none(), required=False)
-    destination = forms.ModelChoiceField(queryset=Location.objects.none(), required=False)
+    location = forms.ModelChoiceField(queryset=Location.objects.none(), required=False, label="Almacén")
     q = forms.CharField(required=False)
     date_from = forms.DateField(required=False)
     date_to = forms.DateField(required=False)
@@ -74,5 +90,4 @@ class StockMovementFilterForm(forms.Form):
 
         if organization:
             self.fields["product"].queryset = Product.objects.filter(organization=organization)
-            self.fields["origin"].queryset = Location.objects.filter(organization=organization)
-            self.fields["destination"].queryset = Location.objects.filter(organization=organization)
+            self.fields["location"].queryset = Location.objects.filter(organization=organization)
