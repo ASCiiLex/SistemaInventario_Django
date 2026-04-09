@@ -45,25 +45,7 @@ function clearFilters(el) {
 }
 
 // ===============================
-// 🔥 TOGGLE LOCATIONS
-// ===============================
-function toggleLocationRow(id) {
-    const row = document.getElementById(`expand-${id}`);
-    if (!row) return;
-
-    const isOpen = row.dataset.open === "true";
-
-    if (isOpen) {
-        row.innerHTML = '<td colspan="5"></td>';
-        row.dataset.open = "false";
-        return;
-    }
-
-    row.dataset.open = "true";
-}
-
-// ===============================
-// 🔥 TOGGLE NOTIFICATIONS GROUP
+// TOGGLE NOTIFICATIONS GROUP
 // ===============================
 function toggleNotificationGroup(el) {
     const content = el.nextElementSibling;
@@ -146,7 +128,7 @@ document.body.addEventListener('htmx:afterSwap', e => {
 });
 
 // ===============================
-// 🔥 NOTIFICATIONS PANEL LAZY LOAD
+// NOTIFICATIONS PANEL LAZY LOAD
 // ===============================
 function initNotificationsPanel() {
     const panel = document.getElementById("notificationsPanelOffcanvas");
@@ -184,7 +166,7 @@ function showToast(message) {
 }
 
 // ===============================
-// 🔥 WEBSOCKET → EVENT BUS + HTMX (FIX REAL)
+// 🔥 WEBSOCKET → SINGLE SOURCE OF TRUTH
 // ===============================
 function connectWS() {
     const protocol = location.protocol === "https:" ? "wss://" : "ws://";
@@ -193,26 +175,27 @@ function connectWS() {
     socket.onmessage = (e) => {
         const data = JSON.parse(e.data);
 
-        if (data.event) {
-            EventBus.emit(data.event, data);
+        if (!data.event) return;
 
-            // 🔥 AQUÍ ESTÁ EL FIX REAL
-            htmx.trigger(document.body, data.event);
-        }
+        // 🔥 ÚNICO FLUJO
+        EventBus.emit(data.event, data);
+        htmx.trigger(document.body, data.event);
 
-        if (data.event && data.event.includes("notifications")) {
-            EventBus.emit("inventory:notifications_updated");
-            htmx.trigger(document.body, "inventory:notifications_updated");
-        }
+        // 🔥 NORMALIZACIÓN CENTRAL (SIN includes difusos)
+        switch (data.event) {
+            case "inventory:stock_low":
+            case "inventory:stock_changed":
+            case "inventory:movement_created":
+                htmx.trigger(document.body, "inventory:stock_changed");
+                break;
 
-        if (data.event && data.event.includes("stock")) {
-            EventBus.emit("inventory:stock_updated");
-            htmx.trigger(document.body, "inventory:stock_changed");
-        }
+            case "inventory:notifications_updated":
+                htmx.trigger(document.body, "inventory:notifications_updated");
+                break;
 
-        if (data.event && data.event.includes("orders")) {
-            EventBus.emit("inventory:orders_updated");
-            htmx.trigger(document.body, "orders:updated");
+            case "orders:updated":
+                htmx.trigger(document.body, "orders:updated");
+                break;
         }
 
         if (data.message) showToast(data.message);
@@ -236,14 +219,7 @@ document.body.addEventListener("htmx:afterRequest", (e) => {
 
         Object.keys(events).forEach(name => {
             EventBus.emit(name, events[name]);
-
-            if (name.includes("notifications")) {
-                EventBus.emit("inventory:notifications_updated");
-            }
-
-            if (name.includes("orders")) {
-                EventBus.emit("inventory:orders_updated");
-            }
+            htmx.trigger(document.body, name);
         });
 
     } catch (err) {
@@ -268,24 +244,19 @@ document.body.addEventListener("htmx:afterSwap", () => {
 });
 
 // ===============================
-// 🔒 FORM LOCK
+// FORM LOCK
 // ===============================
 function handleSubmit(form) {
-    if (form.dataset.submitted === "true") {
-        return false;
-    }
+    if (form.dataset.submitted === "true") return false;
 
     form.dataset.submitted = "true";
 
     const btn = form.querySelector("button[type=submit]");
     if (btn) {
         btn.disabled = true;
-
         const original = btn.innerHTML;
-        const loadingText = btn.dataset.loadingText || "Procesando...";
-
         btn.dataset.originalText = original;
-        btn.innerHTML = loadingText;
+        btn.innerHTML = btn.dataset.loadingText || "Procesando...";
     }
 
     return true;
