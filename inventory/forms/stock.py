@@ -54,6 +54,10 @@ class StockMovementForm(forms.ModelForm):
     def save(self, commit=True):
         instance = super().save(commit=False)
 
+        # 🔥 PRIMERO organización (clave)
+        if self.organization:
+            instance.organization = self.organization
+
         location = self.cleaned_data.get("location")
 
         # 🔥 MAPEO UI → DOMAIN
@@ -64,9 +68,6 @@ class StockMovementForm(forms.ModelForm):
         elif instance.movement_type == "OUT":
             instance.origin = location
             instance.destination = None
-
-        if self.organization:
-            instance.organization = self.organization
 
         if commit:
             instance.save()
