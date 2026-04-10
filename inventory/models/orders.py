@@ -2,6 +2,8 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+import logging
+
 from suppliers.models import Supplier
 from products.models import Product
 from .locations import Location
@@ -14,6 +16,9 @@ from inventory.services.audit import (
 )
 
 from inventory.models.movements import StockMovement
+
+logger = logging.getLogger("inventory.domain")
+metrics = logging.getLogger("inventory.metrics")
 
 
 class Order(models.Model):
@@ -74,13 +79,11 @@ class Order(models.Model):
             self.movements.filter(movement_type="IN").values_list("quantity", flat=True)
         )
 
-    # ==========================================
-    # 🔥 BUSINESS ACTIONS
-    # ==========================================
-
     def mark_as_sent(self, user):
         if self.status != "pending":
             raise ValidationError("Solo pedidos pendientes pueden enviarse.")
+
+        logger.info("order.mark_as_sent", extra={"order_id": self.id})
 
         old_status = self.status
         self.status = "sent"
@@ -89,6 +92,8 @@ class Order(models.Model):
         self._skip_audit = True
         self.save(update_fields=["status", "sent_at"])
         del self._skip_audit
+
+        metrics.info("order.sent", extra={"order_id": self.id})
 
         audit_order_sent(self, user, old_status)
 
@@ -99,10 +104,11 @@ class Order(models.Model):
         if not self.location:
             raise ValidationError("Pedido sin ubicación.")
 
+        logger.info("order.receive.start", extra={"order_id": self.id})
+
         old_status = self.status
 
         with transaction.atomic():
-
             for item_data in items_data:
                 product = item_data["product"]
                 qty = item_data["quantity"]
@@ -115,14 +121,12 @@ class Order(models.Model):
                 if qty <= 0:
                     raise ValidationError("Cantidad inválida.")
 
-                # 🔥 VALIDACIÓN CLAVE
                 if qty > order_item.pending_quantity:
                     raise ValidationError("No puedes recibir más de lo pendiente.")
 
-                # 🔥 IDMPOTENCIA CORRECTA (permite múltiples recepciones)
                 key = f"order:{self.id}:{product.id}:{timezone.now().timestamp()}"
 
-                movement = StockMovement(
+                StockMovement(
                     organization=self.organization,
                     product=product,
                     movement_type="IN",
@@ -131,9 +135,13 @@ class Order(models.Model):
                     destination=self.location,
                     quantity=qty,
                     idempotency_key=key,
-                )
+                ).save()
 
-                movement.save()
+                metrics.info("order.item.received", extra={
+                    "order_id": self.id,
+                    "product_id": product.id,
+                    "qty": qty,
+                })
 
             total_expected = sum(i.quantity for i in self.items.all())
             total_received = self.total_received
@@ -150,19 +158,24 @@ class Order(models.Model):
             self.save(update_fields=["status", "received_at"])
             del self._skip_audit
 
+        metrics.info("order.receive.completed", extra={"order_id": self.id})
+
         audit_order_received(self, user, old_status)
 
     def mark_as_cancelled(self, user):
         if self.status in ["received", "cancelled"]:
             raise ValidationError("No se puede cancelar.")
 
-        old_status = self.status
+        logger.warning("order.cancelled", extra={"order_id": self.id})
 
+        old_status = self.status
         self.status = "cancelled"
 
         self._skip_audit = True
         self.save(update_fields=["status"])
         del self._skip_audit
+
+        metrics.info("order.cancelled", extra={"order_id": self.id})
 
         audit_order_cancelled(self, user, old_status)
 
@@ -196,14 +209,6 @@ class OrderItem(models.Model):
             models.Index(fields=["organization", "order"]),
         ]
 
-    def __str__(self):
-        return f"{self.product.name if self.product else 'N/A'} x {self.quantity}"
-
-    @property
-    def total_cost(self):
-        return self.quantity * self.cost_price
-
-    # 🔥 NUEVO → RECEPCIÓN REAL
     @property
     def received_quantity(self):
         return sum(
@@ -216,8 +221,3 @@ class OrderItem(models.Model):
     @property
     def pending_quantity(self):
         return max(self.quantity - self.received_quantity, 0)
-
-    def save(self, *args, **kwargs):
-        if self.order and not self.organization_id:
-            self.organization = self.order.organization
-        super().save(*args, **kwargs)

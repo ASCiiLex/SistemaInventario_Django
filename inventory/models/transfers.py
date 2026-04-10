@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+import logging
+
 from products.models import Product
 from .locations import Location
 from .movements import StockMovement
@@ -12,6 +14,9 @@ from inventory.services.audit import (
     audit_transfer_confirmed,
     audit_transfer_cancelled,
 )
+
+logger = logging.getLogger("inventory.domain")
+metrics = logging.getLogger("inventory.metrics")
 
 
 class StockTransfer(models.Model):
@@ -50,7 +55,7 @@ class StockTransfer(models.Model):
     )
 
     quantity = models.PositiveIntegerField()
-    received_quantity = models.PositiveIntegerField(default=0)  # 🔥 NUEVO
+    received_quantity = models.PositiveIntegerField(default=0)
 
     note = models.TextField(blank=True)
 
@@ -113,6 +118,12 @@ class StockTransfer(models.Model):
         if self.status != "pending":
             return self
 
+        logger.info("transfer.confirm.start", extra={
+            "transfer_id": self.id,
+            "product_id": self.product_id,
+            "qty": self.quantity,
+        })
+
         old_status = self.status
 
         with transaction.atomic():
@@ -139,12 +150,17 @@ class StockTransfer(models.Model):
 
             locked.save(update_fields=["status", "confirmed_by", "confirmed_at"])
 
+        metrics.info("transfer.confirmed", extra={
+            "transfer_id": self.id,
+            "qty": self.quantity,
+        })
+
         audit_transfer_confirmed(self, user, old_status)
 
         return self
 
     # ==========================================
-    # 🔥 RECEIVE PARTIAL (CORE)
+    # RECEIVE PARTIAL
     # ==========================================
 
     def receive_partial(self, user, qty):
@@ -155,14 +171,23 @@ class StockTransfer(models.Model):
         if qty <= 0:
             raise ValidationError("Cantidad inválida.")
 
+        logger.info("transfer.receive.start", extra={
+            "transfer_id": self.id,
+            "qty": qty,
+        })
+
         with transaction.atomic():
 
             locked = StockTransfer.objects.select_for_update().get(pk=self.pk)
 
             if qty > locked.pending_quantity:
+                logger.warning("transfer.over_receive_attempt", extra={
+                    "transfer_id": self.id,
+                    "pending": locked.pending_quantity,
+                    "requested": qty,
+                })
                 raise ValidationError("No puedes recibir más de lo pendiente.")
 
-            # 🔥 MOVIMIENTO IN
             StockMovement(
                 organization=self.organization,
                 product=self.product,
@@ -182,6 +207,11 @@ class StockTransfer(models.Model):
 
             locked.save(update_fields=["received_quantity", "status", "completed_at"])
 
+        metrics.info("transfer.receive.success", extra={
+            "transfer_id": self.id,
+            "qty": qty,
+        })
+
         return self
 
     # ==========================================
@@ -193,11 +223,19 @@ class StockTransfer(models.Model):
         if self.status != "pending":
             raise ValidationError("Solo transferencias pendientes pueden cancelarse.")
 
+        logger.warning("transfer.cancel", extra={
+            "transfer_id": self.id
+        })
+
         old_status = self.status
 
         self.status = "cancelled"
         self.confirmed_by = user
         self.save(update_fields=["status", "confirmed_by"])
+
+        metrics.info("transfer.cancelled", extra={
+            "transfer_id": self.id
+        })
 
         audit_transfer_cancelled(self, user, old_status)
 

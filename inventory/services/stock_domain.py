@@ -7,6 +7,7 @@ from django.db import connection
 import logging
 
 logger = logging.getLogger("inventory.domain")
+metrics = logging.getLogger("inventory.metrics")
 
 
 class StockDomainService:
@@ -23,11 +24,14 @@ class StockDomainService:
             "qty": movement.quantity,
         })
 
-        # 🔥 Garantizar organización
+        metrics.info("stock.movement.attempt", extra={
+            "type": movement.movement_type,
+            "qty": movement.quantity,
+        })
+
         if not movement.organization and movement.product:
             movement.organization = movement.product.organization
 
-        # 🔁 Idempotencia
         if movement.idempotency_key:
             existing = movement.__class__.objects.filter(
                 organization=movement.organization,
@@ -39,12 +43,16 @@ class StockDomainService:
                     "movement_id": existing.id,
                     "key": movement.idempotency_key
                 })
+
+                metrics.info("stock.idempotent.hit", extra={
+                    "movement_id": existing.id
+                })
+
                 return existing
 
         try:
             with transaction.atomic():
 
-                # 🔒 Lock por producto
                 StockDomainService._lock_product_scope(movement)
 
                 movement.full_clean()
@@ -54,16 +62,13 @@ class StockDomainService:
 
                 movement.save_base(raw=True)
 
-                # 🔒 Lock stock rows
                 StockItem.objects.select_for_update().filter(
                     organization=movement.organization,
                     product=movement.product
                 )
 
-                # 🔥 Aplicar lógica
                 StockDomainService._apply_stock(movement, StockItem)
 
-                # 🔍 Validación global
                 StockDomainService._validate_global_stock(movement, StockItem)
 
         except ValidationError as e:
@@ -72,10 +77,18 @@ class StockDomainService:
                 "product_id": movement.product_id,
                 "type": movement.movement_type,
             })
+
+            metrics.warning("stock.movement.failed", extra={
+                "type": movement.movement_type,
+                "error": str(e),
+            })
+
             raise
 
         except IntegrityError:
             logger.exception("stock.integrity.error")
+
+            metrics.error("stock.integrity.error")
 
             if movement.idempotency_key:
                 return movement.__class__.objects.get(
@@ -89,6 +102,11 @@ class StockDomainService:
         logger.info("stock.execute.success", extra={
             "movement_id": movement.id,
             "product_id": movement.product_id,
+        })
+
+        metrics.info("stock.movement.success", extra={
+            "type": movement.movement_type,
+            "qty": movement.quantity,
         })
 
         return movement
@@ -114,6 +132,9 @@ class StockDomainService:
                 "location_id": getattr(location, "id", None),
                 "product_id": movement.product_id
             })
+
+            metrics.error("stock.not_found")
+
             raise ValidationError("Stock no existente para la operación.")
 
     @staticmethod
@@ -148,9 +169,6 @@ class StockDomainService:
             "qty": movement.quantity
         })
 
-        # ===============================
-        # ➕ ENTRADA
-        # ===============================
         if movement.movement_type == "IN":
 
             item = StockDomainService._get_or_create_stock_for_update(
@@ -160,9 +178,6 @@ class StockDomainService:
             item.quantity += movement.quantity
             item.save(update_fields=["quantity"])
 
-        # ===============================
-        # ➖ SALIDA
-        # ===============================
         elif movement.movement_type == "OUT":
 
             item = StockDomainService._get_stock_for_update(
@@ -174,6 +189,12 @@ class StockDomainService:
                     "available": item.quantity,
                     "requested": movement.quantity
                 })
+
+                metrics.warning("stock.insufficient", extra={
+                    "available": item.quantity,
+                    "requested": movement.quantity
+                })
+
                 raise ValidationError("Stock insuficiente.")
 
             item.quantity -= movement.quantity
@@ -191,6 +212,12 @@ class StockDomainService:
                 "product_id": movement.product_id,
                 "total": total
             })
+
+            metrics.critical("stock.global.negative", extra={
+                "product_id": movement.product_id,
+                "total": total
+            })
+
             raise ValidationError("Inconsistencia detectada: stock total negativo.")
 
     @staticmethod
@@ -201,6 +228,10 @@ class StockDomainService:
         from inventory.services.stock_alerts import sync_all_notifications
 
         logger.info("stock.post_commit", extra={
+            "movement_id": movement.id
+        })
+
+        metrics.info("stock.movement.committed", extra={
             "movement_id": movement.id
         })
 
