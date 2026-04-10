@@ -3,9 +3,13 @@ from django.conf import settings
 from django.db.models import Sum, Value, F, DecimalField, ExpressionWrapper, IntegerField
 from django.db.models.functions import Coalesce
 
+import logging
+
 from products.models import Product
 from inventory.models import StockItem
 from inventory.models import Order
+
+metrics_logger = logging.getLogger("inventory.metrics")
 
 
 def invalidate_metrics_cache(org_id=None):
@@ -20,6 +24,7 @@ def get_low_stock(organization):
     cache_key = f"dashboard:low_stock:{organization.id}"
     cached = cache.get(cache_key)
     if cached:
+        metrics_logger.info("dashboard.cache.hit.low_stock", extra={"org_id": organization.id})
         return cached
 
     qs = (
@@ -48,6 +53,12 @@ def get_low_stock(organization):
     ]
 
     cache.set(cache_key, result, settings.CACHE_TTL["low_stock"])
+
+    metrics_logger.info("dashboard.cache.miss.low_stock", extra={
+        "org_id": organization.id,
+        "count": len(result)
+    })
+
     return result
 
 
@@ -64,9 +75,9 @@ def get_dashboard_metrics(organization):
     cache_key = f"dashboard:metrics:{organization.id}"
     cached = cache.get(cache_key)
     if cached:
+        metrics_logger.info("dashboard.cache.hit.metrics", extra={"org_id": organization.id})
         return cached
 
-    # 🔥 UNIDADES (FIX)
     total_units = (
         StockItem.objects
         .filter(organization=organization)
@@ -78,7 +89,6 @@ def get_dashboard_metrics(organization):
         )
     )["total"]
 
-    # 🔥 VALOR INVENTARIO (FIX COMPLETO)
     inventory_value = (
         StockItem.objects
         .select_related("product")
@@ -97,13 +107,11 @@ def get_dashboard_metrics(organization):
         )
     )["total"]
 
-    # 🔥 PEDIDOS
     pending_orders = Order.objects.filter(
         organization=organization,
         status__in=["pending", "partially_received", "backordered"]
     ).count()
 
-    # 🔥 PRODUCT RISK
     product_risk_count = get_products_at_risk(organization).count()
 
     result = {
@@ -114,4 +122,13 @@ def get_dashboard_metrics(organization):
     }
 
     cache.set(cache_key, result, settings.CACHE_TTL["metrics"])
+
+    metrics_logger.info("dashboard.metrics.calculated", extra={
+        "org_id": organization.id,
+        "total_units": total_units,
+        "inventory_value": float(inventory_value),
+        "pending_orders": pending_orders,
+        "product_risk_count": product_risk_count,
+    })
+
     return result
