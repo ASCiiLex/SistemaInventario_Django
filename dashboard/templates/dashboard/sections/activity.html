@@ -16,7 +16,7 @@
 
                     <div class="subsection-content compact-table"
                          hx-get="{% url 'dashboard_recent_movements' %}"
-                         hx-trigger="load once, inventory:movement_created from:body"
+                         hx-trigger="load, inventory:movement_created from:body"
                          hx-target="this"
                          hx-swap="innerHTML">
                     </div>
@@ -30,7 +30,7 @@
 
                     <div class="subsection-content compact-table"
                          hx-get="{% url 'dashboard_recent_stock_movements' %}"
-                         hx-trigger="load once, inventory:movement_created from:body"
+                         hx-trigger="load, inventory:movement_created from:body"
                          hx-target="this"
                          hx-swap="innerHTML">
                     </div>

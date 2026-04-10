@@ -10,10 +10,7 @@
             <div id="kpis-container"
                  class="card-body section-content"
                  hx-get="{% url 'dashboard_totals' %}"
-                 hx-trigger="load once,
-                             inventory:stock_changed from:body,
-                             inventory:notifications_updated from:body,
-                             orders:updated from:body"
+                 hx-trigger="load, inventory:stock_changed from:body, notifications:updated from:body, orders:updated from:body"
                  hx-target="this"
                  hx-swap="innerHTML">
             </div>
@@ -29,7 +26,7 @@
 
             <div class="card-body section-content"
                  hx-get="{% url 'dashboard_chart' %}"
-                 hx-trigger="load once, inventory:stock_changed from:body"
+                 hx-trigger="load, inventory:stock_changed from:body"
                  hx-target="this"
                  hx-swap="innerHTML">
             </div>
@@ -46,7 +43,7 @@
 
             <div class="card-body section-content"
                 hx-get="{% url 'dashboard_system_metrics' %}"
-                hx-trigger="load once, inventory:stock_changed from:body"
+                hx-trigger="load, inventory:stock_changed from:body"
                 hx-target="this"
                 hx-swap="innerHTML">
             </div>
