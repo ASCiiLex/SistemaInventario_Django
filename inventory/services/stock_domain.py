@@ -276,12 +276,21 @@ class StockDomainService:
             "movement_id": movement.id
         })
 
+        # 🔥 EVENTO PRINCIPAL
         emit_event(
             Events.MOVEMENT_CREATED,
             {
                 "product": movement.product,
-                "message": f"Movimiento de stock en {movement.product.name}",
             }
         )
 
+        # 🔥 EVENTO CONSISTENTE PARA DASHBOARD
+        emit_event(
+            Events.STOCK_CHANGED,
+            {
+                "product": movement.product,
+            }
+        )
+
+        # 🔥 NOTIFICACIONES + INVALIDACIÓN
         sync_all_notifications(movement.organization)

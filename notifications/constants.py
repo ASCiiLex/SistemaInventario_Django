@@ -1,11 +1,6 @@
 """
 🔥 EVENTOS CENTRALIZADOS (SOURCE OF TRUTH)
-
-- Evita strings mágicos
-- Unifica backend + frontend
-- Escalable SaaS
 """
-
 
 class Events:
     # INVENTORY
@@ -18,4 +13,4 @@ class Events:
     ORDERS_UPDATED = "orders:updated"
 
     # NOTIFICATIONS
-    NOTIFICATIONS_UPDATED = "inventory:notifications_updated"
+    NOTIFICATIONS_UPDATED = "notifications:updated"
