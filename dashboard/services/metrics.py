@@ -4,10 +4,10 @@ from django.db.models import Sum, Value, F, DecimalField, ExpressionWrapper, Int
 from django.db.models.functions import Coalesce
 
 import logging
+import time
 
 from products.models import Product
-from inventory.models import StockItem
-from inventory.models import Order
+from inventory.models import StockItem, Order, StockMovement
 
 metrics_logger = logging.getLogger("inventory.metrics")
 
@@ -16,9 +16,14 @@ def invalidate_metrics_cache(org_id=None):
     if org_id:
         cache.delete(f"dashboard:metrics:{org_id}")
         cache.delete(f"dashboard:low_stock:{org_id}")
+        cache.delete(f"dashboard:system_metrics:{org_id}")
     else:
         cache.clear()
 
+
+# ==========================================
+# EXISTENTES (SIN CAMBIO FUNCIONAL)
+# ==========================================
 
 def get_low_stock(organization):
     cache_key = f"dashboard:low_stock:{organization.id}"
@@ -129,6 +134,46 @@ def get_dashboard_metrics(organization):
         "inventory_value": float(inventory_value),
         "pending_orders": pending_orders,
         "product_risk_count": product_risk_count,
+    })
+
+    return result
+
+
+# ==========================================
+# 🔥 NUEVO — MÉTRICAS INTERNAS
+# ==========================================
+
+def get_system_metrics(organization):
+    cache_key = f"dashboard:system_metrics:{organization.id}"
+    cached = cache.get(cache_key)
+    if cached:
+        metrics_logger.info("dashboard.cache.hit.system_metrics", extra={"org_id": organization.id})
+        return cached
+
+    start = time.time()
+
+    movements_last_24h = StockMovement.objects.filter(
+        organization=organization
+    ).count()
+
+    errors_estimate = 0  # 🔥 placeholder para futuro (logs parsing / prometheus)
+
+    cache_size = cache._cache.get_client().dbsize() if hasattr(cache, "_cache") else 0
+
+    duration = time.time() - start
+
+    result = {
+        "movements_24h": movements_last_24h,
+        "errors": errors_estimate,
+        "cache_keys": cache_size,
+        "calc_time": round(duration, 4),
+    }
+
+    cache.set(cache_key, result, 10)
+
+    metrics_logger.info("dashboard.system_metrics.calculated", extra={
+        "org_id": organization.id,
+        **result
     })
 
     return result

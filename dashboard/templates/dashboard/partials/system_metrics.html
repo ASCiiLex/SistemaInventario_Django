@@ -1,0 +1,39 @@
+<div class="row g-3">
+
+    <div class="col-md-3">
+        <div class="card text-bg-dark">
+            <div class="card-body text-center">
+                <h6>Movimientos (24h)</h6>
+                <p class="fs-4">{{ movements_24h }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-bg-danger">
+            <div class="card-body text-center">
+                <h6>Errores</h6>
+                <p class="fs-4">{{ errors }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-bg-secondary">
+            <div class="card-body text-center">
+                <h6>Cache Keys</h6>
+                <p class="fs-4">{{ cache_keys }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-bg-info">
+            <div class="card-body text-center">
+                <h6>Tiempo cálculo</h6>
+                <p class="fs-4">{{ calc_time }}s</p>
+            </div>
+        </div>
+    </div>
+
+</div>
