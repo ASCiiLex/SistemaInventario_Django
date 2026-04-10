@@ -5,9 +5,32 @@ from django.utils import timezone
 from django.db import connection
 
 import logging
+import time
 
 logger = logging.getLogger("inventory.domain")
 metrics = logging.getLogger("inventory.metrics")
+
+# ==========================================
+# 🔥 PROMETHEUS METRICS (READY)
+# ==========================================
+from prometheus_client import Counter, Histogram
+
+stock_movements_total = Counter(
+    "stock_movements_total",
+    "Total de movimientos de stock",
+    ["type"]
+)
+
+stock_errors_total = Counter(
+    "stock_errors_total",
+    "Errores en movimientos de stock",
+    ["type"]
+)
+
+stock_execution_time = Histogram(
+    "stock_execution_seconds",
+    "Tiempo de ejecución de movimientos de stock"
+)
 
 
 class StockDomainService:
@@ -16,6 +39,8 @@ class StockDomainService:
     def execute(movement, user=None):
 
         from inventory.models.stock import StockItem
+
+        start_time = time.time()
 
         logger.info("stock.execute.start", extra={
             "product_id": movement.product_id,
@@ -83,12 +108,16 @@ class StockDomainService:
                 "error": str(e),
             })
 
+            stock_errors_total.labels(type=movement.movement_type).inc()
+
             raise
 
         except IntegrityError:
             logger.exception("stock.integrity.error")
 
             metrics.error("stock.integrity.error")
+
+            stock_errors_total.labels(type=movement.movement_type).inc()
 
             if movement.idempotency_key:
                 return movement.__class__.objects.get(
@@ -99,9 +128,15 @@ class StockDomainService:
 
         transaction.on_commit(lambda: StockDomainService._post_commit(movement, user))
 
+        duration = time.time() - start_time
+
+        stock_movements_total.labels(type=movement.movement_type).inc()
+        stock_execution_time.observe(duration)
+
         logger.info("stock.execute.success", extra={
             "movement_id": movement.id,
             "product_id": movement.product_id,
+            "duration": duration,
         })
 
         metrics.info("stock.movement.success", extra={
@@ -134,6 +169,8 @@ class StockDomainService:
             })
 
             metrics.error("stock.not_found")
+
+            stock_errors_total.labels(type="not_found").inc()
 
             raise ValidationError("Stock no existente para la operación.")
 
@@ -195,6 +232,8 @@ class StockDomainService:
                     "requested": movement.quantity
                 })
 
+                stock_errors_total.labels(type="insufficient").inc()
+
                 raise ValidationError("Stock insuficiente.")
 
             item.quantity -= movement.quantity
@@ -217,6 +256,8 @@ class StockDomainService:
                 "product_id": movement.product_id,
                 "total": total
             })
+
+            stock_errors_total.labels(type="global_negative").inc()
 
             raise ValidationError("Inconsistencia detectada: stock total negativo.")
 
