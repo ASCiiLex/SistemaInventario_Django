@@ -1,6 +1,7 @@
 from django.core.cache import cache
 from prometheus_client import REGISTRY
 import logging
+import time
 
 metrics_logger = logging.getLogger("inventory.metrics")
 
@@ -95,23 +96,47 @@ def _get_top_endpoints():
 
 
 # ==========================================
+# 🔥 RATE CALCULATION (RPS)
+# ==========================================
+
+def _calculate_rate(metric_name, cache_key):
+    current = int(_sum_samples(_collect_metric(metric_name)))
+    now = time.time()
+
+    prev = cache.get(cache_key)
+
+    if not prev:
+        cache.set(cache_key, {"value": current, "ts": now}, 60)
+        return 0
+
+    delta_value = current - prev["value"]
+    delta_time = now - prev["ts"]
+
+    rate = (delta_value / delta_time) if delta_time > 0 else 0
+
+    cache.set(cache_key, {"value": current, "ts": now}, 60)
+
+    return round(rate, 2)
+
+
+# ==========================================
 # 🔥 ALERTING INTERNO
 # ==========================================
 
 def _evaluate_alerts(metrics):
     alerts = []
 
-    # 🔴 errores altos
     if metrics["errors"] > 10:
         alerts.append({"level": "critical", "msg": "Demasiados errores"})
 
-    # 🟠 latencia alta
     if metrics["p95_latency"] > 1:
         alerts.append({"level": "warning", "msg": "Latencia elevada"})
 
-    # 🟡 sin tráfico
     if metrics["requests"] == 0:
         alerts.append({"level": "warning", "msg": "Sin tráfico detectado"})
+
+    if metrics["rps"] > 50:
+        alerts.append({"level": "warning", "msg": "Alta carga de tráfico"})
 
     return alerts
 
@@ -131,6 +156,9 @@ def _calculate_health_score(metrics):
 
     if metrics["requests"] == 0:
         score -= 30
+
+    if metrics["rps"] > 50:
+        score -= 10
 
     return max(score, 0)
 
@@ -154,6 +182,11 @@ def get_system_metrics(organization):
 
     top_endpoints = _get_top_endpoints()
 
+    # 🔥 rates
+    rps = _calculate_rate("http_requests", "metrics:rps")
+    eps = _calculate_rate("errors", "metrics:eps")
+    evps = _calculate_rate("domain_events", "metrics:evps")
+
     base_metrics = {
         "requests": total_requests,
         "errors": total_errors,
@@ -161,6 +194,9 @@ def get_system_metrics(organization):
         "avg_latency": avg_latency,
         "p95_latency": p95_latency,
         "top_endpoints": top_endpoints,
+        "rps": rps,
+        "eps": eps,
+        "evps": evps,
     }
 
     alerts = _evaluate_alerts(base_metrics)
