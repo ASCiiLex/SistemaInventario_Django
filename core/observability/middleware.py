@@ -3,9 +3,10 @@ import uuid
 from django.utils.deprecation import MiddlewareMixin
 from django.urls import resolve
 from django.db import connection
+from django.core.cache import cache
 
 from .metrics import http_requests_total, http_request_duration_seconds, errors_total
-from .tracing import set_trace_id, clear_trace, trace_db_query
+from .tracing import set_trace_id, clear_trace, trace_db_query, get_trace_stats
 
 
 class ObservabilityMiddleware(MiddlewareMixin):
@@ -18,7 +19,6 @@ class ObservabilityMiddleware(MiddlewareMixin):
 
         set_trace_id(trace_id)
 
-        # 🔥 activar wrapper de DB
         connection.execute_wrapper(trace_db_query)
 
     def process_response(self, request, response):
@@ -46,6 +46,32 @@ class ObservabilityMiddleware(MiddlewareMixin):
             method=method,
             endpoint=endpoint
         ).observe(duration)
+
+        # 🔥 TRACE SUMMARY
+        stats = get_trace_stats()
+
+        trace_summary = {
+            "trace_id": getattr(request, "trace_id", ""),
+            "endpoint": endpoint,
+            "status": status,
+            "total_time": round(duration, 4),
+            "db_time": round(stats["db_time"], 4),
+            "db_queries": stats["db_queries"],
+            "slow_queries": stats["slow_queries"],
+        }
+
+        import logging
+        logger = logging.getLogger("inventory.domain")
+        logger.info("trace.summary", extra=trace_summary)
+
+        # 🔥 TOP SLOW REQUESTS (cache)
+        cache_key = "observability:slow_requests"
+        slow_requests = cache.get(cache_key, [])
+
+        slow_requests.append(trace_summary)
+        slow_requests = sorted(slow_requests, key=lambda x: x["total_time"], reverse=True)[:10]
+
+        cache.set(cache_key, slow_requests, 60)
 
         response["X-Request-ID"] = getattr(request, "trace_id", "")
 
