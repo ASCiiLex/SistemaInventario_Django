@@ -10,22 +10,9 @@ import time
 logger = logging.getLogger("inventory.domain")
 metrics = logging.getLogger("inventory.metrics")
 
-# ==========================================
-# 🔥 PROMETHEUS METRICS (READY)
-# ==========================================
-from prometheus_client import Counter, Histogram
-
-stock_movements_total = Counter(
-    "stock_movements_total",
-    "Total de movimientos de stock",
-    ["type"]
-)
-
-stock_errors_total = Counter(
-    "stock_errors_total",
-    "Errores en movimientos de stock",
-    ["type"]
-)
+# 🔥 OBSERVABILIDAD CENTRALIZADA
+from core.observability.metrics import domain_events_total, errors_total
+from prometheus_client import Histogram
 
 stock_execution_time = Histogram(
     "stock_execution_seconds",
@@ -49,11 +36,6 @@ class StockDomainService:
             "qty": movement.quantity,
         })
 
-        metrics.info("stock.movement.attempt", extra={
-            "type": movement.movement_type,
-            "qty": movement.quantity,
-        })
-
         if not movement.organization and movement.product:
             movement.organization = movement.product.organization
 
@@ -68,11 +50,6 @@ class StockDomainService:
                     "movement_id": existing.id,
                     "key": movement.idempotency_key
                 })
-
-                metrics.info("stock.idempotent.hit", extra={
-                    "movement_id": existing.id
-                })
-
                 return existing
 
         try:
@@ -97,27 +74,20 @@ class StockDomainService:
                 StockDomainService._validate_global_stock(movement, StockItem)
 
         except ValidationError as e:
+            errors_total.labels(type="validation_error").inc()
+
             logger.warning("stock.validation.error", extra={
                 "errors": str(e),
                 "product_id": movement.product_id,
                 "type": movement.movement_type,
             })
 
-            metrics.warning("stock.movement.failed", extra={
-                "type": movement.movement_type,
-                "error": str(e),
-            })
-
-            stock_errors_total.labels(type=movement.movement_type).inc()
-
             raise
 
         except IntegrityError:
+            errors_total.labels(type="integrity_error").inc()
+
             logger.exception("stock.integrity.error")
-
-            metrics.error("stock.integrity.error")
-
-            stock_errors_total.labels(type=movement.movement_type).inc()
 
             if movement.idempotency_key:
                 return movement.__class__.objects.get(
@@ -130,18 +100,17 @@ class StockDomainService:
 
         duration = time.time() - start_time
 
-        stock_movements_total.labels(type=movement.movement_type).inc()
+        # 🔥 MÉTRICA DE DOMINIO REAL
+        domain_events_total.labels(
+            event_type=f"stock:{movement.movement_type.lower()}"
+        ).inc()
+
         stock_execution_time.observe(duration)
 
         logger.info("stock.execute.success", extra={
             "movement_id": movement.id,
             "product_id": movement.product_id,
             "duration": duration,
-        })
-
-        metrics.info("stock.movement.success", extra={
-            "type": movement.movement_type,
-            "qty": movement.quantity,
         })
 
         return movement
@@ -163,15 +132,7 @@ class StockDomainService:
                 location=location,
             )
         except StockItem.DoesNotExist:
-            logger.error("stock.not_found", extra={
-                "location_id": getattr(location, "id", None),
-                "product_id": movement.product_id
-            })
-
-            metrics.error("stock.not_found")
-
-            stock_errors_total.labels(type="not_found").inc()
-
+            errors_total.labels(type="stock_not_found").inc()
             raise ValidationError("Stock no existente para la operación.")
 
     @staticmethod
@@ -201,11 +162,6 @@ class StockDomainService:
 
         StockDomainService._validate_business_rules(movement)
 
-        logger.info("stock.apply.start", extra={
-            "type": movement.movement_type,
-            "qty": movement.quantity
-        })
-
         if movement.movement_type == "IN":
 
             item = StockDomainService._get_or_create_stock_for_update(
@@ -222,18 +178,7 @@ class StockDomainService:
             )
 
             if item.quantity < movement.quantity:
-                logger.warning("stock.insufficient", extra={
-                    "available": item.quantity,
-                    "requested": movement.quantity
-                })
-
-                metrics.warning("stock.insufficient", extra={
-                    "available": item.quantity,
-                    "requested": movement.quantity
-                })
-
-                stock_errors_total.labels(type="insufficient").inc()
-
+                errors_total.labels(type="insufficient_stock").inc()
                 raise ValidationError("Stock insuficiente.")
 
             item.quantity -= movement.quantity
@@ -247,18 +192,7 @@ class StockDomainService:
         ).aggregate(total=Sum("quantity"))["total"] or 0
 
         if total < 0:
-            logger.critical("stock.global.negative", extra={
-                "product_id": movement.product_id,
-                "total": total
-            })
-
-            metrics.critical("stock.global.negative", extra={
-                "product_id": movement.product_id,
-                "total": total
-            })
-
-            stock_errors_total.labels(type="global_negative").inc()
-
+            errors_total.labels(type="global_negative_stock").inc()
             raise ValidationError("Inconsistencia detectada: stock total negativo.")
 
     @staticmethod
@@ -268,15 +202,6 @@ class StockDomainService:
         from notifications.constants import Events
         from inventory.services.stock_alerts import sync_all_notifications
 
-        logger.info("stock.post_commit", extra={
-            "movement_id": movement.id
-        })
-
-        metrics.info("stock.movement.committed", extra={
-            "movement_id": movement.id
-        })
-
-        # 🔥 EVENTO PRINCIPAL
         emit_event(
             Events.MOVEMENT_CREATED,
             {
@@ -284,7 +209,6 @@ class StockDomainService:
             }
         )
 
-        # 🔥 EVENTO CONSISTENTE PARA DASHBOARD
         emit_event(
             Events.STOCK_CHANGED,
             {
@@ -292,5 +216,4 @@ class StockDomainService:
             }
         )
 
-        # 🔥 NOTIFICACIONES + INVALIDACIÓN
         sync_all_notifications(movement.organization)
