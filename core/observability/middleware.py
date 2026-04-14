@@ -5,6 +5,8 @@ from django.urls import resolve
 from django.db import connection
 from django.core.cache import cache
 
+from core.security.errors import safe_log_error
+
 from .metrics import http_requests_total, http_request_duration_seconds, errors_total
 from .tracing import set_trace_id, clear_trace, trace_db_query, get_trace_stats
 
@@ -81,4 +83,11 @@ class ObservabilityMiddleware(MiddlewareMixin):
 
     def process_exception(self, request, exception):
         errors_total.labels(type=exception.__class__.__name__).inc()
+
+        safe_log_error(
+            error_type=exception.__class__.__name__,
+            message=str(exception),
+            context=request.path
+        )
+
         return None
