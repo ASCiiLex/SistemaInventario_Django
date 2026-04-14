@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 
 from .rate_limit import RateLimiter
+from .timeout import TimeoutException
 
 
 class RateLimitMiddleware:
@@ -8,9 +9,7 @@ class RateLimitMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
-        # 🔥 reglas
         self.rules = [
-            # (prefix, methods, limit, window)
             ("POST:/inventory/stock", ["POST"], 10, 10),
             ("POST:/inventory/", ["POST"], 20, 10),
             ("GET:/dashboard", ["GET"], 60, 10),
@@ -31,7 +30,15 @@ class RateLimitMiddleware:
                         status=429
                     )
 
-        return self.get_response(request)
+        try:
+            response = self.get_response(request)
+            return response
+
+        except TimeoutException:
+            return JsonResponse(
+                {"error": "Request timeout"},
+                status=504
+            )
 
     def _get_identifier(self, request):
         if request.user.is_authenticated:
