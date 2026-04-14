@@ -47,12 +47,16 @@ def import_stock_view(request):
 
 def import_stock_confirm_view(request):
     validated_rows = request.session.get("import_validated")
+    errors = request.session.get("import_errors", [])
 
     if not validated_rows:
         messages.error(request, "No hay datos válidos para importar.")
         return redirect("import_stock")
 
-    # reconstrucción segura (sin confiar en sesión completamente)
+    if errors:
+        messages.error(request, "No se puede importar: existen errores en el CSV.")
+        return redirect("import_stock")
+
     from products.models import Product
     from inventory.models import Location
 
@@ -83,8 +87,15 @@ def import_stock_confirm_view(request):
         request.user,
         "IMPORT",
         None,
-        {"rows_processed": processed},
+        {
+            "rows_processed": processed,
+            "rows_total": len(validated_rows),
+        },
+        organization=request.organization,
     )
+
+    request.session.pop("import_validated", None)
+    request.session.pop("import_errors", None)
 
     messages.success(
         request,

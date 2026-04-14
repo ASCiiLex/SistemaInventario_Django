@@ -1,7 +1,8 @@
 import csv
 from io import TextIOWrapper
 
+
 def read_csv(file):
-    wrapper = TextIOWrapper(file, encoding="utf-8")
+    wrapper = TextIOWrapper(file, encoding="utf-8-sig")
     reader = csv.DictReader(wrapper)
     return list(reader)
