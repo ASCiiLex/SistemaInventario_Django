@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid mt-3">
+
+    <h4 class="mb-3">🔎 Observabilidad - Slow Requests</h4>
+
+    <div class="card">
+        <div class="card-body">
+
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Método</th>
+                        <th>Status</th>
+                        <th>Total</th>
+                        <th>DB</th>
+                        <th>Queries</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in slow_requests %}
+                    <tr class="{% if req.total_time > 1 %}table-danger{% elif req.total_time > 0.5 %}table-warning{% endif %}">
+                        <td>
+                            {{ req.endpoint }}<br>
+                            <small class="text-muted">{{ req.trace_id }}</small>
+                        </td>
+                        <td>{{ req.method }}</td>
+                        <td>{{ req.status }}</td>
+                        <td>{{ req.total_time }}s</td>
+                        <td>{{ req.db_time }}s</td>
+                        <td>{{ req.db_queries }}</td>
+                        <td>{{ req.created_at }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7">Sin datos</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
