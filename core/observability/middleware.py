@@ -1,5 +1,7 @@
 import time
 from django.utils.deprecation import MiddlewareMixin
+from django.urls import resolve
+
 from .metrics import http_requests_total, http_request_duration_seconds, errors_total
 
 
@@ -15,18 +17,23 @@ class ObservabilityMiddleware(MiddlewareMixin):
         duration = time.time() - request._start_time
 
         method = request.method
-        path = request.path
         status = response.status_code
+
+        try:
+            match = resolve(request.path)
+            endpoint = match.route or match.url_name or request.path
+        except Exception:
+            endpoint = request.path
 
         http_requests_total.labels(
             method=method,
-            endpoint=path,
+            endpoint=endpoint,
             status=status
         ).inc()
 
         http_request_duration_seconds.labels(
             method=method,
-            endpoint=path
+            endpoint=endpoint
         ).observe(duration)
 
         return response

@@ -1,6 +1,6 @@
 <div class="row g-3">
 
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card text-bg-dark">
             <div class="card-body text-center">
                 <h6>Requests</h6>
@@ -9,7 +9,7 @@
         </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card text-bg-danger">
             <div class="card-body text-center">
                 <h6>Errores</h6>
@@ -18,11 +18,20 @@
         </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card text-bg-info">
             <div class="card-body text-center">
                 <h6>Eventos</h6>
                 <p class="fs-4">{{ events }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-bg-warning">
+            <div class="card-body text-center">
+                <h6>Latencia media</h6>
+                <p class="fs-4">{{ avg_latency }}s</p>
             </div>
         </div>
     </div>
