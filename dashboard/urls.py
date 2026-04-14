@@ -1,17 +1,18 @@
 from django.urls import path
 
-from .views.main import dashboard_view
-from .views.metrics import dashboard_totals, dashboard_low_stock, dashboard_system_metrics
-from .views import observability
-from .views.charts import dashboard_chart, dashboard_chart_data
-from .views.activity import (
-    dashboard_recent_movements,
-    dashboard_recent_stock_movements,
-)
-from .views.notifications import (
+from .views import (
+    dashboard_view,
+    dashboard_totals,
+    dashboard_low_stock,
+    dashboard_system_metrics,
     dashboard_notifications_recent,
     dashboard_notifications_summary,
+    dashboard_recent_movements,
+    dashboard_recent_stock_movements,
+    dashboard_chart,
+    dashboard_chart_data,
 )
+from .views import observability
 
 urlpatterns = [
     path("", dashboard_view, name="dashboard"),

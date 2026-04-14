@@ -34,7 +34,6 @@ class RateLimitMiddleware:
         try:
             response = self.get_response(request)
 
-            # 🔥 chequeo de cache al final de request
             SafeCache.enforce_limits()
 
             return response
@@ -46,8 +45,11 @@ class RateLimitMiddleware:
             )
 
     def _get_identifier(self, request):
-        if request.user.is_authenticated:
-            return f"user:{request.user.id}"
+        user = getattr(request, "user", None)
+
+        if user and user.is_authenticated:
+            return f"user:{user.id}"
+
         return f"ip:{self._get_ip(request)}"
 
     def _get_ip(self, request):
