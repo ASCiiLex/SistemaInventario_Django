@@ -9,6 +9,9 @@ from .utils import group_notifications_by_product, user_qs, has_unread
 def _get_panel_notifications(request):
     qs = user_qs(request)
 
+    # 🔥 SOLO NOTIFICACIONES ACTIVAS (NO LEÍDAS)
+    qs = qs.filter(seen=False)
+
     q = request.GET.get("q", "").strip()
     if q:
         qs = qs.filter(notification__message__icontains=q)
