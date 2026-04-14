@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.observability.middleware.ObservabilityMiddleware',
 
     # 🔐 LOGIN GLOBAL
     'accounts.middleware.LoginRequiredMiddleware',

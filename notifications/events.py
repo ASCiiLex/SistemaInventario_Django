@@ -1,4 +1,5 @@
 from collections import defaultdict
+from core.observability.events import track_event
 
 
 class EventBus:
@@ -17,6 +18,9 @@ class EventBus:
             self._listeners[event_type].append(handler)
 
     def emit(self, event_type: str, payload: dict):
+        # 🔥 Observabilidad automática
+        track_event(event_type)
+
         handlers = self._listeners.get(event_type, [])
 
         for handler in handlers:
