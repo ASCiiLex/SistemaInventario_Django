@@ -53,18 +53,19 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+
+    'core.security.middleware.RateLimitMiddleware',
+
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'core.observability.middleware.ObservabilityMiddleware',
 
-    # 🔐 LOGIN GLOBAL
     'accounts.middleware.LoginRequiredMiddleware',
     'organizations.middleware.OrganizationMiddleware',
 
     "inventory.middleware.audit_middleware.AuditUserMiddleware",
-
 
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
