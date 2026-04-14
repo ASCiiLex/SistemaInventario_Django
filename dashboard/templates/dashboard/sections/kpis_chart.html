@@ -34,21 +34,4 @@
         </div>
     </div>
 
-    <div class="col-12 mt-2">
-        <div class="card card-section" data-section="system-metrics">
-            <div class="card-header section-header bg-dark text-white">
-                <span>Métricas del Sistema</span>
-                <span class="toggle-arrow arrow-up"></span>
-            </div>
-
-            <div class="card-body section-content"
-                hx-get="{% url 'dashboard_system_metrics' %}"
-                hx-trigger="load, inventory:stock_changed from:body"
-                hx-target="this"
-                hx-swap="innerHTML">
-            </div>
-            
-        </div>
-    </div>
-
 </div>
