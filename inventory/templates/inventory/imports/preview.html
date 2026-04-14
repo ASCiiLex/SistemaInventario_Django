@@ -3,6 +3,24 @@
 {% block content %}
 <h2 class="mb-4">Previsualización del archivo</h2>
 
+<div class="mb-3">
+    <span class="badge bg-success">✔ {{ valid_count }} válidas</span>
+    <span class="badge bg-danger">✖ {{ error_count }} con errores</span>
+</div>
+
+{% if errors %}
+<div class="alert alert-danger">
+    <strong>Errores detectados:</strong>
+    <ul class="mb-0">
+        {% for err in errors %}
+            <li>Fila {{ err.row }}:
+                {{ err.errors|join:", " }}
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 <div class="card shadow-sm mb-4">
     <div class="card-body p-0">
         <table class="table table-striped table-hover mb-0">
@@ -29,7 +47,10 @@
 
 <form method="post" action="{% url 'import_stock_confirm' %}">
     {% csrf_token %}
-    <button class="btn btn-success">Confirmar importación</button>
+    <button class="btn btn-success" {% if error_count > 0 %}disabled{% endif %}>
+        Confirmar importación
+    </button>
     <a href="{% url 'import_stock' %}" class="btn btn-secondary">Cancelar</a>
 </form>
+
 {% endblock %}
