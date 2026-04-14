@@ -236,14 +236,16 @@ from datetime import datetime
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
+        from core.observability.tracing import get_trace_id
+
         log_record = {
             "timestamp": datetime.utcnow().isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
+            "trace_id": get_trace_id(),  # 🔥 añadido
         }
 
-        # 🔥 CONTEXTO EXTRA
         if hasattr(record, "product_id"):
             log_record["product_id"] = record.product_id
         if hasattr(record, "org_id"):

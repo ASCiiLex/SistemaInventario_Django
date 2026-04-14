@@ -1,14 +1,21 @@
 import time
+import uuid
 from django.utils.deprecation import MiddlewareMixin
 from django.urls import resolve
 
 from .metrics import http_requests_total, http_request_duration_seconds, errors_total
+from .tracing import set_trace_id, clear_trace
 
 
 class ObservabilityMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         request._start_time = time.time()
+
+        trace_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+        request.trace_id = trace_id
+
+        set_trace_id(trace_id)
 
     def process_response(self, request, response):
         if not hasattr(request, "_start_time"):
@@ -35,6 +42,11 @@ class ObservabilityMiddleware(MiddlewareMixin):
             method=method,
             endpoint=endpoint
         ).observe(duration)
+
+        # 🔥 devolver trace_id al cliente
+        response["X-Request-ID"] = getattr(request, "trace_id", "")
+
+        clear_trace()
 
         return response
 
