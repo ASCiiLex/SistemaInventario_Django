@@ -89,10 +89,50 @@ def _get_top_endpoints():
             "hits": int(count),
         })
 
-    # 🔥 ordenar por latencia (peores primero)
     results.sort(key=lambda x: x["avg_latency"], reverse=True)
 
     return results[:5]
+
+
+# ==========================================
+# 🔥 ALERTING INTERNO
+# ==========================================
+
+def _evaluate_alerts(metrics):
+    alerts = []
+
+    # 🔴 errores altos
+    if metrics["errors"] > 10:
+        alerts.append({"level": "critical", "msg": "Demasiados errores"})
+
+    # 🟠 latencia alta
+    if metrics["p95_latency"] > 1:
+        alerts.append({"level": "warning", "msg": "Latencia elevada"})
+
+    # 🟡 sin tráfico
+    if metrics["requests"] == 0:
+        alerts.append({"level": "warning", "msg": "Sin tráfico detectado"})
+
+    return alerts
+
+
+def _calculate_health_score(metrics):
+    score = 100
+
+    if metrics["errors"] > 10:
+        score -= 40
+    elif metrics["errors"] > 0:
+        score -= 20
+
+    if metrics["p95_latency"] > 1:
+        score -= 30
+    elif metrics["p95_latency"] > 0.5:
+        score -= 10
+
+    if metrics["requests"] == 0:
+        score -= 30
+
+    return max(score, 0)
 
 
 def get_system_metrics(organization):
@@ -114,13 +154,22 @@ def get_system_metrics(organization):
 
     top_endpoints = _get_top_endpoints()
 
-    result = {
+    base_metrics = {
         "requests": total_requests,
         "errors": total_errors,
         "events": total_events,
         "avg_latency": avg_latency,
         "p95_latency": p95_latency,
         "top_endpoints": top_endpoints,
+    }
+
+    alerts = _evaluate_alerts(base_metrics)
+    health_score = _calculate_health_score(base_metrics)
+
+    result = {
+        **base_metrics,
+        "alerts": alerts,
+        "health_score": health_score,
     }
 
     cache.set(cache_key, result, 5)

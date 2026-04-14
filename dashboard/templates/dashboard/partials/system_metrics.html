@@ -39,6 +39,41 @@
 </div>
 
 <div class="row mt-3">
+    <div class="col-md-4">
+        <div class="card text-bg-success">
+            <div class="card-body text-center">
+                <h6>Health Score</h6>
+                <p class="fs-4">{{ health_score }}/100</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h6>Alertas</h6>
+                <ul class="mb-0">
+                    {% for alert in alerts %}
+                        <li>
+                            {% if alert.level == "critical" %}
+                                🔴
+                            {% elif alert.level == "warning" %}
+                                🟠
+                            {% else %}
+                                🟢
+                            {% endif %}
+                            {{ alert.msg }}
+                        </li>
+                    {% empty %}
+                        <li>🟢 Sistema estable</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
     <div class="col-12">
         <div class="card">
             <div class="card-body">
