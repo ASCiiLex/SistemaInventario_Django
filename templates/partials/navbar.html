@@ -44,6 +44,13 @@
                         <li><a class="dropdown-item" href="{% url 'location_list' %}">Almacenes</a></li>
                         <li><a class="dropdown-item" href="{% url 'order_list' %}">Pedidos</a></li>
 
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-primary fw-semibold" href="{% url 'import_stock' %}">
+                                ⬆️ Importar stock (CSV)
+                            </a>
+                        </li>
+
                         {% if perm.view_audit %}
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'audit_list' %}">Auditoría</a></li>
