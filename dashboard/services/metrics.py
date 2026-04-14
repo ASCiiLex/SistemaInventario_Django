@@ -34,6 +34,67 @@ def _get_histogram_avg(metric_name):
     return round(sum_value / count_value, 4)
 
 
+def _get_histogram_p95(metric_name):
+    samples = _collect_metric(metric_name)
+
+    buckets = {}
+
+    for s in samples:
+        if "_bucket" in s.name:
+            le = float(s.labels.get("le", 0))
+            buckets[le] = buckets.get(le, 0) + s.value
+
+    if not buckets:
+        return 0
+
+    sorted_buckets = sorted(buckets.items())
+    total = sorted_buckets[-1][1]
+
+    if total == 0:
+        return 0
+
+    target = total * 0.95
+
+    for le, value in sorted_buckets:
+        if value >= target:
+            return le
+
+    return sorted_buckets[-1][0]
+
+
+def _get_top_endpoints():
+    samples = _collect_metric("http_request_duration_seconds")
+
+    endpoint_times = {}
+    endpoint_counts = {}
+
+    for s in samples:
+        if s.name.endswith("_sum"):
+            endpoint = s.labels.get("endpoint", "unknown")
+            endpoint_times[endpoint] = endpoint_times.get(endpoint, 0) + s.value
+
+        elif s.name.endswith("_count"):
+            endpoint = s.labels.get("endpoint", "unknown")
+            endpoint_counts[endpoint] = endpoint_counts.get(endpoint, 0) + s.value
+
+    results = []
+
+    for endpoint in endpoint_times:
+        count = endpoint_counts.get(endpoint, 1)
+        avg = endpoint_times[endpoint] / count if count else 0
+
+        results.append({
+            "endpoint": endpoint,
+            "avg_latency": round(avg, 4),
+            "hits": int(count),
+        })
+
+    # 🔥 ordenar por latencia (peores primero)
+    results.sort(key=lambda x: x["avg_latency"], reverse=True)
+
+    return results[:5]
+
+
 def get_system_metrics(organization):
     cache_key = f"dashboard:system_metrics:{organization.id}"
     cached = cache.get(cache_key)
@@ -49,12 +110,17 @@ def get_system_metrics(organization):
     total_events = int(_sum_samples(events_samples))
 
     avg_latency = _get_histogram_avg("http_request_duration_seconds")
+    p95_latency = _get_histogram_p95("http_request_duration_seconds")
+
+    top_endpoints = _get_top_endpoints()
 
     result = {
         "requests": total_requests,
         "errors": total_errors,
         "events": total_events,
         "avg_latency": avg_latency,
+        "p95_latency": p95_latency,
+        "top_endpoints": top_endpoints,
     }
 
     cache.set(cache_key, result, 5)
