@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views.main import dashboard_view
 from .views.metrics import dashboard_totals, dashboard_low_stock, dashboard_system_metrics
+from .views import observability
 from .views.charts import dashboard_chart, dashboard_chart_data
 from .views.activity import (
     dashboard_recent_movements,
@@ -18,6 +19,7 @@ urlpatterns = [
     path("totales/", dashboard_totals, name="dashboard_totals"),
     path("bajo-minimo/", dashboard_low_stock, name="dashboard_low_stock"),
     path("system-metrics/", dashboard_system_metrics, name="dashboard_system_metrics"),
+    path("observability/slow-requests/", observability.slow_requests_view, name="slow_requests"),
 
     path(
         "notificaciones-resumen/",
