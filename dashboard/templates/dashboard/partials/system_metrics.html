@@ -31,10 +31,11 @@
     </div>
 
     <div class="col-md-3">
-        <div class="card text-bg-warning">
+        <div class="card {% if p95_latency > 1 %}text-bg-danger{% elif p95_latency > 0.5 %}text-bg-warning{% else %}text-bg-success{% endif %}">
             <div class="card-body text-center">
                 <h6>P95 Latencia</h6>
                 <p class="fs-4">{{ p95_latency }}s</p>
+                <small>avg: {{ avg_latency }}s</small>
             </div>
         </div>
     </div>
@@ -43,7 +44,15 @@
 
 <div class="row mt-3">
     <div class="col-md-4">
-        <div class="card text-bg-success">
+        <div class="card 
+            {% if health_score < 50 %}
+                text-bg-danger
+            {% elif health_score < 80 %}
+                text-bg-warning
+            {% else %}
+                text-bg-success
+            {% endif %}
+        ">
             <div class="card-body text-center">
                 <h6>Health Score</h6>
                 <p class="fs-4">{{ health_score }}/100</p>
@@ -57,7 +66,15 @@
                 <h6>Alertas</h6>
                 <ul class="mb-0">
                     {% for alert in alerts %}
-                        <li>
+                        <li class="
+                            {% if alert.level == 'critical' %}
+                                text-danger fw-bold
+                            {% elif alert.level == 'warning' %}
+                                text-warning
+                            {% else %}
+                                text-success
+                            {% endif %}
+                        ">
                             {% if alert.level == "critical" %}
                                 🔴
                             {% elif alert.level == "warning" %}
@@ -68,7 +85,7 @@
                             {{ alert.msg }}
                         </li>
                     {% empty %}
-                        <li>🟢 Sistema estable</li>
+                        <li class="text-success">🟢 Sistema estable</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -77,11 +94,11 @@
 </div>
 
 <div class="row mt-3">
-    <div class="col-12">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-body">
                 <h6>Endpoints más lentos</h6>
-                <table class="table table-sm">
+                <table class="table table-sm align-middle">
                     <thead>
                         <tr>
                             <th>Endpoint</th>
@@ -91,7 +108,7 @@
                     </thead>
                     <tbody>
                         {% for ep in top_endpoints %}
-                        <tr>
+                        <tr class="{% if ep.avg_latency > 1 %}table-danger{% elif ep.avg_latency > 0.5 %}table-warning{% endif %}">
                             <td>{{ ep.endpoint }}</td>
                             <td>{{ ep.avg_latency }}s</td>
                             <td>{{ ep.hits }}</td>
@@ -99,6 +116,41 @@
                         {% empty %}
                         <tr>
                             <td colspan="3">Sin datos</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h6>Slow Requests (Top 10)</h6>
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Total</th>
+                            <th>DB</th>
+                            <th>Queries</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in slow_requests %}
+                        <tr class="{% if req.total_time > 1 %}table-danger{% elif req.total_time > 0.5 %}table-warning{% endif %}">
+                            <td>
+                                {{ req.endpoint }}<br>
+                                <small class="text-muted">{{ req.trace_id }}</small>
+                            </td>
+                            <td>{{ req.total_time }}s</td>
+                            <td>{{ req.db_time }}s</td>
+                            <td>{{ req.db_queries }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4">Sin datos</td>
                         </tr>
                         {% endfor %}
                     </tbody>
