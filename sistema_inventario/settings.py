@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'dashboard',
     'notifications.apps.NotificationsConfig',
     'inventory',
+    'observability',
 
     # WebSockets
     'channels',

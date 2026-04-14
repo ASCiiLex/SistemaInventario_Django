@@ -6,12 +6,15 @@ from django.db import connection
 from django.core.cache import cache
 
 from core.security.errors import safe_log_error
+from observability.models import SlowRequest
 
 from .metrics import http_requests_total, http_request_duration_seconds, errors_total
 from .tracing import set_trace_id, clear_trace, trace_db_query, get_trace_stats
 
 
 class ObservabilityMiddleware(MiddlewareMixin):
+
+    SLOW_REQUEST_THRESHOLD = 0.5  # segundos
 
     def process_request(self, request):
         request._start_time = time.time()
@@ -49,12 +52,12 @@ class ObservabilityMiddleware(MiddlewareMixin):
             endpoint=endpoint
         ).observe(duration)
 
-        # 🔥 TRACE SUMMARY
         stats = get_trace_stats()
 
         trace_summary = {
             "trace_id": getattr(request, "trace_id", ""),
             "endpoint": endpoint,
+            "method": method,
             "status": status,
             "total_time": round(duration, 4),
             "db_time": round(stats["db_time"], 4),
@@ -66,12 +69,24 @@ class ObservabilityMiddleware(MiddlewareMixin):
         logger = logging.getLogger("inventory.domain")
         logger.info("trace.summary", extra=trace_summary)
 
-        # 🔥 TOP SLOW REQUESTS (cache)
+        # ==========================================
+        # 🔥 PERSISTENCIA REAL (DB)
+        # ==========================================
+        if duration >= self.SLOW_REQUEST_THRESHOLD:
+            SlowRequest.objects.create(**trace_summary)
+
+        # ==========================================
+        # 🔥 CACHE (TOP 10 en caliente)
+        # ==========================================
         cache_key = "observability:slow_requests"
         slow_requests = cache.get(cache_key, [])
 
         slow_requests.append(trace_summary)
-        slow_requests = sorted(slow_requests, key=lambda x: x["total_time"], reverse=True)[:10]
+        slow_requests = sorted(
+            slow_requests,
+            key=lambda x: x["total_time"],
+            reverse=True
+        )[:10]
 
         cache.set(cache_key, slow_requests, 60)
 

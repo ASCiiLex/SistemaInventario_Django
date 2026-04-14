@@ -1,9 +1,22 @@
 from django.http import JsonResponse
-from django.core.cache import cache
+from observability.models import SlowRequest
 
 
 def slow_requests_view(request):
-    data = cache.get("observability:slow_requests", [])
+    data = list(
+        SlowRequest.objects
+        .values(
+            "trace_id",
+            "endpoint",
+            "method",
+            "status",
+            "total_time",
+            "db_time",
+            "db_queries",
+            "slow_queries",
+            "created_at",
+        )[:50]
+    )
 
     return JsonResponse({
         "slow_requests": data
