@@ -2,6 +2,7 @@ from django.http import JsonResponse
 
 from .rate_limit import RateLimiter
 from .timeout import TimeoutException
+from .cache_safety import SafeCache
 
 
 class RateLimitMiddleware:
@@ -32,6 +33,10 @@ class RateLimitMiddleware:
 
         try:
             response = self.get_response(request)
+
+            # 🔥 chequeo de cache al final de request
+            SafeCache.enforce_limits()
+
             return response
 
         except TimeoutException:
