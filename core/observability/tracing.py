@@ -1,5 +1,4 @@
 import time
-import uuid
 import threading
 from contextlib import contextmanager
 
@@ -39,7 +38,6 @@ def trace(span_name: str):
     finally:
         duration = time.time() - start
 
-        # 🔥 logging automático del span
         import logging
         logger = logging.getLogger("inventory.domain")
 
@@ -51,3 +49,37 @@ def trace(span_name: str):
         })
 
         _set_current_span(parent)
+
+
+# ==========================================
+# 🔥 DB TRACE WRAPPER
+# ==========================================
+
+def trace_db_query(execute, sql, params, many, context):
+    from .metrics import (
+        db_query_count_total,
+        db_query_duration_seconds,
+        db_slow_queries_total
+    )
+
+    start = time.time()
+
+    try:
+        return execute(sql, params, many, context)
+    finally:
+        duration = time.time() - start
+
+        db_query_count_total.inc()
+        db_query_duration_seconds.observe(duration)
+
+        if duration > 0.1:  # 🔥 slow query threshold
+            db_slow_queries_total.inc()
+
+            import logging
+            logger = logging.getLogger("inventory.domain")
+
+            logger.warning("db.slow_query", extra={
+                "trace_id": get_trace_id(),
+                "duration": round(duration, 4),
+                "sql": sql[:200],  # evitar logs gigantes
+            })

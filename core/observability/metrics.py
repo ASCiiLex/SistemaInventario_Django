@@ -10,7 +10,6 @@ http_requests_total = Counter(
     ["method", "endpoint", "status"]
 )
 
-# 🔥 buckets optimizados para web apps (P95 útil)
 http_request_duration_seconds = Histogram(
     "http_request_duration_seconds",
     "HTTP request duration in seconds",
@@ -40,4 +39,28 @@ domain_events_total = Counter(
     "domain_events_total",
     "Total domain events emitted",
     ["event_type"]
+)
+
+# ==========================================
+# 🔥 DB METRICS
+# ==========================================
+
+db_query_count_total = Counter(
+    "db_query_count_total",
+    "Total number of DB queries"
+)
+
+db_query_duration_seconds = Histogram(
+    "db_query_duration_seconds",
+    "DB query duration in seconds",
+    buckets=(
+        0.001, 0.005, 0.01, 0.025,
+        0.05, 0.1, 0.25, 0.5,
+        1, 2.5, 5
+    )
+)
+
+db_slow_queries_total = Counter(
+    "db_slow_queries_total",
+    "Total slow DB queries"
 )
