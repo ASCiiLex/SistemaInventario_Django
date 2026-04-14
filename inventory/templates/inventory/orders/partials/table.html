@@ -9,7 +9,7 @@
             {% include "partials/sortable_th.html" with field="status" label="Estado" target="#orders-table" %}
             {% include "partials/sortable_th.html" with field="created_at" label="Creado" target="#orders-table" %}
             {% include "partials/sortable_th.html" with field="id" label="Items" target="#orders-table" %}
-            {% include "partials/sortable_th.html" with field="id" label="Coste total" target="#orders-table" %}
+            <th>Coste total</th>
             <th></th>
         </tr>
     </thead>
@@ -39,7 +39,7 @@
 
             <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
             <td>{{ order.total_items }}</td>
-            <td>{{ order.total_cost }}</td>
+            <td>{{ order.total_cost|floatformat:2 }} €</td>
 
             <td class="text-end">
                 <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-primary">Ver</a>

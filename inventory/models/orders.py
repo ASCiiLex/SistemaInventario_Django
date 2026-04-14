@@ -74,6 +74,12 @@ class Order(models.Model):
         return sum(item.quantity for item in self.items.all())
 
     @property
+    def total_cost(self):
+        return sum(
+            (item.quantity * item.cost_price) for item in self.items.all()
+        )
+
+    @property
     def total_received(self):
         return sum(
             self.movements.filter(movement_type="IN").values_list("quantity", flat=True)
@@ -208,6 +214,10 @@ class OrderItem(models.Model):
         indexes = [
             models.Index(fields=["organization", "order"]),
         ]
+
+    @property
+    def total_cost(self):
+        return self.quantity * self.cost_price
 
     @property
     def received_quantity(self):
