@@ -124,10 +124,10 @@ def order_detail(request, pk):
         "inventory/orders/detail.html",
         {
             "order": order,
-            "can_edit": can_edit_inventory(request.user),
+            "can_edit": can_edit_inventory(request.user) and order.can_edit(),
             "can_confirm": can_confirm_inventory(request.user),
-            "can_receive": order.status in ("sent", "partially_received", "backordered"),
-            "can_cancel": order.status not in ("received", "cancelled"),
+            "can_receive": can_confirm_inventory(request.user) and order.can_receive(),
+            "can_cancel": can_confirm_inventory(request.user) and order.can_cancel(),
         },
     )
 
@@ -140,7 +140,7 @@ def order_detail(request, pk):
 def order_edit(request, pk):
     order = get_object_or_404(Order, pk=pk, organization=request.organization)
 
-    if order.status not in ["pending", "backordered"]:
+    if not order.can_edit():
         messages.error(request, "Este pedido no se puede editar en su estado actual.")
         return redirect("order_detail", pk=pk)
 
@@ -184,7 +184,7 @@ def order_edit(request, pk):
 
 
 # ==========================================
-# SEND (DOMAIN SAFE)
+# SEND
 # ==========================================
 
 @permission_required_custom(can_confirm_inventory)
@@ -201,14 +201,14 @@ def order_send(request, pk):
 
 
 # ==========================================
-# RECEIVE (🔥 PRO + HARDENED)
+# RECEIVE
 # ==========================================
 
 @permission_required_custom(can_confirm_inventory)
 def order_receive(request, pk):
     order = get_object_or_404(Order, pk=pk, organization=request.organization)
 
-    if order.status not in ["sent", "partially_received", "backordered"]:
+    if not order.can_receive():
         messages.error(request, "Este pedido no se puede recibir.")
         return redirect("order_detail", pk=pk)
 
@@ -218,7 +218,6 @@ def order_receive(request, pk):
         for item in order.items.all():
             raw_value = request.POST.get(f"qty_{item.id}", "0")
 
-            # 🔥 HARDENING → evita crash por inputs corruptos
             try:
                 qty = int(raw_value)
             except (TypeError, ValueError):
@@ -235,7 +234,6 @@ def order_receive(request, pk):
             return redirect("order_receive", pk=pk)
 
         try:
-            # 🔥 DOMINIO MANDA
             order.receive_items(request.user, items_data)
 
             messages.success(request, "Recepción procesada correctamente.")
@@ -252,7 +250,7 @@ def order_receive(request, pk):
 
 
 # ==========================================
-# CANCEL (DOMAIN SAFE)
+# CANCEL
 # ==========================================
 
 @permission_required_custom(can_confirm_inventory)
@@ -269,7 +267,7 @@ def order_cancel(request, pk):
 
 
 # ==========================================
-# COUNTER (HTMX)
+# COUNTER
 # ==========================================
 
 def orders_counter(request):

@@ -69,6 +69,10 @@ class Order(models.Model):
     def __str__(self):
         return f"Order #{self.id} - {self.supplier.name if self.supplier else 'N/A'}"
 
+    # ==========================================
+    # PROPERTIES
+    # ==========================================
+
     @property
     def total_items(self):
         return sum(item.quantity for item in self.items.all())
@@ -84,6 +88,30 @@ class Order(models.Model):
         return sum(
             self.movements.filter(movement_type="IN").values_list("quantity", flat=True)
         )
+
+    def has_received_stock(self):
+        return self.total_received > 0
+
+    # ==========================================
+    # DOMAIN RULES
+    # ==========================================
+
+    def can_edit(self):
+        return self.status in ["pending", "backordered"]
+
+    def can_cancel(self):
+        if self.status in ["received", "cancelled"]:
+            return False
+        if self.has_received_stock():
+            return False
+        return True
+
+    def can_receive(self):
+        return self.status in ["sent", "partially_received", "backordered"]
+
+    # ==========================================
+    # ACTIONS
+    # ==========================================
 
     def mark_as_sent(self, user):
         if self.status != "pending":
@@ -104,7 +132,7 @@ class Order(models.Model):
         audit_order_sent(self, user, old_status)
 
     def receive_items(self, user, items_data):
-        if self.status not in ["sent", "partially_received", "backordered"]:
+        if not self.can_receive():
             raise ValidationError("Pedido no receivable.")
 
         if not self.location:
@@ -169,8 +197,10 @@ class Order(models.Model):
         audit_order_received(self, user, old_status)
 
     def mark_as_cancelled(self, user):
-        if self.status in ["received", "cancelled"]:
-            raise ValidationError("No se puede cancelar.")
+        if not self.can_cancel():
+            raise ValidationError(
+                "No se puede cancelar un pedido con stock ya recibido o en estado final."
+            )
 
         logger.warning("order.cancelled", extra={"order_id": self.id})
 
