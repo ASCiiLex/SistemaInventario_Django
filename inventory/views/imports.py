@@ -3,7 +3,7 @@ from django.contrib import messages
 
 from ..forms.imports import StockImportForm
 from ..utils.csv_importer import read_csv
-from ..services.csv_import import validate_rows, execute_import
+from ..services.csv_import import CSVImportValidator, CSVImportExecutor
 
 from inventory.services.audit import log_action
 
@@ -13,20 +13,22 @@ def import_stock_view(request):
         form = StockImportForm(request.POST, request.FILES)
 
         if form.is_valid():
-            csv_file = request.FILES["csv_file"]
-            rows = read_csv(csv_file)
+            rows = read_csv(request.FILES["csv_file"])
 
-            validated, errors = validate_rows(rows, request.organization)
+            validator = CSVImportValidator(request.organization)
+            validated, errors = validator.validate(rows)
 
+            request.session["import_rows"] = rows
             request.session["import_validated"] = [
                 {
-                    "product_id": r["product"].id,
-                    "location_id": r["location"].id,
-                    "quantity": r["quantity"],
+                    "sku": r.sku,
+                    "name": r.name,
+                    "location_id": r.location.id,
+                    "stock_min": r.stock_min,
+                    "stock_current": r.stock_current,
                 }
                 for r in validated
             ]
-
             request.session["import_errors"] = errors
 
             return render(
@@ -49,39 +51,30 @@ def import_stock_confirm_view(request):
     validated_rows = request.session.get("import_validated")
     errors = request.session.get("import_errors", [])
 
-    if not validated_rows:
-        messages.error(request, "No hay datos válidos para importar.")
+    if not validated_rows or errors:
+        messages.error(request, "Importación inválida.")
         return redirect("import_stock")
 
-    if errors:
-        messages.error(request, "No se puede importar: existen errores en el CSV.")
-        return redirect("import_stock")
-
-    from products.models import Product
     from inventory.models import Location
+    from products.models import Product
 
     reconstructed = []
 
     for row in validated_rows:
         try:
-            product = Product.objects.get(
-                id=row["product_id"],
-                organization=request.organization
-            )
             location = Location.objects.get(
                 id=row["location_id"],
                 organization=request.organization
             )
 
-            reconstructed.append({
-                "product": product,
-                "location": location,
-                "quantity": row["quantity"],
-            })
+            reconstructed.append(row | {"location": location})
         except Exception:
             continue
 
-    processed = execute_import(reconstructed, request.organization)
+    executor = CSVImportExecutor(request.organization, request.user)
+    processed = executor.execute([
+        type("Row", (), r) for r in reconstructed
+    ])
 
     log_action(
         request.user,
@@ -97,9 +90,5 @@ def import_stock_confirm_view(request):
     request.session.pop("import_validated", None)
     request.session.pop("import_errors", None)
 
-    messages.success(
-        request,
-        f"Importación completada. {processed} filas procesadas."
-    )
-
+    messages.success(request, f"{processed} filas importadas.")
     return redirect("import_stock")
