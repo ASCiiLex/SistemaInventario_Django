@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Tuple, Dict, Any
+from typing import List, Dict, Any
 
 from django.db import transaction
 
@@ -22,20 +22,7 @@ class CSVImportValidator:
 
     def __init__(self, organization):
         self.organization = organization
-        self._sku_cache = {}
         self._location_cache = {}
-
-    def _get_product(self, sku: str):
-        if sku in self._sku_cache:
-            return self._sku_cache[sku]
-
-        product = Product.objects.filter(
-            sku=sku,
-            organization=self.organization
-        ).first()
-
-        self._sku_cache[sku] = product
-        return product
 
     def _get_location(self, name: str):
         if name in self._location_cache:
@@ -74,11 +61,7 @@ class CSVImportValidator:
         except Exception:
             stock_min = 0
 
-        sku = row["sku"]
-        name = row["name"]
         location_name = row["location"]
-
-        product = self._get_product(sku)
         location = self._get_location(location_name)
 
         if not location:
@@ -88,8 +71,8 @@ class CSVImportValidator:
             return None, errors
 
         return NormalizedRow(
-            sku=sku,
-            name=name,
+            sku=row["sku"],
+            name=row["name"],
             location=location,
             stock_min=stock_min,
             stock_current=stock_current,
@@ -99,7 +82,7 @@ class CSVImportValidator:
         validated = []
         errors = []
 
-        seen_skus = set()
+        seen = set()
 
         for idx, row in enumerate(rows, start=1):
             normalized, row_errors = self.validate_row(row, idx)
@@ -113,7 +96,7 @@ class CSVImportValidator:
                 continue
 
             key = (normalized.sku, normalized.location.id)
-            if key in seen_skus:
+            if key in seen:
                 errors.append({
                     "row": idx,
                     "errors": ["Duplicado en CSV"],
@@ -121,7 +104,7 @@ class CSVImportValidator:
                 })
                 continue
 
-            seen_skus.add(key)
+            seen.add(key)
             validated.append(normalized)
 
         return validated, errors
@@ -132,6 +115,9 @@ class CSVImportExecutor:
     def __init__(self, organization, user):
         self.organization = organization
         self.user = user
+
+    def _generate_idempotency_key(self, row: NormalizedRow):
+        return f"csv:{self.organization.id}:{row.sku}:{row.location.id}:{row.stock_current}"
 
     def _upsert_product(self, row: NormalizedRow):
         product, _ = Product.objects.update_or_create(
@@ -144,7 +130,7 @@ class CSVImportExecutor:
         )
         return product
 
-    def _apply_stock(self, product, location, target_quantity):
+    def _apply_stock(self, product, location, target_quantity, row: NormalizedRow):
         from inventory.models import StockItem
 
         stock = StockItem.objects.filter(
@@ -159,6 +145,8 @@ class CSVImportExecutor:
         if delta == 0:
             return
 
+        idempotency_key = self._generate_idempotency_key(row)
+
         if delta > 0:
             StockMovement.objects.create(
                 organization=self.organization,
@@ -167,7 +155,8 @@ class CSVImportExecutor:
                 source_type="manual",
                 destination=location,
                 quantity=delta,
-                note="CSV import adjustment"
+                note="CSV import adjustment",
+                idempotency_key=idempotency_key
             )
         else:
             StockMovement.objects.create(
@@ -177,7 +166,8 @@ class CSVImportExecutor:
                 source_type="manual",
                 origin=location,
                 quantity=abs(delta),
-                note="CSV import adjustment"
+                note="CSV import adjustment",
+                idempotency_key=idempotency_key
             )
 
     @transaction.atomic
@@ -186,7 +176,7 @@ class CSVImportExecutor:
 
         for row in rows:
             product = self._upsert_product(row)
-            self._apply_stock(product, row.location, row.stock_current)
+            self._apply_stock(product, row.location, row.stock_current, row)
             processed += 1
 
         return processed

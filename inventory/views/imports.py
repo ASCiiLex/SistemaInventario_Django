@@ -3,7 +3,7 @@ from django.contrib import messages
 
 from ..forms.imports import StockImportForm
 from ..utils.csv_importer import read_csv
-from ..services.csv_import import CSVImportValidator, CSVImportExecutor
+from ..services.csv_import import CSVImportValidator, CSVImportExecutor, NormalizedRow
 
 from inventory.services.audit import log_action
 
@@ -18,7 +18,6 @@ def import_stock_view(request):
             validator = CSVImportValidator(request.organization)
             validated, errors = validator.validate(rows)
 
-            request.session["import_rows"] = rows
             request.session["import_validated"] = [
                 {
                     "sku": r.sku,
@@ -56,7 +55,6 @@ def import_stock_confirm_view(request):
         return redirect("import_stock")
 
     from inventory.models import Location
-    from products.models import Product
 
     reconstructed = []
 
@@ -67,14 +65,20 @@ def import_stock_confirm_view(request):
                 organization=request.organization
             )
 
-            reconstructed.append(row | {"location": location})
+            reconstructed.append(
+                NormalizedRow(
+                    sku=row["sku"],
+                    name=row["name"],
+                    location=location,
+                    stock_min=row["stock_min"],
+                    stock_current=row["stock_current"],
+                )
+            )
         except Exception:
             continue
 
     executor = CSVImportExecutor(request.organization, request.user)
-    processed = executor.execute([
-        type("Row", (), r) for r in reconstructed
-    ])
+    processed = executor.execute(reconstructed)
 
     log_action(
         request.user,
