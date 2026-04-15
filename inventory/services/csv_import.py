@@ -143,7 +143,10 @@ class CSVImportExecutor:
         delta = target_quantity - current
 
         if delta == 0:
-            return
+            return {
+                "action": "noop",
+                "delta": 0
+            }
 
         idempotency_key = self._generate_idempotency_key(row)
 
@@ -170,13 +173,27 @@ class CSVImportExecutor:
                 idempotency_key=idempotency_key
             )
 
+        return {
+            "action": "adjust",
+            "delta": delta
+        }
+
     @transaction.atomic
     def execute(self, rows: List[NormalizedRow]):
         processed = 0
+        report = []
 
         for row in rows:
             product = self._upsert_product(row)
-            self._apply_stock(product, row.location, row.stock_current, row)
+            result = self._apply_stock(product, row.location, row.stock_current, row)
+
+            report.append({
+                "sku": row.sku,
+                "location": row.location.name,
+                "action": result["action"],
+                "delta": result["delta"]
+            })
+
             processed += 1
 
-        return processed
+        return processed, report

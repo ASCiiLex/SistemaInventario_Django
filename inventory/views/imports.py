@@ -78,7 +78,7 @@ def import_stock_confirm_view(request):
             continue
 
     executor = CSVImportExecutor(request.organization, request.user)
-    processed = executor.execute(reconstructed)
+    processed, report = executor.execute(reconstructed)
 
     log_action(
         request.user,
@@ -95,4 +95,15 @@ def import_stock_confirm_view(request):
     request.session.pop("import_errors", None)
 
     messages.success(request, f"{processed} filas importadas.")
-    return redirect("import_stock")
+
+    return render(
+        request,
+        "inventory/imports/preview.html",
+        {
+            "rows": report,
+            "errors": [],
+            "valid_count": processed,
+            "error_count": 0,
+            "result_mode": True
+        }
+    )

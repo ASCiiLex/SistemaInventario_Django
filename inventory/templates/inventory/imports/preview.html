@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2 class="mb-4">Previsualización del archivo</h2>
+<h2 class="mb-4">
+    {% if result_mode %}
+        Resultado de importación
+    {% else %}
+        Previsualización del archivo
+    {% endif %}
+</h2>
 
 <div class="mb-3">
     <span class="badge bg-success">✔ {{ valid_count }} válidas</span>
@@ -26,18 +32,32 @@
         <table class="table table-striped table-hover mb-0">
             <thead class="table-dark">
                 <tr>
-                    {% for col in rows.0.keys %}
-                        <th>{{ col }}</th>
-                    {% endfor %}
+                    {% if result_mode %}
+                        <th>SKU</th>
+                        <th>Location</th>
+                        <th>Acción</th>
+                        <th>Delta</th>
+                    {% else %}
+                        {% for col in rows.0.keys %}
+                            <th>{{ col }}</th>
+                        {% endfor %}
+                    {% endif %}
                 </tr>
             </thead>
 
             <tbody>
                 {% for row in rows %}
                 <tr>
-                    {% for value in row.values %}
-                        <td>{{ value }}</td>
-                    {% endfor %}
+                    {% if result_mode %}
+                        <td>{{ row.sku }}</td>
+                        <td>{{ row.location }}</td>
+                        <td>{{ row.action }}</td>
+                        <td>{{ row.delta }}</td>
+                    {% else %}
+                        {% for value in row.values %}
+                            <td>{{ value }}</td>
+                        {% endfor %}
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
@@ -45,6 +65,7 @@
     </div>
 </div>
 
+{% if not result_mode %}
 <form method="post" action="{% url 'import_stock_confirm' %}">
     {% csrf_token %}
     <button class="btn btn-success" {% if error_count > 0 %}disabled{% endif %}>
@@ -52,5 +73,10 @@
     </button>
     <a href="{% url 'import_stock' %}" class="btn btn-secondary">Cancelar</a>
 </form>
+{% else %}
+<a href="{% url 'import_stock' %}" class="btn btn-primary">
+    Nueva importación
+</a>
+{% endif %}
 
 {% endblock %}
