@@ -13,7 +13,11 @@ def import_stock_view(request):
         form = StockImportForm(request.POST, request.FILES)
 
         if form.is_valid():
-            rows = read_csv(request.FILES["csv_file"])
+            try:
+                rows = read_csv(request.FILES["csv_file"])
+            except Exception as e:
+                messages.error(request, str(e))
+                return redirect("import_stock")
 
             validator = CSVImportValidator(request.organization)
             validated, errors = validator.validate(rows)
@@ -100,10 +104,11 @@ def import_stock_confirm_view(request):
         request,
         "inventory/imports/preview.html",
         {
-            "rows": report,
+            "rows": report["rows"],
             "errors": [],
-            "valid_count": processed,
+            "valid_count": report["summary"]["processed"],
             "error_count": 0,
-            "result_mode": True
+            "result_mode": True,
+            "summary": report["summary"]
         }
     )

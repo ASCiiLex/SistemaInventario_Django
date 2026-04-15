@@ -183,13 +183,29 @@ class CSVImportExecutor:
     @transaction.atomic
     def execute(self, rows: List[NormalizedRow]):
         processed = 0
-        report = []
+        report = {
+            "summary": {
+                "processed": 0,
+                "created_products": 0,
+                "adjusted": 0,
+                "noops": 0,
+            },
+            "rows": []
+        }
 
         for row in rows:
             product, created = self._upsert_product(row)
             result = self._apply_stock(product, row.location, row.stock_current, row)
 
-            report.append({
+            if created:
+                report["summary"]["created_products"] += 1
+
+            if result["action"] == "adjust":
+                report["summary"]["adjusted"] += 1
+            else:
+                report["summary"]["noops"] += 1
+
+            report["rows"].append({
                 "sku": row.sku,
                 "location": row.location.name,
                 "action": result["action"],
@@ -198,5 +214,7 @@ class CSVImportExecutor:
             })
 
             processed += 1
+
+        report["summary"]["processed"] = processed
 
         return processed, report

@@ -14,6 +14,16 @@
     <span class="badge bg-danger">✖ {{ error_count }} con errores</span>
 </div>
 
+{% if summary %}
+<div class="alert alert-info">
+    <strong>Resumen:</strong><br>
+    Procesadas: {{ summary.processed }}<br>
+    Productos creados: {{ summary.created_products }}<br>
+    Ajustes realizados: {{ summary.adjusted }}<br>
+    Sin cambios: {{ summary.noops }}
+</div>
+{% endif %}
+
 {% if errors %}
 <div class="alert alert-danger">
     <strong>Errores detectados:</strong>
