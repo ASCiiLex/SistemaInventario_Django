@@ -151,7 +151,7 @@ class CSVImportExecutor:
         idempotency_key = self._generate_idempotency_key(row)
 
         if delta > 0:
-            StockMovement.objects.create(
+            movement = StockMovement(
                 organization=self.organization,
                 product=product,
                 movement_type="IN",
@@ -162,7 +162,7 @@ class CSVImportExecutor:
                 idempotency_key=idempotency_key
             )
         else:
-            StockMovement.objects.create(
+            movement = StockMovement(
                 organization=self.organization,
                 product=product,
                 movement_type="OUT",
@@ -172,6 +172,8 @@ class CSVImportExecutor:
                 note="CSV import adjustment",
                 idempotency_key=idempotency_key
             )
+
+        movement.save()
 
         return {
             "action": "adjust",
