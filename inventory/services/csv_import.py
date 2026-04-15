@@ -120,7 +120,7 @@ class CSVImportExecutor:
         return f"csv:{self.organization.id}:{row.sku}:{row.location.id}:{row.stock_current}"
 
     def _upsert_product(self, row: NormalizedRow):
-        product, _ = Product.objects.update_or_create(
+        product, created = Product.objects.update_or_create(
             sku=row.sku,
             organization=self.organization,
             defaults={
@@ -128,7 +128,7 @@ class CSVImportExecutor:
                 "min_stock": row.stock_min,
             }
         )
-        return product
+        return product, created
 
     def _apply_stock(self, product, location, target_quantity, row: NormalizedRow):
         from inventory.models import StockItem
@@ -186,14 +186,15 @@ class CSVImportExecutor:
         report = []
 
         for row in rows:
-            product = self._upsert_product(row)
+            product, created = self._upsert_product(row)
             result = self._apply_stock(product, row.location, row.stock_current, row)
 
             report.append({
                 "sku": row.sku,
                 "location": row.location.name,
                 "action": result["action"],
-                "delta": result["delta"]
+                "delta": result["delta"],
+                "product_created": created
             })
 
             processed += 1
