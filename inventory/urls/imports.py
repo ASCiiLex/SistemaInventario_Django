@@ -3,10 +3,12 @@ from ..views.imports import (
     import_stock_view,
     import_stock_confirm_view,
     download_template_view,
+    import_jobs_list_view,
 )
 
 urlpatterns = [
     path("importar-stock/", import_stock_view, name="import_stock"),
     path("importar-stock/confirmar/", import_stock_confirm_view, name="import_stock_confirm"),
     path("importar-stock/plantilla/", download_template_view, name="import_stock_template"),
+    path("importar-stock/historico/", import_jobs_list_view, name="import_jobs_list"),
 ]

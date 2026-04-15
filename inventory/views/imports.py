@@ -186,3 +186,17 @@ def import_stock_confirm_view(request):
             "summary": report["summary"]
         }
     )
+
+
+def import_jobs_list_view(request):
+    jobs = ImportJob.objects.filter(
+        organization=request.organization
+    ).select_related("user").order_by("-created_at")[:50]
+
+    return render(
+        request,
+        "inventory/imports/list.html",
+        {
+            "jobs": jobs,
+        },
+    )
