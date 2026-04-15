@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils import timezone
+from django.http import HttpResponse
+
+import csv
 
 from ..forms.imports import StockImportForm
 from ..utils.csv_importer import read_csv
@@ -13,6 +16,16 @@ from ..services.csv_import import (
 from inventory.services.audit import log_action
 from inventory.models.imports import ImportJob
 from inventory.models import Location
+
+
+def download_template_view(request):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="stock_import_template.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(["sku", "name", "location", "stock_min", "stock_current"])
+
+    return response
 
 
 def import_stock_view(request):
