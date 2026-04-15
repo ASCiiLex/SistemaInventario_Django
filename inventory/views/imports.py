@@ -101,6 +101,15 @@ def import_stock_confirm_view(request):
         messages.error(request, "Job no encontrado.")
         return redirect("import_stock")
 
+    # 🔒 Protección estado
+    if job.status == "completed":
+        messages.info(request, "Este import ya fue ejecutado.")
+        return redirect("import_stock")
+
+    if job.status != "preview":
+        messages.error(request, "Este import no está en estado válido.")
+        return redirect("import_stock")
+
     reconstructed = []
 
     for row in validated_rows:
@@ -132,7 +141,13 @@ def import_stock_confirm_view(request):
 
         job.status = "completed"
         job.executed_at = timezone.now()
-        job.meta = report["summary"]
+        job.meta = {
+            "summary": report["summary"],
+            "source": {
+                "filename": job.file_name,
+                "user_agent": request.META.get("HTTP_USER_AGENT"),
+            }
+        }
         job.save(update_fields=["status", "executed_at", "meta"])
 
     except Exception as e:
