@@ -6,6 +6,8 @@ from django.db import transaction
 from products.models import Product
 from inventory.models import Location, StockMovement
 
+from inventory.models.imports import ImportJob
+
 
 @dataclass
 class NormalizedRow:
