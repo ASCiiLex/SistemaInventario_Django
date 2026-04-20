@@ -3,13 +3,16 @@ from django.shortcuts import render, get_object_or_404
 from ..models import UserNotification
 from ..utils import send_ui_event_to_all
 from ..constants import Events
+from ..services import sync_notifications_for_org
 from .utils import group_notifications_by_product, user_qs, has_unread
 
 
 def _get_panel_notifications(request):
+    # 🔥 SINCRONIZA ANTES DE MOSTRAR
+    sync_notifications_for_org(request.organization)
+
     qs = user_qs(request)
 
-    # 🔥 SOLO ACTIVAS (INDEPENDIENTE DE seen)
     qs = qs.filter(notification__is_active=True)
 
     q = request.GET.get("q", "").strip()
