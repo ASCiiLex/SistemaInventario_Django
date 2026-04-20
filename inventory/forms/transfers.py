@@ -9,11 +9,20 @@ class StockTransferCreateForm(forms.ModelForm):
         self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
 
-        # 🔥 UNIFICACIÓN UI
-        for field in self.fields.values():
+        for name, field in self.fields.items():
+            is_select = isinstance(field, forms.ModelChoiceField)
+
             field.widget.attrs.update({
-                "class": "form-control select2" if isinstance(field, forms.ModelChoiceField) else "form-control"
+                "class": "form-control select2" if is_select else "form-control",
             })
+
+            # ✅ Placeholders reales (Select2 usa data-placeholder)
+            if name == "product":
+                field.widget.attrs["data-placeholder"] = "Producto"
+            elif name == "origin":
+                field.widget.attrs["data-placeholder"] = "Origen"
+            elif name == "destination":
+                field.widget.attrs["data-placeholder"] = "Destino"
 
         if self.organization:
             self.fields["product"].queryset = Product.objects.filter(organization=self.organization)
@@ -58,22 +67,40 @@ class StockTransferConfirmForm(forms.Form):
 
 
 class StockTransferFilterForm(forms.Form):
-    product = forms.ModelChoiceField(queryset=Product.objects.none(), required=False)
-    origin = forms.ModelChoiceField(queryset=Location.objects.none(), required=False)
-    destination = forms.ModelChoiceField(queryset=Location.objects.none(), required=False)
+    product = forms.ModelChoiceField(
+        queryset=Product.objects.none(),
+        required=False
+    )
+    origin = forms.ModelChoiceField(
+        queryset=Location.objects.none(),
+        required=False
+    )
+    destination = forms.ModelChoiceField(
+        queryset=Location.objects.none(),
+        required=False
+    )
     status = forms.ChoiceField(
         required=False,
-        choices=[("", "Todos")] + list(StockTransfer.STATUS_CHOICES),
+        choices=[("", "Estado")] + list(StockTransfer.STATUS_CHOICES),
     )
 
     def __init__(self, *args, **kwargs):
         organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
 
-        for field in self.fields.values():
+        for name, field in self.fields.items():
+            is_select = isinstance(field, forms.ModelChoiceField)
+
             field.widget.attrs.update({
-                "class": "form-control select2" if isinstance(field, forms.ModelChoiceField) else "form-control"
+                "class": "form-control select2" if is_select else "form-control",
             })
+
+            if name == "product":
+                field.widget.attrs["data-placeholder"] = "Producto"
+            elif name == "origin":
+                field.widget.attrs["data-placeholder"] = "Origen"
+            elif name == "destination":
+                field.widget.attrs["data-placeholder"] = "Destino"
 
         if organization:
             self.fields["product"].queryset = Product.objects.filter(organization=organization)

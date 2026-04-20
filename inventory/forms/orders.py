@@ -83,22 +83,19 @@ class OrderFilterForm(forms.Form):
     supplier = forms.ModelChoiceField(
         queryset=Supplier.objects.none(),
         required=False,
-        widget=forms.Select(attrs={"class": "form-select select2"}),
-        label="Proveedor",
+        widget=forms.Select(attrs={"class": "form-select select2", "data-placeholder": "Proveedor"}),
     )
 
     location = forms.ModelChoiceField(
         queryset=Location.objects.none(),
         required=False,
-        widget=forms.Select(attrs={"class": "form-select select2"}),
-        label="Almacén",
+        widget=forms.Select(attrs={"class": "form-select select2", "data-placeholder": "Almacén"}),
     )
 
     status = forms.ChoiceField(
         required=False,
-        choices=[("", "Todos los estados")] + list(Order.STATUS_CHOICES),
+        choices=[("", "Estado")] + list(Order.STATUS_CHOICES),
         widget=forms.Select(attrs={"class": "form-select"}),
-        label="Estado",
     )
 
     def __init__(self, *args, **kwargs):
@@ -108,7 +105,3 @@ class OrderFilterForm(forms.Form):
         if organization:
             self.fields["supplier"].queryset = Supplier.objects.filter(organization=organization)
             self.fields["location"].queryset = Location.objects.filter(organization=organization)
-
-
-class OrderReceiveForm(forms.Form):
-    confirmar = forms.BooleanField(required=True, initial=True, widget=forms.HiddenInput())
