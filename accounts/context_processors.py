@@ -1,59 +1,61 @@
-from accounts.permissions import *
+from accounts import permissions as perms
 
 
 def permissions_context(request):
     user = getattr(request, "user", None)
+    org = getattr(request, "organization", None)
 
-    # 🔒 Usuario no autenticado → todo False
+    # 🔒 Usuario no autenticado
     if not user or not user.is_authenticated:
-        return {
-            "perm": {}
-        }
+        return {"perm": {}}
 
     perm = {
         # PRODUCTS
-        "view_products": can_view_products(user),
-        "create_products": can_create_products(user),
-        "edit_products": can_edit_products(user),
-        "delete_products": can_delete_products(user),
-        "export_products": can_export_products(user),
+        "view_products": perms.can_view_products(user, org),
+        "create_products": perms.can_create_products(user, org),
+        "edit_products": perms.can_edit_products(user, org),
+        "delete_products": perms.can_delete_products(user, org),
+        "export_products": perms.can_export_products(user, org),
 
         # CATEGORIES
-        "view_categories": can_view_categories(user),
-        "manage_categories": can_manage_categories(user),
+        "view_categories": perms.can_view_categories(user, org),
+        "manage_categories": perms.can_manage_categories(user, org),
 
         # SUPPLIERS
-        "view_suppliers": can_view_suppliers(user),
-        "manage_suppliers": can_manage_suppliers(user),
+        "view_suppliers": perms.can_view_suppliers(user, org),
+        "manage_suppliers": perms.can_manage_suppliers(user, org),
 
         # LOCATIONS
-        "view_locations": can_view_locations(user),
-        "manage_locations": can_manage_locations(user),
+        "view_locations": perms.can_view_locations(user, org),
+        "manage_locations": perms.can_manage_locations(user, org),
 
         # INVENTORY
-        "view_inventory": can_view_inventory(user),
-        "create_inventory": can_create_inventory(user),
-        "edit_inventory": can_edit_inventory(user),
-        "confirm_inventory": can_confirm_inventory(user),
+        "view_inventory": perms.can_view_inventory(user, org),
+        "create_inventory": perms.can_create_inventory(user, org),
+        "edit_inventory": perms.can_edit_inventory(user, org),
+        "confirm_inventory": perms.can_confirm_inventory(user, org),
 
         # TRANSFERS
-        "view_transfers": can_view_transfers(user),
-        "create_transfer": can_create_transfer(user),
-        "confirm_transfer": can_confirm_transfer(user),
+        "view_transfers": perms.can_view_transfers(user, org),
+        "create_transfer": perms.can_create_transfer(user, org),
+        "confirm_transfer": perms.can_confirm_transfer(user, org),
 
         # ORDERS
-        "view_orders": can_view_orders(user),
-        "create_order": can_create_order(user),
-        "edit_order": can_edit_order(user),
-        "send_order": can_send_order(user),
-        "cancel_order": can_cancel_order(user),
-        "receive_order": can_receive_order(user),
+        "view_orders": perms.can_view_orders(user, org),
+        "create_order": perms.can_create_order(user, org),
+        "edit_order": perms.can_edit_order(user, org),
+        "send_order": perms.can_send_order(user, org),
+        "cancel_order": perms.can_cancel_order(user, org),
+        "receive_order": perms.can_receive_order(user, org),
 
         # AUDIT
-        "view_audit": can_view_audit(user),
+        "view_audit": perms.can_view_audit(user, org),
 
         # NOTIFICATIONS
-        "manage_notifications": can_manage_notifications(user),
+        "manage_notifications": perms.can_manage_notifications(user, org),
+
+        # METRICS
+        "can_view_system_metrics": perms.can_view_system_metrics(user, org),
     }
 
     return {

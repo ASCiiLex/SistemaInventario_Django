@@ -23,7 +23,7 @@ def dashboard_low_stock(request):
 
 
 def dashboard_system_metrics(request):
-    if not can_view_system_metrics(request.user):
+    if not can_view_system_metrics(request.user, request.organization):
         return render(request, "dashboard/partials/empty.html")
 
     context = get_system_metrics(request.organization)

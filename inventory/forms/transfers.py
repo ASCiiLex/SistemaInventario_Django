@@ -9,6 +9,12 @@ class StockTransferCreateForm(forms.ModelForm):
         self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
 
+        # 🔥 UNIFICACIÓN UI
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                "class": "form-control select2" if isinstance(field, forms.ModelChoiceField) else "form-control"
+            })
+
         if self.organization:
             self.fields["product"].queryset = Product.objects.filter(organization=self.organization)
             self.fields["origin"].queryset = Location.objects.filter(organization=self.organization)
@@ -44,7 +50,11 @@ class StockTransferCreateForm(forms.ModelForm):
 
 
 class StockTransferConfirmForm(forms.Form):
-    confirmar = forms.BooleanField(required=True, initial=True, widget=forms.HiddenInput())
+    confirmar = forms.BooleanField(
+        required=True,
+        initial=True,
+        widget=forms.HiddenInput()
+    )
 
 
 class StockTransferFilterForm(forms.Form):
@@ -59,6 +69,11 @@ class StockTransferFilterForm(forms.Form):
     def __init__(self, *args, **kwargs):
         organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
+
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                "class": "form-control select2" if isinstance(field, forms.ModelChoiceField) else "form-control"
+            })
 
         if organization:
             self.fields["product"].queryset = Product.objects.filter(organization=organization)
