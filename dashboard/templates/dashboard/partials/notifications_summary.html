@@ -7,16 +7,23 @@
         <h5>No leídas</h5>
         <p class="fs-4">{{ notifications_unread }}</p>
     </div>
-    <div class="col">
-        <h5>Por tipo</h5>
-        <p class="fs-6">
-            {% if notifications_by_type %}
-                {% for t in notifications_by_type %}
-                    {{ t.label }} ({{ t.total }}){% if not forloop.last %}, {% endif %}
-                {% endfor %}
-            {% else %}
-                Sin datos
-            {% endif %}
-        </p>
-    </div>
+</div>
+
+<hr>
+
+<div class="mt-2">
+    <h6 class="text-center mb-2">Por tipo</h6>
+
+    {% if notifications_by_type %}
+        <div class="d-flex flex-column gap-1">
+            {% for t in notifications_by_type %}
+                <div class="d-flex justify-content-between px-2 py-1 border rounded">
+                    <span>{{ t.label }}</span>
+                    <span class="fw-bold">{{ t.total }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted text-center">Sin datos</p>
+    {% endif %}
 </div>

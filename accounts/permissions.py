@@ -198,3 +198,12 @@ def can_view_audit(user):
 
 def can_manage_notifications(user):
     return _is_manager(user)
+
+
+
+# ==========================================
+# METRICS
+# ==========================================
+
+def can_view_system_metrics(user):
+    return _is_admin(user)

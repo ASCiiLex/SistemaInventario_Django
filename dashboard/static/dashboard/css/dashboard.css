@@ -1,5 +1,5 @@
 /* ============================
-   VARIABLES (HEREDADAS CORE)
+   VARIABLES
 ============================ */
 
 :root {
@@ -23,7 +23,7 @@
 }
 
 /* ============================
-   SECCIONES PRINCIPALES
+   SECCIONES
 ============================ */
 
 .section-header {
@@ -77,7 +77,7 @@
 }
 
 /* ============================
-   TABLAS
+   TABLAS (SUBSECCIONES)
 ============================ */
 
 .subsection table {
@@ -92,6 +92,26 @@
 .subsection table thead {
     font-size: 0.9rem;
     font-weight: 600;
+}
+
+/* ============================
+   FIX GLOBAL DARK MODE TABLES
+============================ */
+
+[data-theme="dark"] table {
+    color: #eaeaea;
+}
+
+[data-theme="dark"] thead {
+    background-color: #2c2c2c;
+}
+
+[data-theme="dark"] tbody tr {
+    background-color: #1e1e1e;
+}
+
+[data-theme="dark"] tbody tr:hover {
+    background-color: #2a2a2a;
 }
 
 /* ============================
@@ -158,18 +178,15 @@
 }
 
 /* ============================
-   FIX TEXTOS DARK MODE 
+   TEXTOS DARK MODE
 ============================ */
 
-/* Texto general dentro de cards */
 [data-theme="dark"] .card,
 [data-theme="dark"] .card-body {
     color: #eaeaea;
 }
 
-/* Notificaciones summary */
 [data-theme="dark"] .card-body h5,
 [data-theme="dark"] .card-body p {
     color: #eaeaea !important;
 }
-

@@ -1,6 +1,6 @@
+{% if perm.can_view_system_metrics %}
 <div class="row mt-3">
 
-    <!-- 🔥 MÉTRICAS DEL SISTEMA (movido aquí) -->
     <div class="col-12">
         <div class="card card-section" data-section="system-metrics">
             <div class="card-header section-header bg-dark text-white">
@@ -17,7 +17,6 @@
         </div>
     </div>
 
-    <!-- 🔥 ACCESO A OBSERVABILIDAD PRO -->
     <div class="col-12 mt-3">
         <div class="card card-section" data-section="observability">
 
@@ -42,3 +41,4 @@
     </div>
 
 </div>
+{% endif %}

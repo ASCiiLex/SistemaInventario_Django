@@ -66,14 +66,15 @@ class Notification(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
-    # 🔥 CONSISTENCIA CON DB
-    seen = models.BooleanField(default=False, db_index=True)
+    # 🔥 DOMINIO CORRECTO
+    is_active = models.BooleanField(default=True, db_index=True)
 
     class Meta:
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["organization", "created_at"]),
             models.Index(fields=["organization", "type"]),
+            models.Index(fields=["organization", "is_active"]),
         ]
 
     def __str__(self):

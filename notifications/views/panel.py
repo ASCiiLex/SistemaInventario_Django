@@ -9,8 +9,8 @@ from .utils import group_notifications_by_product, user_qs, has_unread
 def _get_panel_notifications(request):
     qs = user_qs(request)
 
-    # 🔥 SOLO NOTIFICACIONES ACTIVAS (NO LEÍDAS)
-    qs = qs.filter(seen=False)
+    # 🔥 SOLO ACTIVAS (INDEPENDIENTE DE seen)
+    qs = qs.filter(notification__is_active=True)
 
     q = request.GET.get("q", "").strip()
     if q:
@@ -32,7 +32,13 @@ def notifications_panel(request):
 
 
 def notifications_panel_mark_all(request):
-    user_qs(request).filter(seen=False).update(seen=True)
+    qs = user_qs(request).filter(notification__is_active=True)
+
+    for un in qs:
+        un.notification.is_active = False
+        un.notification.save(update_fields=["is_active"])
+        un.seen = True
+        un.save(update_fields=["seen"])
 
     send_ui_event_to_all({"event": Events.NOTIFICATIONS_UPDATED})
 
@@ -41,6 +47,11 @@ def notifications_panel_mark_all(request):
 
 def notifications_panel_mark_one(request, pk):
     un = get_object_or_404(UserNotification, pk=pk, user=request.user)
+
+    notification = un.notification
+    notification.is_active = False
+    notification.save(update_fields=["is_active"])
+
     un.seen = True
     un.save(update_fields=["seen"])
 
@@ -51,6 +62,7 @@ def notifications_panel_mark_one(request, pk):
 
 def notifications_panel_mark_unread(request, pk):
     un = get_object_or_404(UserNotification, pk=pk, user=request.user)
+
     un.seen = False
     un.save(update_fields=["seen"])
 

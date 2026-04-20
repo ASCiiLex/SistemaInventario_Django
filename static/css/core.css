@@ -12,21 +12,32 @@
     --border: #2c2c2c;
 }
 
+/* ===============================
+   BASE
+=============================== */
+
 body {
     background: var(--bg);
     color: var(--text);
     transition: background .25s ease, color .25s ease;
 }
 
-/* Cards */
+/* ===============================
+   CARDS
+=============================== */
+
 .card {
     background: var(--card);
     border-color: var(--border);
 }
 
-/* Tables */
+/* ===============================
+   TABLES
+=============================== */
+
 .table {
     font-size: 0.95rem;
+    color: inherit;
 }
 
 th {
@@ -38,7 +49,7 @@ th:hover {
     opacity: 0.85;
 }
 
-/* Responsive tables */
+/* Responsive */
 @media (max-width: 768px) {
     .table {
         display: block;
@@ -47,24 +58,93 @@ th:hover {
     }
 }
 
-/* Forms base */
+/* ===============================
+   DARK MODE - TABLES (FIX REAL)
+=============================== */
+
+[data-theme="dark"] .table {
+    color: var(--text);
+}
+
+[data-theme="dark"] .table thead {
+    background: #2a2a2a;
+}
+
+[data-theme="dark"] .table tbody tr {
+    background: var(--card);
+}
+
+[data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #262626;
+}
+
+[data-theme="dark"] .table-hover > tbody > tr:hover {
+    background-color: #2f2f2f;
+}
+
+/* ===============================
+   FORMS
+=============================== */
+
 input,
-select {
+select,
+textarea {
     background: var(--card);
     color: var(--text);
     border: 1px solid var(--border);
 }
 
-/* ===============================
-   🔥 SELECT2 UNIFICACIÓN VISUAL
-   =============================== */
+.form-control {
+    background: var(--card);
+    color: var(--text);
+    border-color: var(--border);
+}
 
-/* Container */
+/* Focus */
+.form-control:focus,
+select:focus,
+input:focus {
+    background: var(--card);
+    color: var(--text);
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
+}
+
+/* ===============================
+   DARK MODE FORMS FIX
+=============================== */
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea,
+[data-theme="dark"] .form-control {
+    background: var(--card) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+/* ===============================
+   BUTTONS
+=============================== */
+
+[data-theme="dark"] .btn-outline-dark {
+    color: var(--text);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .btn-outline-dark:hover {
+    background: var(--card);
+}
+
+/* ===============================
+   SELECT2 (CRÍTICO)
+=============================== */
+
 .select2-container {
     width: 100% !important;
 }
 
-/* Single select */
+/* Single */
 .select2-container--bootstrap-5 .select2-selection {
     height: 38px;
     display: flex;
@@ -110,13 +190,13 @@ select {
     color: #6c757d;
 }
 
-/* Focus state */
+/* Focus */
 .select2-container--bootstrap-5.select2-container--focus .select2-selection {
     border-color: #86b7fe;
     box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
 }
 
-/* Dark mode fix */
+/* Dark */
 [data-theme="dark"] .select2-container--bootstrap-5 .select2-selection {
     background: var(--card);
     color: var(--text);
@@ -129,7 +209,8 @@ select {
 
 /* ===============================
    NAVBAR
-   =============================== */
+=============================== */
+
 [data-theme="dark"] .navbar {
     background-color: #1a1a1a !important;
 }
