@@ -1,6 +1,21 @@
 import re
+from datetime import timedelta
+from django.utils import timezone
+
 from ..models import UserNotification
 from products.models import Product
+
+
+ICON_MAP = {
+    "inventory:product_risk": "⚠️",
+    "inventory:stock_low": "🔴",
+    "inventory:movement_created": "🔔",
+    "orders:updated": "📦",
+}
+
+
+def _get_icon(type_):
+    return ICON_MAP.get(type_, "🔔")
 
 
 def user_qs(request):
@@ -75,6 +90,9 @@ def get_filtered_notifications(request):
 
 def group_notifications_by_product(user_notifications):
     grouped = {}
+    now = timezone.now()
+    cutoff = now - timedelta(days=7)
+    MAX_RECENT = 3
 
     for un in user_notifications:
         n = un.notification
@@ -83,36 +101,53 @@ def group_notifications_by_product(user_notifications):
         if key not in grouped:
             grouped[key] = {
                 "product": n.product,
+                "all_items": [],
                 "items": [],
                 "count": 0,
                 "has_unread": False,
                 "icons": set(),
+                "hidden_count": 0,
             }
 
-        grouped[key]["items"].append(un)
-        grouped[key]["count"] += 1
+        grouped[key]["all_items"].append(un)
 
         if not un.seen:
             grouped[key]["has_unread"] = True
 
-        if n.type == "product_risk":
-            icon = "⚠️"
-        elif n.type == "stock_item_low":
-            icon = "🔴"
-        else:
-            icon = "🔔"
+        grouped[key]["icons"].add(_get_icon(n.type))
 
-        grouped[key]["icons"].add(icon)
+    grouped_list = []
 
-    grouped_list = list(grouped.values())
+    for g in grouped.values():
+        # ordenar todo
+        items = sorted(
+            g["all_items"],
+            key=lambda x: x.notification.created_at,
+            reverse=True
+        )
+
+        g["count"] = len(items)
+
+        # 🔥 lógica: última + recientes
+        latest = items[0]
+        recent = [
+            i for i in items[1:]
+            if i.notification.created_at >= cutoff
+        ][:MAX_RECENT]
+
+        final_items = [latest] + recent
+
+        g["items"] = final_items
+        g["hidden_count"] = max(0, len(items) - len(final_items))
+
+        grouped_list.append(g)
 
     grouped_list.sort(
-        key=lambda g: max(un.notification.created_at for un in g["items"]),
+        key=lambda g: g["items"][0].notification.created_at,
         reverse=True
     )
 
     for g in grouped_list:
-        g["items"].sort(key=lambda x: x.notification.created_at, reverse=True)
         g["icons"] = list(g["icons"])
 
     return grouped_list

@@ -56,10 +56,12 @@
                     <li class="list-group-item d-flex justify-content-between align-items-start fw-bold">
 
                         <div>
-                            {% if un.notification.type == "product_risk" %}
+                            {% if un.notification.type == "inventory:product_risk" %}
                                 ⚠️
-                            {% elif un.notification.type == "stock_item_low" %}
+                            {% elif un.notification.type == "inventory:stock_low" %}
                                 🔴
+                            {% elif un.notification.type == "orders:updated" %}
+                                📦
                             {% else %}
                                 🔔
                             {% endif %}
@@ -83,6 +85,12 @@
 
                     </li>
                     {% endfor %}
+
+                    {% if group.hidden_count > 0 %}
+                    <li class="list-group-item text-center text-muted small">
+                        +{{ group.hidden_count }} anteriores...
+                    </li>
+                    {% endif %}
 
                 </ul>
             </div>
