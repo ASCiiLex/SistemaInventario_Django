@@ -298,94 +298,83 @@ input:focus {
 }
 
 
-/* ===============================
-   NAVBAR RESPONSIVE REAL
+
+/* ============================
+   RESPONSIVE GLOBAL
 =============================== */
 
-.navbar-container {
-    display: flex;
-    flex-direction: column;
-}
+@media (max-width: 768px) {
 
-.navbar-topbar {
-    min-height: 48px;
-}
-
-.navbar-icons > div {
-    transform: scale(0.9);
-}
-
-/* SUBBAR BASE */
-.navbar-subbar {
-    width: 100%;
-}
-
-/* DROPDOWN SOBRE EL CONTENIDO */
-.navbar .dropdown-menu {
-    position: absolute;
-    z-index: 1050;
-}
-
-/* ===============================
-   MOBILE / TABLET
-=============================== */
-
-@media (max-width: 992px) {
-
-    .navbar-subbar {
-        margin-top: 0.5rem;
+    h2 {
+        font-size: 1.4rem;
     }
 
-    .navbar-row {
-        text-align: center;
+    .card {
+        border-radius: 0.6rem;
     }
 
-    .navbar-nav-main {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.4rem;
+    .table {
+        font-size: 0.8rem;
     }
 
-    .navbar-nav-main .nav-link {
-        padding: 0.35rem 0.55rem;
+    .btn {
+        font-size: 0.85rem;
+        padding: 0.35rem 0.6rem;
+    }
+
+    .form-control,
+    .form-select {
         font-size: 0.85rem;
     }
 
 }
 
 /* ===============================
-   DESKTOP
+   NAVBAR MOBILE FIX
 =============================== */
 
-@media (min-width: 992px) {
+.navbar-icons {
+    display: flex;
+    align-items: center;
+}
 
-    .navbar-container {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
+.navbar-icons > div {
+    transform: scale(0.9);
+}
+
+@media (max-width: 768px) {
+
+    .navbar .container-fluid {
+        flex-wrap: nowrap;
     }
 
-    .navbar-topbar {
-        width: auto;
+    .navbar-brand {
+        font-size: 0.9rem;
     }
 
-    .navbar-subbar {
-        display: flex !important;
-        align-items: center;
-        justify-content: space-between;
+    .navbar-toggler {
+        padding: 0.25rem 0.4rem;
+    }
+
+}
+
+/* ===============================
+   DASHBOARD GRID FIX
+=============================== */
+
+@media (max-width: 992px) {
+
+    .row > [class*="col-md-"] {
         width: 100%;
     }
 
-    .navbar-row {
-        width: auto;
-        margin-top: 0 !important;
-    }
+}
 
-    .navbar-nav-main {
-        flex-direction: row;
-        gap: 1rem;
-    }
+/* ===============================
+   TABLE SCROLL UX
+=============================== */
 
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
