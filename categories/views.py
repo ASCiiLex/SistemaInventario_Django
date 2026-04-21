@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from .models import Category
 from .forms import CategoryForm
+from products.models import Product
 
 
 def category_list(request):
@@ -53,3 +54,18 @@ def category_delete(request, pk):
     category = get_object_or_404(Category, pk=pk)
     category.delete()
     return redirect(reverse("category_list"))
+
+
+def category_products(request, pk):
+    products = (
+        Product.objects
+        .select_related("supplier")
+        .filter(
+            organization=request.organization,
+            category_id=pk
+        )
+    )
+
+    return render(request, "categories/partials/products.html", {
+        "products": products
+    })

@@ -14,30 +14,37 @@
 
     <tbody>
         {% for p in products %}
-        <tr>
-            <td><a href="{% url 'product_detail' p.id %}">{{ p.name }}</a></td>
+
+        <tr
+            hx-get="{% url 'product_locations' p.id %}"
+            hx-target="#expand-{{ p.id }}"
+            hx-swap="innerHTML"
+            hx-trigger="click"
+            hx-on::before-request="
+                if (document.getElementById('expand-{{ p.id }}').innerHTML.trim() !== '') {
+                    document.getElementById('expand-{{ p.id }}').innerHTML = '';
+                    event.preventDefault();
+                }
+            "
+            style="cursor:pointer"
+        >
+            <td>{{ p.name }}</td>
             <td>{{ p.sku }}</td>
             <td>{{ p.category }}</td>
             <td>{{ p.supplier }}</td>
-            <td>
-                {% if p.total_stock_db <= p.total_min_stock_db %}
-                    <span class="text-danger fw-bold">{{ p.total_stock_db }}</span>
-                {% else %}
-                    {{ p.total_stock_db }}
-                {% endif %}
+            <td class="{% if p.total_stock_db <= p.total_min_stock_db %}text-danger fw-bold{% endif %}">
+                {{ p.total_stock_db }}
             </td>
             <td>{{ p.total_min_stock_db }}</td>
-            <td>
-                {% if perm.edit_products %}
-                    <a href="{% url 'product_edit' p.id %}" class="btn btn-sm btn-primary">Editar</a>
-                {% endif %}
-                {% if perm.delete_products %}
-                    <a href="{% url 'product_delete' p.id %}" class="btn btn-sm btn-danger">Eliminar</a>
-                {% endif %}
+            <td></td>
+        </tr>
+
+        <tr>
+            <td colspan="7" class="p-0">
+                <div id="expand-{{ p.id }}"></div>
             </td>
         </tr>
-        {% empty %}
-        <tr><td colspan="7" class="text-center">No hay productos.</td></tr>
+
         {% endfor %}
     </tbody>
 </table>

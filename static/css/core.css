@@ -268,3 +268,31 @@ input:focus {
 .bg-light {
     background: var(--card) !important;
 }
+
+
+/* ===============================
+   NOTIFICATIONS PANEL (FIX FINAL DARK MODE)
+=============================== */
+
+#notificationsPanelBody {
+    background: var(--card);
+    color: var(--text);
+}
+
+#notificationsPanelBody .list-group {
+    background: var(--card);
+}
+
+#notificationsPanelBody .list-group-item {
+    background: var(--card);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+#notificationsPanelBody .text-muted {
+    color: var(--muted) !important;
+}
+
+#notificationsPanelBody .border {
+    border-color: var(--border) !important;
+}

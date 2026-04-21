@@ -18,7 +18,6 @@
                   hx-target="closest #notificationsPanelBody"
                   hx-swap="outerHTML">
                 {% csrf_token %}
-
                 <button class="btn btn-sm btn-outline-primary">
                     Marcar todas como leídas
                 </button>
@@ -29,6 +28,7 @@
     {% for group in grouped_notifications %}
         <div class="mb-2 border rounded notification-group">
 
+            <!-- HEADER -->
             <div class="p-2 d-flex justify-content-between align-items-center bg-surface cursor-pointer group-header">
 
                 <div>
@@ -48,9 +48,11 @@
 
             </div>
 
+            <!-- BODY -->
             <div class="group-body d-none">
                 <ul class="list-group list-group-flush">
 
+                    <!-- ACTIVAS -->
                     {% for un in group.items %}
                     <li class="list-group-item d-flex justify-content-between align-items-start fw-bold">
 
@@ -85,10 +87,27 @@
                     </li>
                     {% endfor %}
 
+                    <!-- HISTÓRICO -->
                     {% if group.hidden_count > 0 %}
-                    <li class="list-group-item text-center text-muted small toggle-history">
-                        +{{ group.hidden_count }} anteriores...
-                    </li>
+                        <li class="list-group-item text-center text-muted small toggle-history"
+                            data-label="+{{ group.hidden_count }} anteriores..."
+                            onclick="toggleHistory(this)">
+                            +{{ group.hidden_count }} anteriores...
+                        </li>
+
+                        {% for un in group.hidden_items %}
+                        <li class="list-group-item d-none history-item d-flex justify-content-between align-items-start">
+
+                            <div>
+                                {{ un.notification.message }}<br>
+
+                                <small class="text-muted">
+                                    {{ un.notification.created_at|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+
+                        </li>
+                        {% endfor %}
                     {% endif %}
 
                 </ul>
@@ -102,15 +121,40 @@
 </div>
 
 <script>
-document.querySelectorAll(".notification-group .group-header").forEach(header => {
-    header.onclick = () => {
-        const body = header.nextElementSibling;
-        const arrow = header.querySelector(".arrow");
+function initNotificationPanel() {
 
-        const isOpen = !body.classList.contains("d-none");
+    // Toggle grupos
+    document.querySelectorAll(".notification-group .group-header").forEach(header => {
+        if (header.dataset.bound === "true") return;
+        header.dataset.bound = "true";
 
-        body.classList.toggle("d-none");
-        arrow.textContent = isOpen ? "▾" : "▴";
-    };
-});
+        header.onclick = () => {
+            const body = header.nextElementSibling;
+            const arrow = header.querySelector(".arrow");
+
+            const isOpen = !body.classList.contains("d-none");
+
+            body.classList.toggle("d-none");
+            arrow.textContent = isOpen ? "▾" : "▴";
+        };
+    });
+
+}
+
+// Toggle histórico
+function toggleHistory(el) {
+    const items = el.parentElement.querySelectorAll(".history-item");
+
+    const isHidden = items[0]?.classList.contains("d-none");
+
+    items.forEach(i => i.classList.toggle("d-none"));
+
+    el.textContent = isHidden
+        ? "Ocultar histórico"
+        : el.dataset.label;
+}
+
+// INIT (IMPORTANTE PARA HTMX)
+document.addEventListener("DOMContentLoaded", initNotificationPanel);
+document.body.addEventListener("htmx:afterSwap", initNotificationPanel);
 </script>

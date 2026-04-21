@@ -9,7 +9,8 @@ from .views import (
     lowstock_counter,
     stockitem_counter,
     ajax_categories,
-    ajax_suppliers
+    ajax_suppliers,
+    product_locations
 )
 
 urlpatterns = [
@@ -23,4 +24,5 @@ urlpatterns = [
     path("stockitem-counter/", stockitem_counter, name="stockitem_counter"),
     path("ajax/categories/", ajax_categories, name="ajax_categories"),
     path("ajax/suppliers/", ajax_suppliers, name="ajax_suppliers"),
+    path("<int:pk>/locations/", product_locations, name="product_locations"),
 ]

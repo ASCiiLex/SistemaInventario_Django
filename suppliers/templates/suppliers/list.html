@@ -12,7 +12,8 @@
 <a href="{% url 'supplier_create' %}" class="btn btn-success mb-3">Nuevo Proveedor</a>
 {% endif %}
 
-<table class="table table-striped">
+<div class="table-responsive">
+<table class="table table-striped align-middle">
     <thead>
         <tr>
             <th>Nombre</th>
@@ -22,23 +23,55 @@
             <th></th>
         </tr>
     </thead>
+
     <tbody>
-        {% for s in suppliers %}
+    {% for s in suppliers %}
+
+    <!-- 🔥 MISMO PATRÓN QUE CATEGORÍAS -->
+    <tr
+        hx-get="{% url 'supplier_products' s.id %}"
+        hx-target="#expand-{{ s.id }}"
+        hx-swap="innerHTML"
+        hx-trigger="click"
+        hx-on::before-request="
+            if (event.target.closest('a, button')) {
+                return false;
+            }
+
+            if (document.getElementById('expand-{{ s.id }}').innerHTML.trim() !== '') {
+                document.getElementById('expand-{{ s.id }}').innerHTML = '';
+                event.preventDefault();
+            }
+        "
+        style="cursor:pointer"
+    >
+        <td>{{ s.name }}</td>
+        <td>{{ s.contact_name }}</td>
+        <td>{{ s.email }}</td>
+        <td>{{ s.phone }}</td>
+
+        <td class="text-end">
+            {% if perm.manage_suppliers %}
+                <a href="{% url 'supplier_edit' s.id %}" class="btn btn-sm btn-primary">Editar</a>
+                <a href="{% url 'supplier_delete' s.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+            {% endif %}
+        </td>
+    </tr>
+
+    <!-- EXPAND -->
+    <tr>
+        <td colspan="5" class="p-0">
+            <div id="expand-{{ s.id }}"></div>
+        </td>
+    </tr>
+
+    {% empty %}
         <tr>
-            <td>{{ s.name }}</td>
-            <td>{{ s.contact_name }}</td>
-            <td>{{ s.email }}</td>
-            <td>{{ s.phone }}</td>
-            <td>
-                {% if perm.manage_suppliers %}
-                    <a href="{% url 'supplier_edit' s.id %}" class="btn btn-sm btn-primary">Editar</a>
-                    <a href="{% url 'supplier_delete' s.id %}" class="btn btn-sm btn-danger">Eliminar</a>
-                {% endif %}
-            </td>
+            <td colspan="5" class="text-center">No hay proveedores.</td>
         </tr>
-        {% empty %}
-        <tr><td colspan="5">No hay proveedores.</td></tr>
-        {% endfor %}
+    {% endfor %}
     </tbody>
 </table>
+</div>
+
 {% endblock %}

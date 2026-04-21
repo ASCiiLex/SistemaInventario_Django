@@ -103,6 +103,7 @@ def group_notifications_by_product(user_notifications):
                 "product": n.product,
                 "all_items": [],
                 "items": [],
+                "hidden_items": [],  # 👈 CLAVE
                 "count": 0,
                 "has_unread": False,
                 "icons": set(),
@@ -119,7 +120,7 @@ def group_notifications_by_product(user_notifications):
     grouped_list = []
 
     for g in grouped.values():
-        # ordenar todo
+        # ordenar todo (más recientes primero)
         items = sorted(
             g["all_items"],
             key=lambda x: x.notification.created_at,
@@ -128,25 +129,35 @@ def group_notifications_by_product(user_notifications):
 
         g["count"] = len(items)
 
-        # 🔥 lógica: última + recientes
+        if not items:
+            continue
+
+        # 🔥 lógica: última + recientes (como ya tenías)
         latest = items[0]
+
         recent = [
             i for i in items[1:]
             if i.notification.created_at >= cutoff
         ][:MAX_RECENT]
 
-        final_items = [latest] + recent
+        visible_items = [latest] + recent
 
-        g["items"] = final_items
-        g["hidden_count"] = max(0, len(items) - len(final_items))
+        # 🔥 CLAVE: separar hidden correctamente
+        hidden_items = items[len(visible_items):]
+
+        g["items"] = visible_items
+        g["hidden_items"] = hidden_items
+        g["hidden_count"] = len(hidden_items)
 
         grouped_list.append(g)
 
+    # ordenar grupos por más reciente
     grouped_list.sort(
         key=lambda g: g["items"][0].notification.created_at,
         reverse=True
     )
 
+    # normalizar icons
     for g in grouped_list:
         g["icons"] = list(g["icons"])
 

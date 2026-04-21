@@ -11,6 +11,7 @@ from categories.models import Category
 from suppliers.models import Supplier
 from .forms import ProductForm
 from inventory.utils.listing import ListViewMixin
+from inventory.models import StockItem
 
 # 🔐 PERMISSIONS
 from accounts.permissions import (
@@ -343,3 +344,18 @@ def ajax_suppliers(request):
     ]
 
     return JsonResponse({"results": data})
+
+
+def product_locations(request, pk):
+    items = (
+        StockItem.objects
+        .select_related("location")
+        .filter(
+            organization=request.organization,
+            product_id=pk
+        )
+    )
+
+    return render(request, "products/partials/locations.html", {
+        "items": items
+    })

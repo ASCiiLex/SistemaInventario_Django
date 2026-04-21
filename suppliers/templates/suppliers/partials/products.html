@@ -1,0 +1,28 @@
+<div class="p-3 bg-surface border-top">
+    <strong class="d-block mb-2">Productos del proveedor</strong>
+
+    <div class="table-responsive">
+        <table class="table table-sm table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Stock</th>
+                    <th>Mínimo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td>{{ p.name }}</td>
+                    <td>{{ p.category|default:"—" }}</td>
+                    <td>{{ p.total_stock }}</td>
+                    <td>{{ p.total_min_stock }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center text-muted">Sin productos</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

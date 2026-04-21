@@ -7,6 +7,7 @@ from ..forms import LocationForm
 from ..utils.listing import ListViewMixin
 
 from notifications.models import Notification
+from notifications.constants import Events
 
 import re
 
@@ -77,7 +78,7 @@ def location_incidents(request, pk):
         organization=request.organization,
         product=OuterRef("product"),
         location=location,
-        type="stock_item_low"
+        type=Events.STOCK_LOW,
     ).order_by("-created_at")
 
     qs = (
@@ -208,3 +209,45 @@ def location_toggle_active(request, pk):
 
     messages.success(request, "Estado de almacén actualizado.")
     return redirect("location_list")
+
+
+# ==========================================
+# FULL STOCK
+# ==========================================
+
+def location_full_stock(request, pk):
+    location = get_object_or_404(
+        Location,
+        pk=pk,
+        organization=request.organization
+    )
+
+    mode = request.GET.get("mode", "all")
+
+    latest_notification = Notification.objects.filter(
+        organization=request.organization,
+        product=OuterRef("product"),
+        location=location,
+        type=Events.STOCK_LOW,  # 🔥 CONSISTENTE
+    ).order_by("-created_at")
+
+    qs = (
+        StockItem.objects
+        .select_related("product")
+        .filter(
+            organization=request.organization,
+            location=location
+        )
+        .annotate(
+            last_alert=Subquery(latest_notification.values("created_at")[:1])
+        )
+    )
+
+    if mode == "incidents":
+        qs = qs.filter(quantity__lte=F("min_stock"))
+
+    return render(request, "inventory/locations/partials/full_stock.html", {
+        "items": qs,
+        "mode": mode,
+        "location_id": location.id
+    })
