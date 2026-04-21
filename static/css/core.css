@@ -378,3 +378,164 @@ input:focus {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
+
+
+/* ===============================
+   NAVBAR FINAL (CONTROLADO)
+=============================== */
+
+.navbar-icons > div {
+    transform: scale(0.95);
+}
+
+/* DROPDOWN SOBRE CONTENIDO */
+.navbar .dropdown-menu {
+    position: absolute;
+    z-index: 2000;
+}
+
+/* NAV LINKS SIEMPRE EN FILA */
+.navbar-nav {
+    flex-direction: row !important;
+}
+
+/* MOBILE */
+@media (max-width: 576px) {
+
+    .navbar-brand {
+        font-size: 0.85rem;
+    }
+
+    .navbar-icons > div {
+        transform: scale(0.85);
+    }
+
+    .navbar-nav .nav-link {
+        font-size: 0.85rem;
+        padding: 0.35rem 0.5rem;
+    }
+
+}
+
+/* TABLET */
+@media (min-width: 577px) and (max-width: 991px) {
+
+    .navbar-nav .nav-link {
+        font-size: 1.05rem;
+    }
+
+}
+
+/* DESKTOP */
+@media (min-width: 992px) {
+
+    .navbar-nav .nav-link {
+        font-size: 0.95rem;
+    }
+
+}
+
+
+/* ===============================
+   NAVBAR SPLIT STRATEGY
+=============================== */
+
+/* DESKTOP */
+@media (min-width: 992px) {
+
+    .navbar-nav {
+        flex-wrap: nowrap;
+    }
+
+    .navbar-nav .nav-link {
+        white-space: nowrap;
+    }
+
+}
+
+/* TABLET MEJOR DISTRIBUCIÓN */
+@media (min-width: 577px) and (max-width: 991px) {
+
+    .navbar-nav {
+        justify-content: space-evenly !important;
+        width: 100%;
+    }
+
+    .navbar-nav .nav-link {
+        font-size: 1.1rem;
+    }
+
+}
+
+/* MOBILE AJUSTE */
+@media (max-width: 576px) {
+
+    .navbar-nav .nav-link {
+        font-size: 0.9rem;
+    }
+
+}
+
+
+/* ===============================
+   NAVBAR TUNING FINAL V4 (CENTRADO REAL)
+=============================== */
+
+/* CONTENEDOR DEL COLLAPSE */
+#navbarMobile {
+    width: 100%;
+}
+
+/* WRAPPER INTERNO → ESTE ES EL PROBLEMA REAL */
+#navbarMobile > * {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* NAV */
+#navbarMobile .navbar-nav {
+    width: fit-content;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    justify-content: center !important;
+}
+
+/* ACTIONS */
+#navbarMobile > div {
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* MOBILE */
+@media (max-width: 576px) {
+
+    #navbarMobile .navbar-nav {
+        flex-wrap: nowrap;
+    }
+
+    #navbarMobile .nav-link {
+        font-size: 0.78rem;
+        padding: 0.25rem 0.4rem;
+        white-space: nowrap;
+    }
+
+}
+
+/* TABLET */
+@media (min-width: 577px) and (max-width: 991px) {
+
+    #navbarMobile .nav-link {
+        font-size: 1.05rem;
+    }
+
+}
+
+/* DESKTOP */
+@media (min-width: 992px) {
+
+    .navbar-nav {
+        gap: 1.5rem !important;
+    }
+
+}

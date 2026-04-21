@@ -1,18 +1,129 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container navbar-container">
+<!-- =======================
+     DESKTOP NAVBAR
+======================= -->
+<nav class="navbar navbar-dark bg-dark mb-4 d-none d-lg-block">
+    <div class="container d-flex align-items-center justify-content-between">
 
-        <!-- 🔹 TOPBAR -->
-        <div class="navbar-topbar w-100 d-flex justify-content-between align-items-center">
+        <!-- LEFT -->
+        <a class="navbar-brand mb-0" href="{% url 'dashboard' %}">
+            Sistema Inventario
+        </a>
 
-            <!-- LEFT -->
-            <div class="d-flex align-items-center gap-3 navbar-left">
-                <a class="navbar-brand mb-0" href="{% url 'dashboard' %}">
-                    Sistema Inventario
+        <!-- CENTER -->
+        <ul class="navbar-nav flex-row align-items-center gap-3 mb-0 flex-grow-1 justify-content-center">
+
+            <li class="nav-item"><a href="/categorias/" class="nav-link">Categorías</a></li>
+            <li class="nav-item"><a href="/proveedores/" class="nav-link">Proveedores</a></li>
+            <li class="nav-item"><a href="/productos/" class="nav-link">Productos</a></li>
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                    Inventario
                 </a>
+                <ul class="dropdown-menu">
+
+                    <li><a class="dropdown-item" href="{% url 'stockmovement_list' %}">Movimientos</a></li>
+                    <li><a class="dropdown-item" href="{% url 'transfer_list' %}">Transferencias</a></li>
+                    <li><a class="dropdown-item" href="{% url 'location_list' %}">Almacenes</a></li>
+                    <li><a class="dropdown-item" href="{% url 'order_list' %}">Pedidos</a></li>
+
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-primary fw-semibold" href="{% url 'import_stock' %}">
+                            ⬆️ Importar stock (CSV)
+                        </a>
+                    </li>
+
+                    {% if perm.view_audit %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'audit_list' %}">Auditoría</a></li>
+                        <li><a class="dropdown-item" href="{% url 'members_list' %}">Usuarios</a></li>
+                    {% endif %}
+                </ul>
+            </li>
+
+        </ul>
+
+        <!-- RIGHT -->
+        <div class="d-flex align-items-center gap-2">
+
+            <div class="d-flex align-items-center gap-2 navbar-icons">
+
+                {% if perm.view_orders %}
+                <div id="orders-counter"
+                     hx-get="{% url 'orders_counter' %}"
+                     hx-trigger="load, orders:updated from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML"></div>
+                {% endif %}
+
+                <div id="stockitem-counter"
+                     hx-get="{% url 'stockitem_counter' %}"
+                     hx-trigger="load, inventory:stock_changed from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML"></div>
+
+                <div id="lowstock-counter"
+                     hx-get="{% url 'lowstock_counter' %}"
+                     hx-trigger="load, inventory:stock_changed from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML"></div>
+
+                <div id="notifications-bell"
+                     hx-get="{% url 'notifications:notifications_counter' %}"
+                     hx-trigger="load, inventory:notifications_updated from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML"></div>
+
             </div>
 
-            <!-- RIGHT (SIEMPRE VISIBLE) -->
-            <div class="d-flex align-items-center gap-2 navbar-right">
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
+                    {{ organization.name }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    {% for m in organizations %}
+                        <li>
+                            <a class="dropdown-item {% if m.organization.id == organization.id %}active{% endif %}"
+                               href="{% url 'switch_organization' m.organization.id %}">
+                                {{ m.organization.name }}
+                                <small class="text-muted">({{ m.role }})</small>
+                            </a>
+                        </li>
+                    {% endfor %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'notification_preferences' %}">⚙️ Configuración</a></li>
+                    <li>
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button class="dropdown-item">Salir</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+
+            <button id="themeToggle" class="btn btn-sm btn-outline-light">🌙</button>
+
+        </div>
+
+    </div>
+</nav>
+
+
+<!-- =======================
+     MOBILE / TABLET NAVBAR
+======================= -->
+<nav class="navbar navbar-dark bg-dark mb-4 d-lg-none">
+    <div class="container">
+
+        <!-- TOPBAR -->
+        <div class="w-100 d-flex justify-content-between align-items-center">
+
+            <a class="navbar-brand mb-0" href="{% url 'dashboard' %}">
+                Sistema Inventario
+            </a>
+
+            <div class="d-flex align-items-center gap-2">
 
                 <div class="d-flex align-items-center gap-2 navbar-icons">
 
@@ -44,59 +155,28 @@
 
                 </div>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
-                    <span class="navbar-toggler-icon"></span>
+                <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMobile">
+                    ☰
                 </button>
 
             </div>
+
         </div>
 
-        <!-- 🔹 SUBBAR -->
-        <div class="collapse navbar-collapse navbar-subbar w-100" id="navbarMain">
+        <!-- COLLAPSE -->
+        <div class="collapse mt-2" id="navbarMobile">
 
-            <!-- FILA 1 -->
-            <div class="navbar-row d-flex flex-wrap align-items-center justify-content-center gap-2 w-100">
+            <ul class="navbar-nav flex-row flex-wrap justify-content-center gap-3 mb-3">
 
-                <ul class="navbar-nav navbar-nav-main">
+                <li class="nav-item"><a href="/categorias/" class="nav-link">Categorías</a></li>
+                <li class="nav-item"><a href="/proveedores/" class="nav-link">Proveedores</a></li>
+                <li class="nav-item"><a href="/productos/" class="nav-link">Productos</a></li>
+                <li class="nav-item"><a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Inventario</a></li>
 
-                    <li class="nav-item"><a href="/categorias/" class="nav-link">Categorías</a></li>
-                    <li class="nav-item"><a href="/proveedores/" class="nav-link">Proveedores</a></li>
-                    <li class="nav-item"><a href="/productos/" class="nav-link">Productos</a></li>
+            </ul>
 
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            Inventario
-                        </a>
-                        <ul class="dropdown-menu">
+            <div class="d-flex flex-wrap justify-content-center gap-2">
 
-                            <li><a class="dropdown-item" href="{% url 'stockmovement_list' %}">Movimientos</a></li>
-                            <li><a class="dropdown-item" href="{% url 'transfer_list' %}">Transferencias</a></li>
-                            <li><a class="dropdown-item" href="{% url 'location_list' %}">Almacenes</a></li>
-                            <li><a class="dropdown-item" href="{% url 'order_list' %}">Pedidos</a></li>
-
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item text-primary fw-semibold" href="{% url 'import_stock' %}">
-                                    ⬆️ Importar stock (CSV)
-                                </a>
-                            </li>
-
-                            {% if perm.view_audit %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'audit_list' %}">Auditoría</a></li>
-                                <li><a class="dropdown-item" href="{% url 'members_list' %}">Usuarios</a></li>
-                            {% endif %}
-                        </ul>
-                    </li>
-
-                </ul>
-
-            </div>
-
-            <!-- FILA 2 -->
-            <div class="navbar-row d-flex flex-wrap align-items-center justify-content-center gap-2 w-100 mt-2">
-
-                <!-- ORGANIZATION -->
                 <div class="dropdown">
                     <button class="btn btn-sm btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
                         {{ organization.name }}
@@ -107,19 +187,13 @@
                                 <a class="dropdown-item {% if m.organization.id == organization.id %}active{% endif %}"
                                    href="{% url 'switch_organization' m.organization.id %}">
                                     {{ m.organization.name }}
-                                    <small class="text-muted">({{ m.role }})</small>
                                 </a>
                             </li>
                         {% endfor %}
                     </ul>
                 </div>
 
-                <!-- ACTIONS -->
-                <a href="{% url 'notification_preferences' %}"
-                   class="btn btn-sm btn-outline-light">
-                    ⚙️
-                </a>
-
+                <a href="{% url 'notification_preferences' %}" class="btn btn-sm btn-outline-light">⚙️</a>
                 <button id="themeToggle" class="btn btn-sm btn-outline-light">🌙</button>
 
                 <form method="post" action="{% url 'logout' %}">
@@ -130,5 +204,6 @@
             </div>
 
         </div>
+
     </div>
 </nav>
