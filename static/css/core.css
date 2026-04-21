@@ -296,3 +296,96 @@ input:focus {
 #notificationsPanelBody .border {
     border-color: var(--border) !important;
 }
+
+
+/* ===============================
+   NAVBAR RESPONSIVE REAL
+=============================== */
+
+.navbar-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar-topbar {
+    min-height: 48px;
+}
+
+.navbar-icons > div {
+    transform: scale(0.9);
+}
+
+/* SUBBAR BASE */
+.navbar-subbar {
+    width: 100%;
+}
+
+/* DROPDOWN SOBRE EL CONTENIDO */
+.navbar .dropdown-menu {
+    position: absolute;
+    z-index: 1050;
+}
+
+/* ===============================
+   MOBILE / TABLET
+=============================== */
+
+@media (max-width: 992px) {
+
+    .navbar-subbar {
+        margin-top: 0.5rem;
+    }
+
+    .navbar-row {
+        text-align: center;
+    }
+
+    .navbar-nav-main {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.4rem;
+    }
+
+    .navbar-nav-main .nav-link {
+        padding: 0.35rem 0.55rem;
+        font-size: 0.85rem;
+    }
+
+}
+
+/* ===============================
+   DESKTOP
+=============================== */
+
+@media (min-width: 992px) {
+
+    .navbar-container {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .navbar-topbar {
+        width: auto;
+    }
+
+    .navbar-subbar {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .navbar-row {
+        width: auto;
+        margin-top: 0 !important;
+    }
+
+    .navbar-nav-main {
+        flex-direction: row;
+        gap: 1rem;
+    }
+
+}
