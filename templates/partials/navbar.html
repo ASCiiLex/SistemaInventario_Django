@@ -1,14 +1,13 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand" href="{% url 'dashboard' %}">Sistema Inventario</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3">
+    <div class="container-fluid">
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <!-- LEFT -->
+        <div class="d-flex align-items-center gap-2">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">
+                Sistema Inventario
+            </a>
 
-        <div class="collapse navbar-collapse" id="navbarMain">
-
-            <div class="dropdown me-3">
+            <div class="dropdown d-none d-md-block">
                 <button class="btn btn-sm btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
                     {{ organization.name }}
                 </button>
@@ -19,12 +18,48 @@
                                href="{% url 'switch_organization' m.organization.id %}"
                                hx-boost="false">
                                 {{ m.organization.name }}
-                                <small class="text-muted">({{ m.role }})</small>
                             </a>
                         </li>
                     {% endfor %}
                 </ul>
             </div>
+        </div>
+
+        <!-- RIGHT ACTIONS (SIEMPRE VISIBLES MOBILE) -->
+        <div class="d-flex align-items-center gap-2">
+
+            <div class="d-flex gap-1 navbar-icons">
+
+                <div id="orders-counter"
+                     hx-get="{% url 'orders_counter' %}"
+                     hx-trigger="load, orders:updated from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML"></div>
+
+                <div id="lowstock-counter"
+                     hx-get="{% url 'lowstock_counter' %}"
+                     hx-trigger="load, inventory:stock_changed from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML"></div>
+
+                <div id="notifications-bell"
+                     hx-get="{% url 'notifications:notifications_counter' %}"
+                     hx-trigger="load, inventory:notifications_updated from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML"></div>
+
+            </div>
+
+            <button id="themeToggle" class="btn btn-sm btn-outline-light">🌙</button>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+        </div>
+
+        <!-- COLLAPSE -->
+        <div class="collapse navbar-collapse mt-3 mt-lg-0" id="navbarMain">
 
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
@@ -40,73 +75,49 @@
 
                         <li><a class="dropdown-item" href="{% url 'stockmovement_list' %}">Movimientos</a></li>
                         <li><a class="dropdown-item" href="{% url 'transfer_list' %}">Transferencias</a></li>
-
                         <li><a class="dropdown-item" href="{% url 'location_list' %}">Almacenes</a></li>
                         <li><a class="dropdown-item" href="{% url 'order_list' %}">Pedidos</a></li>
 
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item text-primary fw-semibold" href="{% url 'import_stock' %}">
-                                ⬆️ Importar stock (CSV)
+                                ⬆️ Importar stock
                             </a>
                         </li>
 
-                        {% if perm.view_audit %}
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'audit_list' %}">Auditoría</a></li>
-                            <li><a class="dropdown-item" href="{% url 'members_list' %}">Usuarios</a></li>
-                        {% endif %}
                     </ul>
                 </li>
-
             </ul>
 
-            <div class="d-flex align-items-center gap-3 me-3">
+            <!-- MOBILE ORG -->
+            <div class="dropdown d-md-none mb-2">
+                <button class="btn btn-sm btn-outline-light dropdown-toggle w-100" data-bs-toggle="dropdown">
+                    {{ organization.name }}
+                </button>
+                <ul class="dropdown-menu w-100">
+                    {% for m in organizations %}
+                        <li>
+                            <a class="dropdown-item {% if m.organization.id == organization.id %}active{% endif %}"
+                               href="{% url 'switch_organization' m.organization.id %}">
+                                {{ m.organization.name }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
 
-                {% if perm.view_orders %}
-                <div id="orders-counter"
-                     hx-get="{% url 'orders_counter' %}"
-                     hx-trigger="load, orders:updated from:body"
-                     hx-target="this"
-                     hx-swap="outerHTML">
-                </div>
-                {% endif %}
+            <div class="d-flex flex-wrap gap-2 mt-2 mt-lg-0">
 
-                <div id="lowstock-counter"
-                     hx-get="{% url 'lowstock_counter' %}"
-                     hx-trigger="load, inventory:stock_changed from:body"
-                     hx-target="this"
-                     hx-swap="outerHTML">
-                </div>
-
-                <div id="stockitem-counter"
-                     hx-get="{% url 'stockitem_counter' %}"
-                     hx-trigger="load, inventory:stock_changed from:body"
-                     hx-target="this"
-                     hx-swap="outerHTML">
-                </div>
-
-                <div id="notifications-bell"
-                     hx-get="{% url 'notifications:notifications_counter' %}"
-                     hx-trigger="load, inventory:notifications_updated from:body"
-                     hx-target="this"
-                     hx-swap="outerHTML">
-                </div>
-
-                <a href="{% url 'notification_preferences' %}"
-                   class="btn btn-sm btn-outline-light"
-                   title="Configurar notificaciones">
+                <a href="{% url 'notification_preferences' %}" class="btn btn-sm btn-outline-light">
                     ⚙️
                 </a>
 
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-light w-100">Salir</button>
+                </form>
+
             </div>
-
-            <button id="themeToggle" class="btn btn-sm btn-outline-light me-3">🌙</button>
-
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button class="btn btn-sm btn-outline-light">Salir</button>
-            </form>
 
         </div>
     </div>
