@@ -216,3 +216,55 @@ input:focus {
 [data-theme="dark"] .navbar {
     background-color: #1a1a1a !important;
 }
+
+
+/* ===============================
+   SURFACE TOKENS (CLAVE)
+=============================== */
+
+.bg-surface {
+    background: var(--card) !important;
+}
+
+.border-top {
+    border-color: var(--border) !important;
+}
+
+/* ===============================
+   LIST GROUP DARK FIX (CRÍTICO)
+=============================== */
+
+.list-group-item {
+    background: var(--card);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .list-group-item {
+    background: var(--card);
+    color: var(--text);
+}
+
+/* ===============================
+   NOTIFICATIONS UI
+=============================== */
+
+.notification-group .group-header {
+    background: var(--card);
+}
+
+.notification-group .group-header:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+[data-theme="dark"] .notification-group .group-header:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+/* ===============================
+   FIX TABLAS EXPANDIDAS (EL BUG QUE TENÍAS)
+=============================== */
+
+.bg-light {
+    background: var(--card) !important;
+}

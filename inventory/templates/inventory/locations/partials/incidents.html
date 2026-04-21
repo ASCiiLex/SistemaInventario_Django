@@ -1,4 +1,4 @@
-<div class="p-3 bg-light border-top">
+<div class="p-3 bg-surface border-top">
     <strong class="d-block mb-2">Productos con incidencias</strong>
 
     <div class="table-responsive">
@@ -8,9 +8,7 @@
                     {% include "partials/sortable_th.html" with field="product__name" label="Producto" target=target_id url=base_url %}
                     {% include "partials/sortable_th.html" with field="quantity" label="Stock" target=target_id url=base_url %}
                     {% include "partials/sortable_th.html" with field="min_stock" label="Mínimo" target=target_id url=base_url %}
-
                     <th>Estado</th>
-
                     {% include "partials/sortable_th.html" with field="last_alert" label="Última alerta" target=target_id url=base_url %}
                 </tr>
             </thead>

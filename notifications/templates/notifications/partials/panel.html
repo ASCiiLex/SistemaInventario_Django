@@ -27,10 +27,9 @@
     </div>
 
     {% for group in grouped_notifications %}
-        <div class="mb-2 border rounded">
+        <div class="mb-2 border rounded notification-group">
 
-            <div class="p-2 d-flex justify-content-between align-items-center bg-light cursor-pointer"
-                 onclick="toggleNotificationGroup(this)">
+            <div class="p-2 d-flex justify-content-between align-items-center bg-surface cursor-pointer group-header">
 
                 <div>
                     <strong>{{ group.product|default:"Sin producto" }}</strong>
@@ -44,12 +43,12 @@
 
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-danger">{{ group.count }}</span>
-                    <span>▾</span>
+                    <span class="arrow">▾</span>
                 </div>
 
             </div>
 
-            <div class="d-none">
+            <div class="group-body d-none">
                 <ul class="list-group list-group-flush">
 
                     {% for un in group.items %}
@@ -87,7 +86,7 @@
                     {% endfor %}
 
                     {% if group.hidden_count > 0 %}
-                    <li class="list-group-item text-center text-muted small">
+                    <li class="list-group-item text-center text-muted small toggle-history">
                         +{{ group.hidden_count }} anteriores...
                     </li>
                     {% endif %}
@@ -101,3 +100,17 @@
     {% endfor %}
 
 </div>
+
+<script>
+document.querySelectorAll(".notification-group .group-header").forEach(header => {
+    header.onclick = () => {
+        const body = header.nextElementSibling;
+        const arrow = header.querySelector(".arrow");
+
+        const isOpen = !body.classList.contains("d-none");
+
+        body.classList.toggle("d-none");
+        arrow.textContent = isOpen ? "▾" : "▴";
+    };
+});
+</script>
