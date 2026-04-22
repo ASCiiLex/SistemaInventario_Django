@@ -7,24 +7,13 @@ class CoreConfig(AppConfig):
     name = 'core'
 
     def ready(self):
-        # 🔥 Ejecutar seed SOLO en producción y una vez
-        if os.getenv("DJANGO_ENV") != "prod":
-            return
-
-        if os.getenv("RUN_MAIN") != "true":
+        # 🔥 Solo ejecutar en comando explícito de seed
+        if os.getenv("RUN_SEED") != "true":
             return
 
         try:
-            from django.contrib.auth.models import User
-
-            # Si ya existe el admin, no hacer nada
-            if User.objects.filter(username="admin").exists():
-                return
-
             from scripts.seed_demo import run
             run()
-
-            print("✅ Seed ejecutado automáticamente en producción")
-
+            print("✅ Seed ejecutado desde AppConfig (RUN_SEED=true)")
         except Exception as e:
             print(f"❌ Error ejecutando seed: {e}")
