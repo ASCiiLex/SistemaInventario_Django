@@ -1,1 +1,1 @@
-web: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn sistema_inventario.wsgi:application --bind 0.0.0.0:$PORT --workers 3
+web: python manage.py migrate && python manage.py shell -c "from scripts.seed_demo import run; run()" && gunicorn sistema_inventario.wsgi:application --bind 0.0.0.0:$PORT --workers 3

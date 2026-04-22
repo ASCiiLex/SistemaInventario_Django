@@ -11,12 +11,34 @@ from inventory.models import (
     Order,
     OrderItem,
     StockTransfer,
-    StockItem,
 )
 
 
 def run():
     print("🚀 Seed DEMO (determinista y consistente con dominio)")
+
+    # =====================
+    # SUPERUSER (CRÍTICO)
+    # =====================
+    def create_superuser():
+        username = "admin"
+        password = "admin1234"
+
+        user = User.objects.filter(username=username).first()
+
+        if not user:
+            user = User.objects.create_superuser(
+                username=username,
+                email="admin@demo.com",
+                password=password,
+            )
+            print(f"✅ Superuser creado → {username} / {password}")
+        else:
+            print(f"ℹ️ Superuser ya existe → {username}")
+
+        return user
+
+    admin = create_superuser()
 
     # =====================
     # USERS
@@ -28,7 +50,6 @@ def run():
             user.save()
         return user
 
-    admin = create_user("demo_admin")
     manager = create_user("demo_manager")
     staff = create_user("demo_staff")
 
@@ -99,7 +120,7 @@ def run():
         products.append(p)
 
     # =====================
-    # STOCK INICIAL (solo IN)
+    # STOCK INICIAL
     # =====================
     for p in products:
         for loc in locations:
@@ -117,7 +138,7 @@ def run():
                 continue
 
     # =====================
-    # OUT (válido)
+    # OUT
     # =====================
     for i in range(20):
         p = products[i % len(products)]
@@ -136,7 +157,7 @@ def run():
             continue
 
     # =====================
-    # TRANSFERS (CORRECTO)
+    # TRANSFERS
     # =====================
     for i in range(10):
         p = products[i % len(products)]
@@ -192,4 +213,4 @@ def run():
         except:
             continue
 
-    print("✅ Seed DEMO limpio y consistente")
+    print("✅ Seed DEMO completo")
