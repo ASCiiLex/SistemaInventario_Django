@@ -18,36 +18,40 @@ def run():
     print("🚀 Seed DEMO (determinista y consistente con dominio)")
 
     # =====================
-    # SUPERUSER (CRÍTICO)
+    # SUPERUSER (ROBUSTO)
     # =====================
-    def create_superuser():
+    def create_or_update_superuser():
         username = "admin"
         password = "admin1234"
 
-        user = User.objects.filter(username=username).first()
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={
+                "email": "admin@demo.com",
+                "is_staff": True,
+                "is_superuser": True,
+            }
+        )
 
-        if not user:
-            user = User.objects.create_superuser(
-                username=username,
-                email="admin@demo.com",
-                password=password,
-            )
-            print(f"✅ Superuser creado → {username} / {password}")
-        else:
-            print(f"ℹ️ Superuser ya existe → {username}")
+        # 🔥 CLAVE: asegurar password SIEMPRE (aunque ya exista)
+        user.set_password(password)
+        user.is_staff = True
+        user.is_superuser = True
+        user.save()
+
+        print(f"✅ Superuser listo → {username} / {password}")
 
         return user
 
-    admin = create_superuser()
+    admin = create_or_update_superuser()
 
     # =====================
     # USERS
     # =====================
     def create_user(username):
         user, created = User.objects.get_or_create(username=username)
-        if created:
-            user.set_password("demo1234")
-            user.save()
+        user.set_password("demo1234")
+        user.save()
         return user
 
     manager = create_user("demo_manager")
@@ -134,7 +138,7 @@ def run():
                     quantity=30,
                     note="Stock inicial demo",
                 ).save()
-            except:
+            except Exception:
                 continue
 
     # =====================
@@ -153,7 +157,7 @@ def run():
                 origin=loc,
                 quantity=2,
             ).save()
-        except:
+        except Exception:
             continue
 
     # =====================
@@ -175,7 +179,7 @@ def run():
 
         try:
             transfer.confirm(admin)
-        except:
+        except Exception:
             continue
 
     # =====================
@@ -210,7 +214,7 @@ def run():
         try:
             order.mark_as_sent(admin)
             order.receive_items(admin, items)
-        except:
+        except Exception:
             continue
 
     print("✅ Seed DEMO completo")
