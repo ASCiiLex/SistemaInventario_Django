@@ -43,6 +43,7 @@ urlpatterns = [
 
     # 🔥 METRICS ENDPOINT
     path('metrics/', metrics_view, name='metrics'),
+    path("observability/", include("observability.urls")),
 ]
 
 if settings.DEBUG:

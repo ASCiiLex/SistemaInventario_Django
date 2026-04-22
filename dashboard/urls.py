@@ -12,7 +12,6 @@ from .views import (
     dashboard_chart,
     dashboard_chart_data,
 )
-from .views import observability
 
 urlpatterns = [
     path("", dashboard_view, name="dashboard"),
@@ -20,10 +19,6 @@ urlpatterns = [
     path("totales/", dashboard_totals, name="dashboard_totals"),
     path("bajo-minimo/", dashboard_low_stock, name="dashboard_low_stock"),
     path("system-metrics/", dashboard_system_metrics, name="dashboard_system_metrics"),
-
-    # 🆕 NUEVA PÁGINA
-    path("observability/", observability.observability_dashboard_view, name="observability_dashboard"),
-    path("observability/slow-requests/", observability.slow_requests_view, name="slow_requests"),
 
     path(
         "notificaciones-resumen/",
