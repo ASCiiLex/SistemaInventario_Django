@@ -10,7 +10,6 @@ class LoginRequiredMiddleware:
     EXEMPT_NAMES = {
         "login",
         "logout",
-        "create-admin",
     }
 
     EXEMPT_PREFIXES = (
@@ -29,7 +28,7 @@ class LoginRequiredMiddleware:
         if path.startswith(self.EXEMPT_PREFIXES):
             return self.get_response(request)
 
-        # 2) Resolver nombre de la URL (robusto con fallback)
+        # 2) Resolver nombre de la URL
         url_name = None
         try:
             match = resolve(path)
@@ -37,8 +36,7 @@ class LoginRequiredMiddleware:
         except Exception:
             pass
 
-        # 🔥 fallback directo por path (evita problemas de resolución)
-        if url_name in self.EXEMPT_NAMES or path.startswith("/create-admin"):
+        if url_name in self.EXEMPT_NAMES:
             return self.get_response(request)
 
         # 3) Usuario autenticado
