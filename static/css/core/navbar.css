@@ -8,8 +8,13 @@
     align-items: center;
 }
 
-.navbar-icons > div {
-    transform: scale(0.95);
+/* 🔥 FIX: evitar saltos */
+.counter-slot {
+    width: 42px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* DROPDOWN */
@@ -50,7 +55,7 @@
 }
 
 /* ===============================
-   DESKTOP (≥1200px)
+   DESKTOP
 =============================== */
 
 @media (min-width: 1200px) {
@@ -78,26 +83,13 @@
 }
 
 /* ===============================
-   TABLET + MOBILE (<1200px)
+   MOBILE
 =============================== */
 
-@media (max-width: 1199px) {
-
-    .navbar-actions {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-}
-
-/* MOBILE */
 @media (max-width: 576px) {
 
     .navbar-brand {
         font-size: 0.85rem;
-    }
-
-    .navbar-icons > div {
-        transform: scale(0.85);
     }
 
     .navbar-nav .nav-link {
