@@ -43,7 +43,7 @@
 
     <!-- JS APP -->
     <script src="{% static 'js/theme.js' %}" defer></script>
-    <script src="{% static 'dashboard/js/dashboard.js' %}" defer></script>
+    <script type="module" src="{% static 'dashboard/js/dashboard.js' %}"></script>
 
     {% block extra_js %}{% endblock %}
 </head>
