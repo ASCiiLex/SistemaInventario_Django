@@ -93,14 +93,20 @@ TEMPLATES = [
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "inventario"),
-        "USER": os.getenv("DB_USER", "inventario_user"),
-        "PASSWORD": os.getenv("DB_PASSWORD", "inventario_pass"),
-        "HOST": os.getenv("DB_HOST", "localhost"),
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
         "PORT": os.getenv("DB_PORT", "5432"),
-        "CONN_MAX_AGE": 0,
+        "CONN_MAX_AGE": 60,
     }
 }
+
+# ============================
+# REDIS (UNIFICADO)
+# ============================
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379")
 
 # ============================
 # CACHE
@@ -109,7 +115,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
@@ -167,7 +173,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [REDIS_URL],
         },
     },
 }
