@@ -21,6 +21,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
 
+    'core.apps.CoreConfig',  # 🔥 IMPORTANTE
+
     'accounts',
     'organizations',
 
