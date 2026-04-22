@@ -7,14 +7,16 @@ class LoginRequiredMiddleware:
     🔐 Fuerza login en toda la app excepto rutas públicas
     """
 
+    EXEMPT_URLS = [
+        "login",
+        "logout",
+        "create-admin",
+    ]
 
     EXEMPT_PREFIXES = [
         "/static/",
         "/media/",
         "/metrics/",
-        "/login",
-        "/logout",
-        "/create-admin",
     ]
 
     def __init__(self, get_response):
@@ -22,17 +24,13 @@ class LoginRequiredMiddleware:
 
     def __call__(self, request):
 
-        # permitir siempre recursos estáticos / internos
         path = request.path
 
+        # 1. Prefijos directos (rápido y seguro)
         if any(path.startswith(p) for p in self.EXEMPT_PREFIXES):
             return self.get_response(request)
 
-        # evitar problemas si request.user no está listo aún
-        user = getattr(request, "user", None)
-        if user and user.is_authenticated:
-            return self.get_response(request)
-
+        # 2. URLs nombradas (reverse)
         exempt_paths = []
         for url in self.EXEMPT_URLS:
             try:
@@ -41,6 +39,11 @@ class LoginRequiredMiddleware:
                 continue
 
         if any(path.startswith(url) for url in exempt_paths):
+            return self.get_response(request)
+
+        # 3. Usuario autenticado
+        user = getattr(request, "user", None)
+        if user and user.is_authenticated:
             return self.get_response(request)
 
         return redirect("login")
