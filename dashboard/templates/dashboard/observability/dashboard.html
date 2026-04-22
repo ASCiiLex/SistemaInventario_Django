@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="row mt-3">
+
+        <div class="col-12">
+            <div class="card card-section">
+                <div class="card-header bg-dark text-white">
+                    <span>Métricas del Sistema</span>
+                </div>
+
+                <div class="card-body"
+                     hx-get="{% url 'dashboard_system_metrics' %}"
+                     hx-trigger="load"
+                     hx-target="this"
+                     hx-swap="innerHTML">
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mt-3">
+            <div class="card card-section">
+
+                <div class="card-header bg-secondary text-white">
+                    <span>Observabilidad Avanzada</span>
+                </div>
+
+                <div class="card-body text-center">
+
+                    <p class="mb-3 text-muted">
+                        Análisis detallado de rendimiento, trazas y cuellos de botella
+                    </p>
+
+                    <a href="{% url 'slow_requests' %}" class="btn btn-outline-dark">
+                        🔎 Ver trazas detalladas
+                    </a>
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

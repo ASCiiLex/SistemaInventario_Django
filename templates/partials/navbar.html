@@ -47,31 +47,32 @@
             <div class="d-flex align-items-center gap-2 navbar-icons">
                 {% if perm.view_orders %}
                 <div id="orders-counter"
-                     hx-get="{% url 'orders_counter' %}"
-                     hx-trigger="load, orders:updated from:body"
-                     hx-target="this"
-                     hx-swap="outerHTML"></div>
+                    hx-get="{% url 'orders_counter' %}"
+                    hx-trigger="load, orders:updated from:body"
+                    hx-target="this"
+                    hx-swap="outerHTML"></div>
                 {% endif %}
 
                 <div id="stockitem-counter"
-                     hx-get="{% url 'stockitem_counter' %}"
-                     hx-trigger="load, inventory:stock_changed from:body"
-                     hx-target="this"
-                     hx-swap="outerHTML"></div>
+                    hx-get="{% url 'stockitem_counter' %}"
+                    hx-trigger="load, inventory:stock_changed from:body"
+                    hx-target="this"
+                    hx-swap="outerHTML"></div>
 
                 <div id="lowstock-counter"
-                     hx-get="{% url 'lowstock_counter' %}"
-                     hx-trigger="load, inventory:stock_changed from:body"
-                     hx-target="this"
-                     hx-swap="outerHTML"></div>
+                    hx-get="{% url 'lowstock_counter' %}"
+                    hx-trigger="load, inventory:stock_changed from:body"
+                    hx-target="this"
+                    hx-swap="outerHTML"></div>
 
                 <div id="notifications-bell"
-                     hx-get="{% url 'notifications:notifications_counter' %}"
-                     hx-trigger="load, inventory:notifications_updated from:body"
-                     hx-target="this"
-                     hx-swap="outerHTML"></div>
+                    hx-get="{% url 'notifications:notifications_counter' %}"
+                    hx-trigger="load, inventory:notifications_updated from:body"
+                    hx-target="this"
+                    hx-swap="outerHTML"></div>
             </div>
 
+            <!-- ORG -->
             <div class="dropdown">
                 <button class="btn btn-sm btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
                     {{ organization.name }}
@@ -80,7 +81,7 @@
                     {% for m in organizations %}
                         <li>
                             <a class="dropdown-item {% if m.organization.id == organization.id %}active{% endif %}"
-                               href="{% url 'switch_organization' m.organization.id %}">
+                            href="{% url 'switch_organization' m.organization.id %}">
                                 {{ m.organization.name }}
                                 <small class="text-muted">({{ m.role }})</small>
                             </a>
@@ -89,9 +90,13 @@
                 </ul>
             </div>
 
-            <a href="{% url 'notification_preferences' %}" class="btn btn-sm btn-outline-light">⚙️</a>
+            <!-- 📊 NUEVO -->
+            <a href="{% url 'observability_dashboard' %}" class="btn btn-sm btn-outline-light">📊</a>
+
+            <!-- THEME -->
             <button id="themeToggle" class="btn btn-sm btn-outline-light">🌙</button>
 
+            <!-- LOGOUT -->
             <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
                 <button class="btn btn-sm btn-outline-light">Salir</button>
