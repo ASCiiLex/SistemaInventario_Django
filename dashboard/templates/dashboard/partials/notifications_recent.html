@@ -5,8 +5,8 @@
             <th>Producto</th>
             <th>Ubicación</th>
             <th>Tipo</th>
-            <th>Leída</th>
             <th>Fecha</th>
+            <th>Leída</th>
         </tr>
     </thead>
     <tbody>
@@ -17,8 +17,8 @@
             <td>{{ n.product.name|default:"-" }}</td>
             <td>{{ n.location.name|default:"-" }}</td>
             <td>{{ n.get_type_display }}</td>
-            <td>{{ un.seen|yesno:"Sí,No" }}</td>
             <td>{{ n.created_at|date:"d/m/Y H:i" }}</td>
+            <td>{{ un.seen|yesno:"Sí,No" }}</td>
         </tr>
         {% endwith %}
         {% empty %}
