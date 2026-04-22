@@ -1,16 +1,15 @@
+# core/observability/middleware.py
+
 import time
 import uuid
 import logging
 
 from django.urls import resolve
-from django.db import connection
-from django.core.cache import cache
 
 from core.security.errors import safe_log_error
-from observability.models import SlowRequest
 
 from .metrics import http_requests_total, http_request_duration_seconds, errors_total
-from .tracing import set_trace_id, clear_trace, trace_db_query, get_trace_stats
+from .tracing import set_trace_id, clear_trace, get_trace_stats
 
 
 logger = logging.getLogger("inventory.domain")
@@ -20,10 +19,23 @@ class ObservabilityMiddleware:
 
     SLOW_REQUEST_THRESHOLD = 0.5  # segundos
 
+    EXCLUDED_PATHS = [
+        "/login",
+        "/static/",
+        "/media/",
+        "/favicon.ico",
+    ]
+
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
+
+        path = request.path
+
+        # 🔥 CRÍTICO: NO aplicar observabilidad en login y recursos básicos
+        if any(path.startswith(p) for p in self.EXCLUDED_PATHS):
+            return self.get_response(request)
 
         start_time = time.time()
 
@@ -31,11 +43,6 @@ class ObservabilityMiddleware:
         request.trace_id = trace_id
 
         set_trace_id(trace_id)
-
-        try:
-            connection.execute_wrapper(trace_db_query)
-        except Exception:
-            pass
 
         try:
             response = self.get_response(request)
@@ -91,34 +98,6 @@ class ObservabilityMiddleware:
 
         try:
             logger.info("trace.summary", extra=trace_summary)
-        except Exception:
-            pass
-
-        # 🔥 DB (NO CRÍTICO)
-        if duration >= self.SLOW_REQUEST_THRESHOLD:
-            try:
-                SlowRequest.objects.create(**trace_summary)
-            except Exception:
-                pass
-
-        # 🔥 CACHE (NO CRÍTICO)
-        try:
-            cache_key = "observability:slow_requests"
-            slow_requests = cache.get(cache_key, [])
-
-            slow_requests.append(trace_summary)
-            slow_requests = sorted(
-                slow_requests,
-                key=lambda x: x["total_time"],
-                reverse=True
-            )[:10]
-
-            cache.set(cache_key, slow_requests, 60)
-        except Exception:
-            pass
-
-        try:
-            response["X-Request-ID"] = getattr(request, "trace_id", "")
         except Exception:
             pass
 
