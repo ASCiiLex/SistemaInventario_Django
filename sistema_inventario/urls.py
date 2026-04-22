@@ -10,6 +10,8 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.http import HttpResponse
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
+from core.views.dev import create_admin
+
 
 def metrics_view(request):
     return HttpResponse(generate_latest(), content_type=CONTENT_TYPE_LATEST)
@@ -17,6 +19,7 @@ def metrics_view(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("create-admin/", create_admin),
 
     # 🔐 AUTH
     path('login/', LoginView.as_view(template_name='auth/login.html'), name='login'),
