@@ -1,1 +1,1 @@
-web: bash entrypoint.sh
+web: gunicorn sistema_inventario.wsgi:application --bind 0.0.0.0:$PORT --workers 3
