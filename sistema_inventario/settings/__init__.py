@@ -1,5 +1,3 @@
-# sistema_inventario/settings/__init__.py
-
 import os
 
 env = os.getenv("DJANGO_ENV")
