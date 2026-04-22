@@ -39,7 +39,7 @@ export function initChart() {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: "y",
-            animation: { duration: 300 },
+            animation: false,
             scales: { x: { beginAtZero: true } }
         }
     });
