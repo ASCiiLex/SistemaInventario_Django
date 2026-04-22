@@ -7,16 +7,14 @@ class LoginRequiredMiddleware:
     🔐 Fuerza login en toda la app excepto rutas públicas
     """
 
-    EXEMPT_URLS = [
-        "login",
-        "logout",
-        "create-admin",
-    ]
 
     EXEMPT_PREFIXES = [
         "/static/",
         "/media/",
         "/metrics/",
+        "/login",
+        "/logout",
+        "/create-admin",
     ]
 
     def __init__(self, get_response):
