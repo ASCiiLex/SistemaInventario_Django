@@ -16,8 +16,7 @@ services:
     image: redis:7
     container_name: inventario_redis
     restart: always
-    ports:
-      - "6379:6379"
+
 
 volumes:
   postgres_data:
