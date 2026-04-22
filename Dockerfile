@@ -15,6 +15,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN python manage.py collectstatic --noinput
-
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "sistema_inventario.asgi:application"]
+CMD ["gunicorn", "sistema_inventario.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
