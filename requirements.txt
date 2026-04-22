@@ -13,6 +13,7 @@ Django==6.0.3
 django-extensions==4.1
 django-redis==6.0.0
 django-widget-tweaks==1.5.1
+gunicorn==22.0.0
 hyperlink==21.0.0
 idna==3.11
 Incremental==24.11.0
