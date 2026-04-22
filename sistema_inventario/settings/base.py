@@ -1,26 +1,13 @@
 from pathlib import Path
+import os
 
-# BASE DIR
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-# ============================
-# SEGURIDAD
-# ============================
-
-SECRET_KEY = 'django-insecure-3*sfsynq@f9ef+8h6$holq(cpei*68s^u(rdml=kzulgaeruj='
-
-DEBUG = True
-
-ALLOWED_HOSTS = []  # En producción añadir dominio o IP
-
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # ============================
 # APPS
 # ============================
 
 INSTALLED_APPS = [
-    # Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -29,11 +16,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
 
-    # Core
     'accounts',
     'organizations',
 
-    # Apps del proyecto
     'products.apps.ProductsConfig',
     'suppliers',
     'categories',
@@ -42,10 +27,8 @@ INSTALLED_APPS = [
     'inventory',
     'observability',
 
-    # WebSockets
     'channels',
 ]
-
 
 # ============================
 # MIDDLEWARE
@@ -72,16 +55,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-
 # ============================
 # URLS / WSGI / ASGI
 # ============================
 
 ROOT_URLCONF = 'sistema_inventario.urls'
-
 WSGI_APPLICATION = 'sistema_inventario.wsgi.application'
 ASGI_APPLICATION = 'sistema_inventario.asgi.application'
-
 
 # ============================
 # TEMPLATES
@@ -98,39 +78,29 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-
-                # Notificaciones
                 'notifications.context_processors.notifications_unread',
-
-                # Permisos
                 "accounts.context_processors.permissions_context",
-
-                # Organización
                 'organizations.context_processors.organization',
             ],
         },
     },
 ]
 
-
 # ============================
-# BASE DE DATOS
+# DATABASE
 # ============================
-
-import os
 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "inventario",
-        "USER": "inventario_user",
-        "PASSWORD": "inventario_pass",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.getenv("DB_NAME", "inventario"),
+        "USER": os.getenv("DB_USER", "inventario_user"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "inventario_pass"),
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "5432"),
         "CONN_MAX_AGE": 0,
     }
 }
-
 
 # ============================
 # CACHE
@@ -154,9 +124,8 @@ CACHE_TTL = {
     "activity": 5,
 }
 
-
 # ============================
-# VALIDACIÓN DE PASSWORDS
+# PASSWORDS
 # ============================
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -166,9 +135,8 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
 # ============================
-# INTERNACIONALIZACIÓN
+# I18N
 # ============================
 
 LANGUAGE_CODE = 'es-es'
@@ -176,28 +144,20 @@ TIME_ZONE = 'Europe/Madrid'
 USE_I18N = True
 USE_TZ = True
 
-
 # ============================
-# ARCHIVOS ESTÁTICOS
+# STATIC
 # ============================
 
 STATIC_URL = '/static/'
-
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
-
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 
 # ============================
 # EMAIL
 # ============================
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
 
 # ============================
 # CHANNELS
@@ -212,91 +172,12 @@ CHANNEL_LAYERS = {
     },
 }
 
-
 # ============================
-# CONFIG GENERAL
+# GENERAL
 # ============================
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
-
-
-
-# ============================
-# LOGGING (OBSERVABILIDAD REAL)
-# ============================
-
-import logging
-import sys
-import json
-from datetime import datetime
-
-
-class JSONFormatter(logging.Formatter):
-    def format(self, record):
-        from core.observability.tracing import get_trace_id
-
-        log_record = {
-            "timestamp": datetime.utcnow().isoformat(),
-            "level": record.levelname,
-            "logger": record.name,
-            "message": record.getMessage(),
-            "trace_id": get_trace_id(),  # 🔥 añadido
-        }
-
-        if hasattr(record, "product_id"):
-            log_record["product_id"] = record.product_id
-        if hasattr(record, "org_id"):
-            log_record["organization_id"] = record.org_id
-        if hasattr(record, "movement_id"):
-            log_record["movement_id"] = record.movement_id
-        if hasattr(record, "type"):
-            log_record["movement_type"] = record.type
-        if hasattr(record, "qty"):
-            log_record["quantity"] = record.qty
-        if hasattr(record, "errors"):
-            log_record["errors"] = record.errors
-
-        return json.dumps(log_record)
-
-
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-
-    "formatters": {
-        "json": {
-            "()": JSONFormatter,
-        },
-    },
-
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "stream": sys.stdout,
-            "formatter": "json",
-        },
-    },
-
-    "loggers": {
-        "inventory.domain": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "inventory.metrics": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "django.request": {
-            "handlers": ["console"],
-            "level": "WARNING",
-            "propagate": False,
-        },
-    },
-}
