@@ -7,9 +7,9 @@ class Command(BaseCommand):
     help = "Seed inicial de datos (idempotente)"
 
     def handle(self, *args, **kwargs):
-        # 🔥 asegurar conexión DB antes de ejecutar seed
         connection.ensure_connection()
 
+        # 🔥 ejecutar SIEMPRE (idempotente)
         run()
 
         self.stdout.write(self.style.SUCCESS("✅ Seed ejecutado correctamente"))
