@@ -21,7 +21,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
 
-    'core.apps.CoreConfig',  # 🔥 IMPORTANTE
+    'core.apps.CoreConfig',
 
     'accounts',
     'organizations',
@@ -38,23 +38,29 @@ INSTALLED_APPS = [
 ]
 
 # ============================
-# MIDDLEWARE
+# MIDDLEWARE (REORDENADO Y AISLADO)
 # ============================
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
 
-    'core.security.middleware.RateLimitMiddleware',
-
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+
+    # 🔐 control de acceso primero
+    'accounts.middleware.LoginRequiredMiddleware',
+
+    # 🏢 multi-tenant solo con usuario autenticado
+    'organizations.middleware.OrganizationMiddleware',
+
+    # 🔍 observabilidad al final (no rompe flujo)
     'core.observability.middleware.ObservabilityMiddleware',
 
-    'accounts.middleware.LoginRequiredMiddleware',
-    'organizations.middleware.OrganizationMiddleware',
+    # ⚠️ rate limit fuera del flujo crítico (opcional reintroducir después)
+    # 'core.security.middleware.RateLimitMiddleware',
 
     "inventory.middleware.audit_middleware.AuditUserMiddleware",
 
