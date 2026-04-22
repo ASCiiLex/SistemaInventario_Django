@@ -1,21 +1,13 @@
 from django.utils import timezone
 from datetime import timedelta
 from django.core.cache import cache
-from django.db.models import F, Sum  # 🔥 IMPORT CORRECTO
 
-from .models import Notification, UserNotification
-from .utils import send_to_user, send_ui_event_to_all
-from .events import register_event
-from .preferences import is_event_enabled
-from .constants import Events
+from notifications.models import Notification, UserNotification
+from notifications.utils import send_to_user, send_ui_event_to_all
+from notifications.preferences import is_event_enabled
+from notifications.constants import Events
 
 from organizations.models import Membership
-
-
-COOLDOWNS = {
-    Events.STOCK_LOW: 30,
-    Events.PRODUCT_RISK: 60,
-}
 
 
 PRIORITY_MAP = {
@@ -60,7 +52,7 @@ def _resolve_organization(product=None, location=None):
 
 
 def _get_target_users(organization):
-    from .preferences import ensure_user_preferences
+    from notifications.preferences import ensure_user_preferences
 
     memberships = (
         Membership.objects
@@ -80,77 +72,6 @@ def _build_message(type_, product=None, location=None):
     template = MESSAGE_TEMPLATES.get(type_)
     return template(product, location) if template else type_
 
-
-# ==========================================
-# 🔥 REGLAS DE DOMINIO
-# ==========================================
-
-def _stock_item_is_still_low(notification):
-    from inventory.models import StockItem
-
-    return StockItem.objects.filter(
-        organization=notification.organization,
-        product=notification.product,
-        location=notification.location,
-        quantity__lte=F("min_stock")
-    ).exists()
-
-
-def _product_is_still_in_risk(notification):
-    from inventory.models import StockItem
-
-    agg = (
-        StockItem.objects
-        .filter(organization=notification.organization, product=notification.product)
-        .aggregate(
-            total_qty=Sum("quantity"),
-            total_min=Sum("min_stock"),
-        )
-    )
-
-    total_qty = agg["total_qty"] or 0
-    total_min = agg["total_min"] or 0
-
-    has_local_issue = StockItem.objects.filter(
-        organization=notification.organization,
-        product=notification.product,
-        quantity__lte=F("min_stock")
-    ).exists()
-
-    return has_local_issue and total_qty <= total_min
-
-
-def _should_be_active(notification):
-    if notification.type == Events.STOCK_LOW:
-        return _stock_item_is_still_low(notification)
-
-    if notification.type == Events.PRODUCT_RISK:
-        return _product_is_still_in_risk(notification)
-
-    return False
-
-
-def sync_notification_state(notification):
-    should_be_active = _should_be_active(notification)
-
-    if notification.is_active != should_be_active:
-        notification.is_active = should_be_active
-        notification.save(update_fields=["is_active"])
-
-
-def sync_notifications_for_org(organization):
-    qs = Notification.objects.filter(
-        organization=organization,
-        type__in=[Events.STOCK_LOW, Events.PRODUCT_RISK]
-    )
-
-    for n in qs:
-        sync_notification_state(n)
-
-
-# ==========================================
-# CREATE
-# ==========================================
 
 def create_notification(*, product=None, location=None, type_):
     organization = _resolve_organization(product, location)
@@ -204,24 +125,3 @@ def create_notification(*, product=None, location=None, type_):
     })
 
     return notification
-
-
-# ==========================================
-# EVENTS
-# ==========================================
-
-@register_event(Events.STOCK_LOW)
-def handle_stock_low(payload: dict):
-    create_notification(
-        product=payload.get("product"),
-        location=payload.get("location"),
-        type_=Events.STOCK_LOW,
-    )
-
-
-@register_event(Events.PRODUCT_RISK)
-def handle_product_risk(payload: dict):
-    create_notification(
-        product=payload.get("product"),
-        type_=Events.PRODUCT_RISK,
-    )
