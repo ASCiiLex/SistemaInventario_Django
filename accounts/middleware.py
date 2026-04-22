@@ -1,47 +1,46 @@
 from django.shortcuts import redirect
-from django.urls import reverse, NoReverseMatch
+from django.urls import resolve
 
 
 class LoginRequiredMiddleware:
     """
     🔐 Fuerza login en toda la app excepto rutas públicas
+    (basado en url_name → determinista)
     """
 
-    EXEMPT_URLS = [
+    EXEMPT_NAMES = {
         "login",
         "logout",
         "create-admin",
-    ]
+    }
 
-    EXEMPT_PREFIXES = [
+    EXEMPT_PREFIXES = (
         "/static/",
         "/media/",
         "/metrics/",
-    ]
+    )
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-
         path = request.path
 
-        # 1. Prefijos directos (rápido y seguro)
-        if any(path.startswith(p) for p in self.EXEMPT_PREFIXES):
+        # 1) Recursos estáticos/infra
+        if path.startswith(self.EXEMPT_PREFIXES):
             return self.get_response(request)
 
-        # 2. URLs nombradas (reverse)
-        exempt_paths = []
-        for url in self.EXEMPT_URLS:
-            try:
-                exempt_paths.append(reverse(url))
-            except NoReverseMatch:
-                continue
+        # 2) Resolver nombre de la URL
+        try:
+            match = resolve(path)
+            url_name = match.url_name
+        except Exception:
+            url_name = None
 
-        if any(path.startswith(url) for url in exempt_paths):
+        if url_name in self.EXEMPT_NAMES:
             return self.get_response(request)
 
-        # 3. Usuario autenticado
+        # 3) Usuario autenticado
         user = getattr(request, "user", None)
         if user and user.is_authenticated:
             return self.get_response(request)
