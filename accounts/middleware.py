@@ -10,6 +10,7 @@ class LoginRequiredMiddleware:
     EXEMPT_URLS = [
         "login",
         "logout",
+        "create-admin",
     ]
 
     EXEMPT_PREFIXES = [
