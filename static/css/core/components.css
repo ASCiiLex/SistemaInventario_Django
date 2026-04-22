@@ -1,0 +1,180 @@
+/* ===============================
+   CARDS
+=============================== */
+
+.card {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+/* ===============================
+   TABLES
+=============================== */
+
+.table {
+    font-size: 0.95rem;
+    color: inherit;
+    border-color: var(--border);
+}
+
+/* HEAD */
+.table thead {
+    background: #f1f3f5;
+}
+
+.table thead th {
+    color: var(--text);
+    border-color: var(--border);
+}
+
+/* BODY */
+.table tbody tr {
+    background: #ffffff;
+}
+
+/* STRIPED */
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #f8f9fa;
+}
+
+/* HOVER */
+.table-hover > tbody > tr:hover {
+    background-color: #e9ecef;
+}
+
+/* ===============================
+   DARK MODE TABLES
+=============================== */
+
+[data-theme="dark"] .table {
+    --bs-table-bg: var(--card);
+    --bs-table-color: var(--text);
+    --bs-table-border-color: var(--border);
+    color: var(--text);
+}
+
+[data-theme="dark"] .table thead {
+    background-color: #2a2a2a;
+}
+
+[data-theme="dark"] .table thead th {
+    color: var(--text);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .table tbody tr {
+    background-color: var(--card);
+}
+
+[data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #262626;
+}
+
+[data-theme="dark"] .table-hover > tbody > tr:hover {
+    background-color: #323232;
+}
+
+[data-theme="dark"] .table td,
+[data-theme="dark"] .table th {
+    color: var(--text);
+    border-color: var(--border);
+}
+
+/* ===============================
+   FORMS
+=============================== */
+
+input,
+select,
+textarea,
+.form-control,
+.form-select {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.form-control:focus,
+.form-select:focus,
+select:focus,
+input:focus {
+    background: var(--card);
+    color: var(--text);
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
+}
+
+/* DARK MODE FORMS */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea,
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+    background: var(--card);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+/* ===============================
+   LIST GROUP
+=============================== */
+
+.list-group-item {
+    background: var(--card);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .list-group-item {
+    background: var(--card);
+    color: var(--text);
+}
+
+/* ===============================
+   NOTIFICATIONS UI
+=============================== */
+
+.notification-group .group-header {
+    background: var(--card);
+}
+
+.notification-group .group-header:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+[data-theme="dark"] .notification-group .group-header:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+/* ===============================
+   FIXES
+=============================== */
+
+.bg-light {
+    background: var(--card) !important;
+}
+
+/* Notifications panel */
+
+#notificationsPanelBody {
+    background: var(--card);
+    color: var(--text);
+}
+
+#notificationsPanelBody .list-group {
+    background: var(--card);
+}
+
+#notificationsPanelBody .list-group-item {
+    background: var(--card);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+#notificationsPanelBody .text-muted {
+    color: var(--muted) !important;
+}
+
+#notificationsPanelBody .border {
+    border-color: var(--border) !important;
+}

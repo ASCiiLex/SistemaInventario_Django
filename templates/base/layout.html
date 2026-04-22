@@ -8,11 +8,31 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- CSS -->
+    <!-- THEME INIT (evita FOUC) -->
+    <script>
+        const theme = localStorage.getItem("theme");
+        if (theme === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+        }
+    </script>
+
+    <!-- CSS LIBS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="{% static 'css/core.css' %}">
+
+    <!-- CORE -->
+    <link rel="stylesheet" href="{% static 'css/core/variables.css' %}">
+    <link rel="stylesheet" href="{% static 'css/core/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/core/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/core/components.css' %}">
+    <link rel="stylesheet" href="{% static 'css/core/plugins.css' %}">
+    <link rel="stylesheet" href="{% static 'css/core/navbar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/core/responsive.css' %}">
+
+    <!-- FEATURE -->
     <link rel="stylesheet" href="{% static 'dashboard/css/dashboard.css' %}">
+
+    {% block extra_css %}{% endblock %}
 
     <!-- JS LIBS -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -24,6 +44,8 @@
     <!-- JS APP -->
     <script src="{% static 'js/theme.js' %}" defer></script>
     <script src="{% static 'dashboard/js/dashboard.js' %}" defer></script>
+
+    {% block extra_js %}{% endblock %}
 </head>
 
 <body x-data>

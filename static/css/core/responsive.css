@@ -1,0 +1,47 @@
+/* GLOBAL */
+@media (max-width: 768px) {
+
+    h2 {
+        font-size: 1.4rem;
+    }
+
+    .card {
+        border-radius: 0.6rem;
+    }
+
+    .table {
+        font-size: 0.8rem;
+    }
+
+    .btn {
+        font-size: 0.85rem;
+        padding: 0.35rem 0.6rem;
+    }
+
+    .form-control,
+    .form-select {
+        font-size: 0.85rem;
+    }
+}
+
+/* DASHBOARD GRID */
+@media (max-width: 992px) {
+    .row > [class*="col-md-"] {
+        width: 100%;
+    }
+}
+
+/* NAVBAR MOBILE EXTRA */
+@media (max-width: 768px) {
+    .navbar .container-fluid {
+        flex-wrap: nowrap;
+    }
+
+    .navbar-brand {
+        font-size: 0.9rem;
+    }
+
+    .navbar-toggler {
+        padding: 0.25rem 0.4rem;
+    }
+}

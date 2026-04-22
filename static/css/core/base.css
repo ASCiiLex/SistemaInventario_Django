@@ -1,0 +1,15 @@
+body {
+    background: var(--bg);
+    color: var(--text);
+    transition: background .25s ease, color .25s ease;
+}
+
+/* Placeholder */
+::placeholder {
+    color: var(--muted);
+    opacity: 1;
+}
+
+[data-theme="dark"] ::placeholder {
+    color: var(--muted);
+}

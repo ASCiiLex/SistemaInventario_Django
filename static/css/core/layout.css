@@ -1,0 +1,13 @@
+.bg-surface {
+    background: var(--card) !important;
+}
+
+.border-top {
+    border-color: var(--border) !important;
+}
+
+/* TABLE SCROLL UX */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}

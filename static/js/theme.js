@@ -2,6 +2,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const html = document.documentElement;
     const btn = document.getElementById("themeToggle");
 
+    if (!btn) return;
+
     const saved = localStorage.getItem("theme") || "light";
     html.setAttribute("data-theme", saved);
 
