@@ -1,7 +1,7 @@
 <!-- =======================
-     DESKTOP NAVBAR
+     DESKTOP NAVBAR (≥1200)
 ======================= -->
-<nav class="navbar navbar-dark bg-dark mb-4 d-none d-lg-block">
+<nav class="navbar navbar-dark bg-dark mb-4 d-none d-xl-block">
     <div class="container d-flex align-items-center justify-content-between">
 
         <!-- LEFT -->
@@ -11,7 +11,6 @@
 
         <!-- CENTER -->
         <ul class="navbar-nav flex-row align-items-center gap-3 mb-0 flex-grow-1 justify-content-center">
-
             <li class="nav-item"><a href="/categorias/" class="nav-link">Categorías</a></li>
             <li class="nav-item"><a href="/proveedores/" class="nav-link">Proveedores</a></li>
             <li class="nav-item"><a href="/productos/" class="nav-link">Productos</a></li>
@@ -21,7 +20,6 @@
                     Inventario
                 </a>
                 <ul class="dropdown-menu">
-
                     <li><a class="dropdown-item" href="{% url 'stockmovement_list' %}">Movimientos</a></li>
                     <li><a class="dropdown-item" href="{% url 'transfer_list' %}">Transferencias</a></li>
                     <li><a class="dropdown-item" href="{% url 'location_list' %}">Almacenes</a></li>
@@ -41,14 +39,12 @@
                     {% endif %}
                 </ul>
             </li>
-
         </ul>
 
         <!-- RIGHT -->
-        <div class="d-flex align-items-center gap-2">
+        <div class="navbar-actions d-flex align-items-center gap-2">
 
             <div class="d-flex align-items-center gap-2 navbar-icons">
-
                 {% if perm.view_orders %}
                 <div id="orders-counter"
                      hx-get="{% url 'orders_counter' %}"
@@ -74,7 +70,6 @@
                      hx-trigger="load, inventory:notifications_updated from:body"
                      hx-target="this"
                      hx-swap="outerHTML"></div>
-
             </div>
 
             <div class="dropdown">
@@ -91,18 +86,16 @@
                             </a>
                         </li>
                     {% endfor %}
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="{% url 'notification_preferences' %}">⚙️ Configuración</a></li>
-                    <li>
-                        <form method="post" action="{% url 'logout' %}">
-                            {% csrf_token %}
-                            <button class="dropdown-item">Salir</button>
-                        </form>
-                    </li>
                 </ul>
             </div>
 
+            <a href="{% url 'notification_preferences' %}" class="btn btn-sm btn-outline-light">⚙️</a>
             <button id="themeToggle" class="btn btn-sm btn-outline-light">🌙</button>
+
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-light">Salir</button>
+            </form>
 
         </div>
 
@@ -111,9 +104,9 @@
 
 
 <!-- =======================
-     MOBILE / TABLET NAVBAR
+     TABLET + MOBILE (<1200)
 ======================= -->
-<nav class="navbar navbar-dark bg-dark mb-4 d-lg-none">
+<nav class="navbar navbar-dark bg-dark mb-4 d-xl-none">
     <div class="container">
 
         <!-- TOPBAR -->
@@ -155,7 +148,11 @@
 
                 </div>
 
-                <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMobile">
+                <!-- 🔥 Toggle SIEMPRE visible en tablet -->
+                <button class="btn btn-sm btn-outline-light"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#navbarMobile">
                     ☰
                 </button>
 
@@ -166,15 +163,17 @@
         <!-- COLLAPSE -->
         <div class="collapse mt-2" id="navbarMobile">
 
+            <!-- NAV LINKS -->
             <ul class="navbar-nav flex-row flex-wrap justify-content-center gap-3 mb-3">
-
                 <li class="nav-item"><a href="/categorias/" class="nav-link">Categorías</a></li>
                 <li class="nav-item"><a href="/proveedores/" class="nav-link">Proveedores</a></li>
                 <li class="nav-item"><a href="/productos/" class="nav-link">Productos</a></li>
-                <li class="nav-item"><a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Inventario</a></li>
-
+                <li class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Inventario</a>
+                </li>
             </ul>
 
+            <!-- ACTIONS -->
             <div class="d-flex flex-wrap justify-content-center gap-2">
 
                 <div class="dropdown">
