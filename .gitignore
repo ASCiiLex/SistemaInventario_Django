@@ -1,20 +1,24 @@
 # Entorno virtual
 venv/
+.env
 
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
 
 # Django
 db.sqlite3
 staticfiles/
 media/
 
-# Variables de entorno
-.env
+# Logs
+*.log
 
-# VS Code
+# IDEs
 .vscode/
+.idea/
 
 # OS
 .DS_Store
+Thumbs.db

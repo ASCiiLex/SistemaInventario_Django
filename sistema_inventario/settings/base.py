@@ -106,7 +106,7 @@ DATABASES = {
 }
 
 # ============================
-# REDIS (UNIFICADO)
+# REDIS
 # ============================
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379")
@@ -123,14 +123,6 @@ CACHES = {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     }
-}
-
-CACHE_TTL = {
-    "metrics": 15,
-    "low_stock": 15,
-    "charts": 30,
-    "notifications": 10,
-    "activity": 5,
 }
 
 # ============================
