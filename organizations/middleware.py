@@ -3,11 +3,7 @@ from .models import Membership, Organization
 
 class OrganizationMiddleware:
     """
-    🔥 Middleware multi-tenant PRO
-
-    - Soporta múltiples organizaciones por usuario
-    - Permite selección activa vía sesión
-    - Fallback automático seguro
+    🔥 Middleware multi-tenant robusto (no rompe login / errores DB)
     """
 
     SESSION_KEY = "active_organization_id"
@@ -19,10 +15,13 @@ class OrganizationMiddleware:
         request.organization = None
         request.membership = None
 
-        user = request.user
+        user = getattr(request, "user", None)
 
-        if user.is_authenticated:
+        # 🔥 CRÍTICO: si no hay usuario o no está autenticado → no tocar DB
+        if not user or not user.is_authenticated:
+            return self.get_response(request)
 
+        try:
             memberships = (
                 Membership.objects
                 .select_related("organization")
@@ -32,17 +31,16 @@ class OrganizationMiddleware:
 
             membership = None
 
-            # 🔥 1. Intentar desde sesión
+            # 1. sesión
             org_id = request.session.get(self.SESSION_KEY)
-
             if org_id:
                 membership = memberships.filter(organization_id=org_id).first()
 
-            # 🔥 2. Fallback → primera activa
+            # 2. fallback
             if not membership:
                 membership = memberships.first()
 
-            # 🔥 3. Bootstrap seguro
+            # 3. bootstrap seguro
             if not membership:
                 organization, _ = Organization.objects.get_or_create(
                     slug="default",
@@ -62,10 +60,14 @@ class OrganizationMiddleware:
                     role=Membership.Roles.OWNER
                 )
 
-            # 🔥 Persistir en sesión
             request.session[self.SESSION_KEY] = membership.organization_id
 
             request.organization = membership.organization
             request.membership = membership
+
+        except Exception:
+            # 🔥 nunca romper request (login incluido)
+            request.organization = None
+            request.membership = None
 
         return self.get_response(request)
