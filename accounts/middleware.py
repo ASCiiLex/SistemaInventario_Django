@@ -5,7 +5,6 @@ from django.urls import resolve
 class LoginRequiredMiddleware:
     """
     🔐 Fuerza login en toda la app excepto rutas públicas
-    (basado en url_name → determinista)
     """
 
     EXEMPT_NAMES = {
@@ -30,14 +29,16 @@ class LoginRequiredMiddleware:
         if path.startswith(self.EXEMPT_PREFIXES):
             return self.get_response(request)
 
-        # 2) Resolver nombre de la URL
+        # 2) Resolver nombre de la URL (robusto con fallback)
+        url_name = None
         try:
             match = resolve(path)
             url_name = match.url_name
         except Exception:
-            url_name = None
+            pass
 
-        if url_name in self.EXEMPT_NAMES:
+        # 🔥 fallback directo por path (evita problemas de resolución)
+        if url_name in self.EXEMPT_NAMES or path.startswith("/create-admin"):
             return self.get_response(request)
 
         # 3) Usuario autenticado
