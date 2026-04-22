@@ -3,7 +3,7 @@ import os
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 
-DEBUG = False
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
 raw_hosts = os.getenv("ALLOWED_HOSTS", "")
 ALLOWED_HOSTS = [h.strip() for h in raw_hosts.split(",") if h.strip()]
