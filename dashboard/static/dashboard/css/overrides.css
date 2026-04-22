@@ -1,0 +1,65 @@
+/* TEXTOS DARK MODE */
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .card-body {
+    color: #eaeaea;
+}
+
+[data-theme="dark"] .card-body h5,
+[data-theme="dark"] .card-body p {
+    color: #eaeaea !important;
+}
+
+/* HEADER FIX */
+
+.card-header.bg-info,
+.card-header.bg-warning,
+.card-header.bg-light {
+    color: #212529 !important;
+}
+
+.card-header.bg-primary,
+.card-header.bg-danger,
+.card-header.bg-success,
+.card-header.bg-dark {
+    color: #ffffff !important;
+}
+
+.card-header.bg-primary *,
+.card-header.bg-danger * {
+    color: #ffffff !important;
+}
+
+/* BOTONES */
+
+[data-theme="dark"] .btn,
+[data-theme="dark"] .btn-outline-primary,
+[data-theme="dark"] .btn-outline-secondary,
+[data-theme="dark"] .btn-outline-dark {
+    color: #eaeaea !important;
+    border-color: #555;
+}
+
+[data-theme="dark"] .btn:hover {
+    color: #ffffff !important;
+}
+
+/* TABLE HEAD FIX */
+
+[data-theme="dark"] .table-primary,
+[data-theme="dark"] .table-danger,
+[data-theme="dark"] .table-warning,
+[data-theme="dark"] .table-info,
+[data-theme="dark"] .table-success {
+    --bs-table-bg: #2a2a2a;
+    --bs-table-color: #eaeaea;
+    --bs-table-border-color: var(--border);
+}
+
+[data-theme="dark"] .table-primary th,
+[data-theme="dark"] .table-danger th,
+[data-theme="dark"] .table-warning th,
+[data-theme="dark"] .table-info th,
+[data-theme="dark"] .table-success th {
+    color: #eaeaea !important;
+}

@@ -1,0 +1,13 @@
+.subsection table {
+    background-color: var(--dashboard-sub-bg);
+    border-top: 2px solid #ccc;
+}
+
+.subsection table tbody tr:nth-child(odd) {
+    background-color: var(--dashboard-sub-bg);
+}
+
+.subsection table thead {
+    font-size: 0.9rem;
+    font-weight: 600;
+}

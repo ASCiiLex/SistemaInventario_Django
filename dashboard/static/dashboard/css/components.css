@@ -1,0 +1,23 @@
+/* ALTURAS */
+.row.g-3 > [class*="col-md-6"] .card-section {
+    height: 100%;
+}
+
+/* COMPACT TABLE */
+.compact-table {
+    padding: 6px 10px !important;
+}
+
+.compact-table table td,
+.compact-table table th {
+    padding: 4px 6px !important;
+}
+
+.compact-table table tbody tr {
+    line-height: 1.1;
+}
+
+/* CHART SELECTOR */
+.chart-selector {
+    width: auto;
+}

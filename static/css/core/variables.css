@@ -4,6 +4,11 @@
     --card: #ffffff;
     --border: #dee2e6;
     --muted: #6c757d;
+
+    /* DASHBOARD */
+    --dashboard-section-bg: #ffffff;
+    --dashboard-sub-bg: #414040;
+    --dashboard-sub-text: #fafafa;
 }
 
 [data-theme="dark"] {
@@ -12,4 +17,9 @@
     --card: #1e1e1e;
     --border: #2c2c2c;
     --muted: #9aa0a6;
+
+    /* DASHBOARD */
+    --dashboard-section-bg: #1e1e1e;
+    --dashboard-sub-bg: #2c2c2c;
+    --dashboard-sub-text: #eaeaea;
 }

@@ -1,0 +1,25 @@
+@media (max-width: 768px) {
+
+    .row.g-3 > [class*="col-md-6"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .chart-selector {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .section-header {
+        padding: 8px 10px;
+        font-size: 0.95rem;
+    }
+
+    .card-body.section-content {
+        padding: 8px 10px;
+    }
+
+    canvas {
+        max-height: 250px;
+    }
+}
