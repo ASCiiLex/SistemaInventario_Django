@@ -16,23 +16,21 @@ from inventory.models import (
 
 
 def run():
-    print("🚀 Seed DEMO (determinista y no destructivo)")
+    print("🚀 Seed DEMO (determinista y consistente con dominio)")
 
     # =====================
-    # USERS (NO sobrescribe)
+    # USERS
     # =====================
-    def create_user(username, role):
+    def create_user(username):
         user, created = User.objects.get_or_create(username=username)
         if created:
             user.set_password("demo1234")
             user.save()
         return user
 
-    admin = create_user("demo_admin", Membership.Roles.ADMIN)
-    manager = create_user("demo_manager", Membership.Roles.MANAGER)
-    staff = create_user("demo_staff", Membership.Roles.STAFF)
-
-    users = [admin, manager, staff]
+    admin = create_user("demo_admin")
+    manager = create_user("demo_manager")
+    staff = create_user("demo_staff")
 
     # =====================
     # ORGANIZATION
@@ -45,11 +43,6 @@ def run():
         }
     )
 
-    if not org.owner:
-        org.owner = admin
-        org.save()
-
-    # memberships
     Membership.objects.get_or_create(
         user=admin,
         organization=org,
@@ -69,122 +62,105 @@ def run():
     )
 
     # =====================
-    # CATEGORIES
+    # BASE DATA
     # =====================
-    cat_names = ["Electrónica", "Ropa", "Hogar"]
     categories = [
         Category.objects.get_or_create(name=n, organization=org)[0]
-        for n in cat_names
+        for n in ["Electrónica", "Ropa", "Hogar"]
     ]
 
-    # =====================
-    # SUPPLIERS
-    # =====================
-    supplier_names = ["Amazon", "Ikea", "Zara"]
     suppliers = [
         Supplier.objects.get_or_create(name=n, organization=org)[0]
-        for n in supplier_names
+        for n in ["Amazon", "Ikea", "Zara"]
     ]
 
-    # =====================
-    # LOCATIONS
-    # =====================
-    loc_names = ["Madrid", "Barcelona", "Valencia"]
     locations = [
         Location.objects.get_or_create(name=n, organization=org)[0]
-        for n in loc_names
+        for n in ["Madrid", "Barcelona", "Valencia"]
     ]
 
     # =====================
     # PRODUCTS
     # =====================
     products = []
-
     for i in range(10):
         p, _ = Product.objects.get_or_create(
             sku=f"DEMO-SKU-{i}",
             organization=org,
             defaults={
                 "name": f"Producto Demo {i}",
-                "category": categories[i % len(categories)],
-                "supplier": suppliers[i % len(suppliers)],
+                "category": categories[i % 3],
+                "supplier": suppliers[i % 3],
                 "cost_price": 10 + i,
                 "sale_price": 30 + i * 2,
+                "min_stock": 5,
             }
         )
         products.append(p)
 
     # =====================
-    # STOCK INICIAL
+    # STOCK INICIAL (solo IN)
     # =====================
-    for i, p in enumerate(products):
-        for j, loc in enumerate(locations):
-
-            qty = 20 + (i * 3) - (j * 5)
-            if qty < 0:
-                qty = 5
-
-            movement = StockMovement(
-                organization=org,
-                product=p,
-                movement_type="IN",
-                destination=loc,
-                quantity=qty,
-                note="Stock inicial demo",
-            )
-            movement.save()
-
-            item = StockItem.objects.get(
-                organization=org,
-                product=p,
-                location=loc
-            )
-
-            # algunos con low stock
-            item.min_stock = 15 if i % 3 == 0 else 5
-            item.save(update_fields=["min_stock"])
+    for p in products:
+        for loc in locations:
+            try:
+                StockMovement(
+                    organization=org,
+                    product=p,
+                    movement_type="IN",
+                    source_type="manual",
+                    destination=loc,
+                    quantity=30,
+                    note="Stock inicial demo",
+                ).save()
+            except:
+                continue
 
     # =====================
-    # MOVIMIENTOS
+    # OUT (válido)
     # =====================
-    for i in range(40):
+    for i in range(20):
         p = products[i % len(products)]
+        loc = locations[i % len(locations)]
 
-        if i % 3 == 0:
-            # OUT
-            loc = locations[i % len(locations)]
-            try:
-                StockMovement(
-                    organization=org,
-                    product=p,
-                    movement_type="OUT",
-                    origin=loc,
-                    quantity=2 + (i % 3),
-                ).save()
-            except:
-                continue
+        try:
+            StockMovement(
+                organization=org,
+                product=p,
+                movement_type="OUT",
+                source_type="manual",
+                origin=loc,
+                quantity=2,
+            ).save()
+        except:
+            continue
 
-        else:
-            # TRANSFER
-            origin = locations[i % len(locations)]
-            destination = locations[(i + 1) % len(locations)]
+    # =====================
+    # TRANSFERS (CORRECTO)
+    # =====================
+    for i in range(10):
+        p = products[i % len(products)]
+        origin = locations[i % len(locations)]
+        destination = locations[(i + 1) % len(locations)]
 
-            try:
-                StockMovement(
-                    organization=org,
-                    product=p,
-                    movement_type="TRANSFER",
-                    origin=origin,
-                    destination=destination,
-                    quantity=1 + (i % 2),
-                ).save()
-            except:
-                continue
+        transfer = StockTransfer.objects.create(
+            organization=org,
+            product=p,
+            origin=origin,
+            destination=destination,
+            quantity=2,
+            created_by=admin,
+        )
+
+        try:
+            transfer.confirm(admin)
+        except:
+            continue
 
     # =====================
     # ORDERS
     # =====================
-    for i in range(5):
+    for i in range(3):
         order = Order.objects.create(
             organization=org,
             supplier=suppliers[i % len(suppliers)],
@@ -193,9 +169,9 @@ def run():
 
         items = []
 
-        for j in range(3):
+        for j in range(2):
             product = products[(i + j) % len(products)]
-            qty = 5 + j
+            qty = 5
 
             OrderItem.objects.create(
                 organization=org,
@@ -216,26 +192,4 @@ def run():
         except:
             continue
 
-    # =====================
-    # TRANSFERS
-    # =====================
-    for i in range(10):
-        product = products[i % len(products)]
-        origin = locations[i % len(locations)]
-        destination = locations[(i + 1) % len(locations)]
-
-        transfer = StockTransfer.objects.create(
-            organization=org,
-            product=product,
-            origin=origin,
-            destination=destination,
-            quantity=2,
-            created_by=admin,
-        )
-
-        try:
-            transfer.confirm(admin)
-        except:
-            continue
-
-    print("✅ Seed DEMO completado")
+    print("✅ Seed DEMO limpio y consistente")
