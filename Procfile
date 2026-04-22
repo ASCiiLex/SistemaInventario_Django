@@ -1,1 +1,1 @@
-web: bash -c "python manage.py migrate && python manage.py seed && python manage.py collectstatic --noinput && gunicorn sistema_inventario.wsgi:application --bind 0.0.0.0:$PORT --workers 3"
+web: bash entrypoint.sh
