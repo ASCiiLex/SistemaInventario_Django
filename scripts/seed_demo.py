@@ -24,7 +24,7 @@ def run():
         username = "admin"
         password = "admin1234"
 
-        user, created = User.objects.get_or_create(
+        user, _ = User.objects.get_or_create(
             username=username,
             defaults={
                 "email": "admin@demo.com",
@@ -33,14 +33,12 @@ def run():
             }
         )
 
-        # 🔥 CLAVE: asegurar password SIEMPRE (aunque ya exista)
         user.set_password(password)
         user.is_staff = True
         user.is_superuser = True
         user.save()
 
-        print(f"✅ Superuser listo → {username} / {password}")
-
+        print(f"✅ Superuser listo → {username}")
         return user
 
     admin = create_or_update_superuser()
@@ -49,7 +47,7 @@ def run():
     # USERS
     # =====================
     def create_user(username):
-        user, created = User.objects.get_or_create(username=username)
+        user, _ = User.objects.get_or_create(username=username)
         user.set_password("demo1234")
         user.save()
         return user
@@ -129,7 +127,7 @@ def run():
     for p in products:
         for loc in locations:
             try:
-                StockMovement(
+                StockMovement.objects.create(
                     organization=org,
                     product=p,
                     movement_type="IN",
@@ -137,7 +135,7 @@ def run():
                     destination=loc,
                     quantity=30,
                     note="Stock inicial demo",
-                ).save()
+                )
             except Exception:
                 continue
 
@@ -149,14 +147,14 @@ def run():
         loc = locations[i % len(locations)]
 
         try:
-            StockMovement(
+            StockMovement.objects.create(
                 organization=org,
                 product=p,
                 movement_type="OUT",
                 source_type="manual",
                 origin=loc,
                 quantity=2,
-            ).save()
+            )
         except Exception:
             continue
 
