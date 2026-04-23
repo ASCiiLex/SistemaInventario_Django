@@ -41,7 +41,7 @@ def location_list(request):
     page_obj = view.paginate_queryset(request, qs)
 
     context = {
-        "locations": page_obj,
+        "locations": page_obj.object_list,
         "page_obj": page_obj,
         "search": search or "",
         "current_sort": request.GET.get("sort", ""),

@@ -44,8 +44,6 @@ export function initChart() {
 
     setCategoryChart(chart);
     initChartSelector();
-
-    loadChartData("categorias");
 }
 
 export async function loadChartData(tipo) {

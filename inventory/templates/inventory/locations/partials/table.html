@@ -15,7 +15,7 @@
 
         <!-- MAIN ROW -->
         <tr 
-            hx-get="{% url 'location_full_stock' location.id %}?mode=incidents"
+            hx-get="{% url 'location_full_stock' location.id %}?mode=all"
             hx-target="#expand-{{ location.id }}"
             hx-swap="innerHTML"
             hx-trigger="click"
