@@ -168,29 +168,6 @@ function showToast(message) {
 }
 
 // ===============================
-// 🔥 WEBSOCKET → SINGLE SOURCE OF TRUTH (SIMPLIFICADO)
-// ===============================
-function connectWS() {
-    const protocol = location.protocol === "https:" ? "wss://" : "ws://";
-    const socket = new WebSocket(protocol + location.host + "/ws/notificaciones/");
-
-    socket.onmessage = (e) => {
-        const data = JSON.parse(e.data);
-
-        if (!data.event) return;
-
-        EventBus.emit(data.event, data);
-        htmx.trigger(document.body, data.event);
-
-        if (data.message) showToast(data.message);
-    };
-
-    socket.onclose = () => setTimeout(connectWS, 2000);
-}
-
-connectWS();
-
-// ===============================
 // HTMX → EVENT BUS
 // ===============================
 document.body.addEventListener("htmx:afterRequest", (e) => {
