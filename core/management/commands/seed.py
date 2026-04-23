@@ -2,14 +2,23 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 import sys
 
-from scripts.seed_demo import run
-
 
 class Command(BaseCommand):
-    help = "Seed inicial de datos (idempotente)"
+    help = "Seed de datos (base | demo)"
 
-    def handle(self, *args, **kwargs):
-        print("🔥 SEED: inicio", flush=True)
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--mode",
+            type=str,
+            default="base",
+            choices=["base", "demo"],
+            help="Modo de seed"
+        )
+
+    def handle(self, *args, **options):
+        mode = options["mode"]
+
+        print(f"🔥 SEED ({mode}): inicio", flush=True)
 
         try:
             connection.ensure_connection()
@@ -19,10 +28,15 @@ class Command(BaseCommand):
             sys.exit(1)
 
         try:
+            if mode == "base":
+                from scripts.seed_base import run
+            else:
+                from scripts.seed_demo import run
+
             run()
-            print("🔥 SEED: run() ejecutado", flush=True)
+
         except Exception as e:
             print(f"❌ SEED: error en run {e}", flush=True)
             sys.exit(1)
 
-        self.stdout.write(self.style.SUCCESS("✅ Seed ejecutado correctamente"))
+        self.stdout.write(self.style.SUCCESS(f"✅ Seed {mode} ejecutado correctamente"))

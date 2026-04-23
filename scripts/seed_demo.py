@@ -5,83 +5,52 @@ from products.models import Product
 from categories.models import Category
 from suppliers.models import Supplier
 
-from inventory.models import (
-    Location,
-    StockMovement,
-    Order,
-    OrderItem,
-    StockTransfer,
-)
+from inventory.models import Location, StockMovement
 
 
 def run():
-    print("🚀 Seed DEMO (determinista y consistente con dominio)")
+    print("🚀 Seed DEMO (autosuficiente, rápido y consistente)")
 
     # =====================
-    # SUPERUSER (ROBUSTO)
+    # USERS (idempotente)
     # =====================
-    def create_or_update_superuser():
-        username = "admin"
-        password = "admin1234"
+    admin, _ = User.objects.get_or_create(
+        username="admin",
+        defaults={"email": "admin@demo.com", "is_staff": True, "is_superuser": True},
+    )
+    admin.set_password("admin1234")
+    admin.is_staff = True
+    admin.is_superuser = True
+    admin.save()
 
-        user, _ = User.objects.get_or_create(
-            username=username,
-            defaults={
-                "email": "admin@demo.com",
-                "is_staff": True,
-                "is_superuser": True,
-            }
-        )
+    manager, _ = User.objects.get_or_create(username="demo_manager")
+    manager.set_password("demo1234")
+    manager.save()
 
-        user.set_password(password)
-        user.is_staff = True
-        user.is_superuser = True
-        user.save()
-
-        print(f"✅ Superuser listo → {username}")
-        return user
-
-    admin = create_or_update_superuser()
-
-    # =====================
-    # USERS
-    # =====================
-    def create_user(username):
-        user, _ = User.objects.get_or_create(username=username)
-        user.set_password("demo1234")
-        user.save()
-        return user
-
-    manager = create_user("demo_manager")
-    staff = create_user("demo_staff")
+    staff, _ = User.objects.get_or_create(username="demo_staff")
+    staff.set_password("demo1234")
+    staff.save()
 
     # =====================
     # ORGANIZATION
     # =====================
     org, _ = Organization.objects.get_or_create(
         slug="demo",
-        defaults={
-            "name": "Demo Corp",
-            "owner": admin,
-        }
+        defaults={"name": "Demo Corp", "owner": admin},
     )
 
-    Membership.objects.get_or_create(
-        user=admin,
-        organization=org,
-        defaults={"role": Membership.Roles.OWNER}
-    )
+    if not org.owner:
+        org.owner = admin
+        org.save()
 
     Membership.objects.get_or_create(
-        user=manager,
-        organization=org,
-        defaults={"role": Membership.Roles.MANAGER}
+        user=admin, organization=org, defaults={"role": Membership.Roles.OWNER}
     )
-
     Membership.objects.get_or_create(
-        user=staff,
-        organization=org,
-        defaults={"role": Membership.Roles.STAFF}
+        user=manager, organization=org, defaults={"role": Membership.Roles.MANAGER}
+    )
+    Membership.objects.get_or_create(
+        user=staff, organization=org, defaults={"role": Membership.Roles.STAFF}
     )
 
     # =====================
@@ -116,8 +85,8 @@ def run():
                 "supplier": suppliers[i % 3],
                 "cost_price": 10 + i,
                 "sale_price": 30 + i * 2,
-                "min_stock": 5,
-            }
+                "min_stock": 5 if i < 8 else 25,  # 🔥 algunos forzados a bajo stock
+            },
         )
         products.append(p)
 
@@ -126,93 +95,30 @@ def run():
     # =====================
     for p in products:
         for loc in locations:
-            try:
-                StockMovement.objects.create(
-                    organization=org,
-                    product=p,
-                    movement_type="IN",
-                    source_type="manual",
-                    destination=loc,
-                    quantity=30,
-                    note="Stock inicial demo",
-                )
-            except Exception:
-                continue
-
-    # =====================
-    # OUT
-    # =====================
-    for i in range(20):
-        p = products[i % len(products)]
-        loc = locations[i % len(locations)]
-
-        try:
             StockMovement.objects.create(
                 organization=org,
                 product=p,
-                movement_type="OUT",
+                movement_type="IN",
                 source_type="manual",
-                origin=loc,
-                quantity=2,
+                destination=loc,
+                quantity=20,
             )
-        except Exception:
-            continue
 
     # =====================
-    # TRANSFERS
+    # SALIDAS CONTROLADAS (generan alertas)
     # =====================
-    for i in range(10):
-        p = products[i % len(products)]
-        origin = locations[i % len(locations)]
-        destination = locations[(i + 1) % len(locations)]
+    for i, p in enumerate(products):
+        loc = locations[i % len(locations)]
 
-        transfer = StockTransfer.objects.create(
+        qty = 15 if i >= 8 else 5  # 🔥 últimos productos caerán bajo mínimo
+
+        StockMovement.objects.create(
             organization=org,
             product=p,
-            origin=origin,
-            destination=destination,
-            quantity=2,
-            created_by=admin,
+            movement_type="OUT",
+            source_type="manual",
+            origin=loc,
+            quantity=qty,
         )
-
-        try:
-            transfer.confirm(admin)
-        except Exception:
-            continue
-
-    # =====================
-    # ORDERS
-    # =====================
-    for i in range(3):
-        order = Order.objects.create(
-            organization=org,
-            supplier=suppliers[i % len(suppliers)],
-            location=locations[i % len(locations)],
-        )
-
-        items = []
-
-        for j in range(2):
-            product = products[(i + j) % len(products)]
-            qty = 5
-
-            OrderItem.objects.create(
-                organization=org,
-                order=order,
-                product=product,
-                quantity=qty,
-                cost_price=product.cost_price,
-            )
-
-            items.append({
-                "product": product,
-                "quantity": qty
-            })
-
-        try:
-            order.mark_as_sent(admin)
-            order.receive_items(admin, items)
-        except Exception:
-            continue
 
     print("✅ Seed DEMO completo")
