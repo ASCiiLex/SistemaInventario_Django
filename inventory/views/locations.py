@@ -212,7 +212,7 @@ def location_toggle_active(request, pk):
 
 
 # ==========================================
-# FULL STOCK
+# FULL STOCK (FIX CLAVE)
 # ==========================================
 
 def location_full_stock(request, pk):
@@ -228,7 +228,7 @@ def location_full_stock(request, pk):
         organization=request.organization,
         product=OuterRef("product"),
         location=location,
-        type=Events.STOCK_LOW,  # 🔥 CONSISTENTE
+        type=Events.STOCK_LOW,
     ).order_by("-created_at")
 
     qs = (
@@ -243,8 +243,11 @@ def location_full_stock(request, pk):
         )
     )
 
+    # 🔥 IMPORTANTE: forzamos evaluación para evitar problemas con HTMX + lazy queryset
+    qs = list(qs)
+
     if mode == "incidents":
-        qs = qs.filter(quantity__lte=F("min_stock"))
+        qs = [item for item in qs if item.quantity <= item.min_stock]
 
     return render(request, "inventory/locations/partials/full_stock.html", {
         "items": qs,
