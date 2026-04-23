@@ -2,13 +2,16 @@
     background-color: #1a1a1a !important;
 }
 
-/* ICONS */
+/* ===============================
+   ICONS
+=============================== */
+
 .navbar-icons {
     display: flex;
     align-items: center;
 }
 
-/* 🔥 FIX: evitar saltos */
+/* 🔥 FIX: evitar saltos en contadores */
 .counter-slot {
     width: 42px;
     height: 28px;
@@ -17,13 +20,19 @@
     justify-content: center;
 }
 
-/* DROPDOWN */
+/* ===============================
+   DROPDOWN GLOBAL
+=============================== */
+
 .navbar .dropdown-menu {
     position: absolute;
     z-index: 2000;
 }
 
-/* NAV LINKS */
+/* ===============================
+   NAV LINKS
+=============================== */
+
 .navbar-nav {
     flex-direction: row !important;
 }
@@ -83,10 +92,10 @@
 }
 
 /* ===============================
-   MOBILE
+   MOBILE + TABLET (FIX REAL)
 =============================== */
 
-@media (max-width: 768px) {
+@media (max-width: 991px) {
 
     .navbar-brand {
         font-size: 0.85rem;
@@ -98,16 +107,19 @@
         white-space: nowrap;
     }
 
-    /* 🔥 FIX CLAVE: dropdown centrado y contenido en pantalla */
-    #navbarMobile .dropdown-menu {
-        position: static !important;
-        float: none;
-        width: 100%;
-        text-align: center;
-        margin-top: 0.5rem;
+    /* 🔥 CLAVE: dropdown flotante sin romper layout */
+    #navbarMobile .dropdown {
+        position: relative;
     }
 
-    #navbarMobile .dropdown-item {
-        text-align: center;
+    #navbarMobile .dropdown-menu {
+        position: absolute !important;
+        right: 0;
+        left: auto;
+        transform: none;
+        min-width: 220px;
+        max-width: calc(100vw - 16px);
+        z-index: 3000;
     }
+
 }
