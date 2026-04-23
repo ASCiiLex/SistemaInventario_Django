@@ -100,6 +100,7 @@
                 </ul>
             </div>
 
+            <!-- 🔥 Observability SIEMPRE visible -->
             <a href="{% url 'observability_dashboard' %}" class="btn btn-sm btn-outline-light">📊</a>
 
             <button id="themeToggle" class="btn btn-sm btn-outline-light">🌙</button>
@@ -184,6 +185,8 @@
                 <li class="nav-item"><a href="/categorias/" class="nav-link">Categorías</a></li>
                 <li class="nav-item"><a href="/proveedores/" class="nav-link">Proveedores</a></li>
                 <li class="nav-item"><a href="/productos/" class="nav-link">Productos</a></li>
+                <li class="nav-item"><a href="{% url 'location_list' %}" class="nav-link">Almacenes</a></li>
+                <li class="nav-item"><a href="{% url 'stockmovement_list' %}" class="nav-link">Movimientos</a></li>
             </ul>
 
             <div class="d-flex flex-wrap justify-content-center gap-2">
@@ -204,7 +207,9 @@
                     </ul>
                 </div>
 
-                <a href="{% url 'notification_preferences' %}" class="btn btn-sm btn-outline-light">⚙️</a>
+                <!-- 🔥 Sustituye configuración -->
+                <a href="{% url 'observability_dashboard' %}" class="btn btn-sm btn-outline-light">📊</a>
+
                 <button id="themeToggle" class="btn btn-sm btn-outline-light">🌙</button>
 
                 <form method="post" action="{% url 'logout' %}">
