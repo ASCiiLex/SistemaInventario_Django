@@ -86,7 +86,7 @@
    MOBILE
 =============================== */
 
-@media (max-width: 576px) {
+@media (max-width: 768px) {
 
     .navbar-brand {
         font-size: 0.85rem;
@@ -96,5 +96,18 @@
         font-size: 0.78rem;
         padding: 0.25rem 0.4rem;
         white-space: nowrap;
+    }
+
+    /* 🔥 FIX CLAVE: dropdown centrado y contenido en pantalla */
+    #navbarMobile .dropdown-menu {
+        position: static !important;
+        float: none;
+        width: 100%;
+        text-align: center;
+        margin-top: 0.5rem;
+    }
+
+    #navbarMobile .dropdown-item {
+        text-align: center;
     }
 }
