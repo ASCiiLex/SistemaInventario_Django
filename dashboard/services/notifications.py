@@ -10,25 +10,34 @@ from notifications.constants import Events
 metrics_logger = logging.getLogger("inventory.metrics")
 
 
-# ==========================================
-# CACHE KEYS
-# ==========================================
+def _safe_cache_get(key):
+    try:
+        return cache.get(key)
+    except Exception:
+        return None
+
+
+def _safe_cache_set(key, value, ttl):
+    try:
+        cache.set(key, value, ttl)
+    except Exception:
+        pass
+
 
 def _cache_key(user_id, org_id, suffix):
     return f"dashboard:notifications:{user_id}:{org_id}:{suffix}"
 
 
 def invalidate_notifications_cache(user_id=None, org_id=None):
-    if user_id and org_id:
-        cache.delete(_cache_key(user_id, org_id, "summary"))
-        cache.delete(_cache_key(user_id, org_id, "recent"))
-    else:
-        cache.clear()
+    try:
+        if user_id and org_id:
+            cache.delete(_cache_key(user_id, org_id, "summary"))
+            cache.delete(_cache_key(user_id, org_id, "recent"))
+        else:
+            cache.clear()
+    except Exception:
+        pass
 
-
-# ==========================================
-# LABELS
-# ==========================================
 
 TYPE_LABELS = {
     Events.STOCK_LOW: "Stock bajo",
@@ -38,13 +47,9 @@ TYPE_LABELS = {
 }
 
 
-# ==========================================
-# SUMMARY
-# ==========================================
-
 def get_notifications_summary(user, organization):
     cache_key = _cache_key(user.id, organization.id, "summary")
-    cached = cache.get(cache_key)
+    cached = _safe_cache_get(cache_key)
 
     if cached:
         metrics_logger.info(
@@ -90,7 +95,8 @@ def get_notifications_summary(user, organization):
         "notifications_by_type": by_type,
     }
 
-    cache.set(cache_key, result, settings.CACHE_TTL["notifications"])
+    ttl = getattr(settings, "CACHE_TTL", {}).get("notifications", 60)
+    _safe_cache_set(cache_key, result, ttl)
 
     metrics_logger.info(
         "dashboard.cache.miss.notifications_summary",
@@ -106,13 +112,9 @@ def get_notifications_summary(user, organization):
     return result
 
 
-# ==========================================
-# RECENT
-# ==========================================
-
 def get_recent_notifications(user, organization, limit=10):
     cache_key = _cache_key(user.id, organization.id, f"recent:{limit}")
-    cached = cache.get(cache_key)
+    cached = _safe_cache_get(cache_key)
 
     if cached:
         metrics_logger.info(
@@ -142,7 +144,8 @@ def get_recent_notifications(user, organization, limit=10):
         .order_by("-notification__created_at")[:limit]
     )
 
-    cache.set(cache_key, qs, settings.CACHE_TTL["notifications"])
+    ttl = getattr(settings, "CACHE_TTL", {}).get("notifications", 60)
+    _safe_cache_set(cache_key, qs, ttl)
 
     metrics_logger.info(
         "dashboard.cache.miss.notifications_recent",

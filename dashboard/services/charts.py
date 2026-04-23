@@ -12,19 +12,36 @@ from inventory.models import StockItem, StockMovement
 metrics_logger = logging.getLogger("inventory.metrics")
 
 
+def _safe_cache_get(key):
+    try:
+        return cache.get(key)
+    except Exception:
+        return None
+
+
+def _safe_cache_set(key, value, ttl):
+    try:
+        cache.set(key, value, ttl)
+    except Exception:
+        pass
+
+
 def invalidate_chart_cache(org_id=None):
-    if org_id:
-        keys = [
-            f"dashboard:chart:category:{org_id}",
-            f"dashboard:chart:supplier:{org_id}",
-            f"dashboard:chart:location:{org_id}",
-            f"dashboard:chart:rotation:{org_id}",
-            f"dashboard:chart:movements:{org_id}",
-        ]
-        for k in keys:
-            cache.delete(k)
-    else:
-        cache.clear()
+    try:
+        if org_id:
+            keys = [
+                f"dashboard:chart:category:{org_id}",
+                f"dashboard:chart:supplier:{org_id}",
+                f"dashboard:chart:location:{org_id}",
+                f"dashboard:chart:rotation:{org_id}",
+                f"dashboard:chart:movements:{org_id}",
+            ]
+            for k in keys:
+                cache.delete(k)
+        else:
+            cache.clear()
+    except Exception:
+        pass
 
 
 def _format_result(qs, label_field, value_field):
@@ -39,13 +56,15 @@ def _format_result(qs, label_field, value_field):
 
 
 def _cache_get_or_set(key, org_id, fn):
-    cached = cache.get(key)
+    cached = _safe_cache_get(key)
     if cached:
         metrics_logger.info("dashboard.cache.hit.chart", extra={"org_id": org_id, "key": key})
         return cached
 
     result = fn()
-    cache.set(key, result, settings.CACHE_TTL["charts"])
+
+    ttl = getattr(settings, "CACHE_TTL", {}).get("charts", 60)
+    _safe_cache_set(key, result, ttl)
 
     metrics_logger.info("dashboard.cache.miss.chart", extra={"org_id": org_id, "key": key})
 

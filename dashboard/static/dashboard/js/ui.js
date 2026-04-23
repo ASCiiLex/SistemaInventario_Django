@@ -6,17 +6,24 @@ export function initMainSections() {
 
         if (!header || !content || !arrow) return;
 
-        section.classList.remove("closed");
-        arrow.classList.remove("arrow-down");
-        arrow.classList.add("arrow-up");
-        content.style.display = "block";
+        // ✅ evitar re-bind
+        if (section.dataset.bound === "true") return;
+        section.dataset.bound = "true";
 
-        header.onclick = () => {
-            const isClosed = section.classList.toggle("closed");
-            content.style.display = isClosed ? "none" : "block";
-            arrow.classList.toggle("arrow-up", !isClosed);
-            arrow.classList.toggle("arrow-down", isClosed);
-        };
+        // ✅ estado inicial SOLO si no existe
+        const isClosed = section.classList.contains("closed");
+
+        content.style.display = isClosed ? "none" : "block";
+        arrow.classList.toggle("arrow-up", !isClosed);
+        arrow.classList.toggle("arrow-down", isClosed);
+
+        header.addEventListener("click", () => {
+            const nowClosed = section.classList.toggle("closed");
+
+            content.style.display = nowClosed ? "none" : "block";
+            arrow.classList.toggle("arrow-up", !nowClosed);
+            arrow.classList.toggle("arrow-down", nowClosed);
+        });
     });
 }
 
@@ -28,14 +35,23 @@ export function initSubSections() {
 
         if (!header || !content || !arrow) return;
 
-        sub.classList.add("closed");
-        content.style.display = "none";
+        // ✅ evitar re-bind
+        if (sub.dataset.bound === "true") return;
+        sub.dataset.bound = "true";
 
-        header.onclick = () => {
-            const isClosed = sub.classList.toggle("closed");
-            content.style.display = isClosed ? "none" : "block";
-            arrow.classList.toggle("sub-arrow-up", !isClosed);
-            arrow.classList.toggle("sub-arrow-down", isClosed);
-        };
+        // ✅ estado inicial SOLO si no existe
+        const isClosed = sub.classList.contains("closed");
+
+        content.style.display = isClosed ? "none" : "block";
+        arrow.classList.toggle("sub-arrow-up", !isClosed);
+        arrow.classList.toggle("sub-arrow-down", isClosed);
+
+        header.addEventListener("click", () => {
+            const nowClosed = sub.classList.toggle("closed");
+
+            content.style.display = nowClosed ? "none" : "block";
+            arrow.classList.toggle("sub-arrow-up", !nowClosed);
+            arrow.classList.toggle("sub-arrow-down", nowClosed);
+        });
     });
 }

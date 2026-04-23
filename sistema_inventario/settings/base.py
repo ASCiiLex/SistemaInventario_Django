@@ -121,24 +121,44 @@ else:
     }
 
 # ============================
-# REDIS
+# REDIS / CACHE (ROBUSTO)
 # ============================
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379")
+REDIS_URL = os.getenv("REDIS_URL")
 
-# ============================
-# CACHE
-# ============================
-
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            }
         }
     }
-}
+
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+            },
+        },
+    }
+
+else:
+    # 🔥 fallback seguro (evita caída total en Railway sin Redis)
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache"
+        }
+    }
+
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }
 
 # ============================
 # PASSWORDS
@@ -174,19 +194,6 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # ============================
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-# ============================
-# CHANNELS
-# ============================
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [REDIS_URL],
-        },
-    },
-}
 
 # ============================
 # GENERAL

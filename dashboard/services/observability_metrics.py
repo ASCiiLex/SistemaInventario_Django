@@ -6,6 +6,20 @@ import time
 metrics_logger = logging.getLogger("inventory.metrics")
 
 
+def _safe_cache_get(key):
+    try:
+        return cache.get(key)
+    except Exception:
+        return None
+
+
+def _safe_cache_set(key, value, ttl):
+    try:
+        cache.set(key, value, ttl)
+    except Exception:
+        pass
+
+
 def _collect_metric(metric_name):
     for metric in REGISTRY.collect():
         if metric.name == metric_name:
@@ -95,18 +109,14 @@ def _get_top_endpoints():
     return results[:5]
 
 
-# ==========================================
-# 🔥 RATE CALCULATION (RPS)
-# ==========================================
-
 def _calculate_rate(metric_name, cache_key):
     current = int(_sum_samples(_collect_metric(metric_name)))
     now = time.time()
 
-    prev = cache.get(cache_key)
+    prev = _safe_cache_get(cache_key)
 
     if not prev:
-        cache.set(cache_key, {"value": current, "ts": now}, 60)
+        _safe_cache_set(cache_key, {"value": current, "ts": now}, 60)
         return 0
 
     delta_value = current - prev["value"]
@@ -114,14 +124,10 @@ def _calculate_rate(metric_name, cache_key):
 
     rate = (delta_value / delta_time) if delta_time > 0 else 0
 
-    cache.set(cache_key, {"value": current, "ts": now}, 60)
+    _safe_cache_set(cache_key, {"value": current, "ts": now}, 60)
 
     return round(rate, 2)
 
-
-# ==========================================
-# 🔥 ALERTING INTERNO
-# ==========================================
 
 def _evaluate_alerts(metrics):
     alerts = []
@@ -165,7 +171,7 @@ def _calculate_health_score(metrics):
 
 def get_system_metrics(organization):
     cache_key = f"dashboard:system_metrics:{organization.id}"
-    cached = cache.get(cache_key)
+    cached = _safe_cache_get(cache_key)
     if cached:
         return cached
 
@@ -182,7 +188,6 @@ def get_system_metrics(organization):
 
     top_endpoints = _get_top_endpoints()
 
-    # 🔥 rates
     rps = _calculate_rate("http_requests", "metrics:rps")
     eps = _calculate_rate("errors", "metrics:eps")
     evps = _calculate_rate("domain_events", "metrics:evps")
@@ -208,7 +213,7 @@ def get_system_metrics(organization):
         "health_score": health_score,
     }
 
-    cache.set(cache_key, result, 5)
+    _safe_cache_set(cache_key, result, 5)
 
     metrics_logger.info("dashboard.system_metrics.prometheus", extra={
         "org_id": organization.id,
