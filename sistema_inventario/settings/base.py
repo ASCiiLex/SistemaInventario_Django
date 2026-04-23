@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -38,7 +39,7 @@ INSTALLED_APPS = [
 ]
 
 # ============================
-# MIDDLEWARE (REORDENADO Y AISLADO)
+# MIDDLEWARE
 # ============================
 
 MIDDLEWARE = [
@@ -50,17 +51,10 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 
-    # 🔐 control de acceso primero
     'accounts.middleware.LoginRequiredMiddleware',
-
-    # 🏢 multi-tenant solo con usuario autenticado
     'organizations.middleware.OrganizationMiddleware',
 
-    # 🔍 observabilidad al final (no rompe flujo)
     'core.observability.middleware.ObservabilityMiddleware',
-
-    # ⚠️ rate limit fuera del flujo crítico (opcional reintroducir después)
-    # 'core.security.middleware.RateLimitMiddleware',
 
     "inventory.middleware.audit_middleware.AuditUserMiddleware",
 
@@ -100,20 +94,31 @@ TEMPLATES = [
 ]
 
 # ============================
-# DATABASE
+# DATABASE (Railway + local unificado)
 # ============================
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT", "5432"),
-        "CONN_MAX_AGE": 60,
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME"),
+            "USER": os.getenv("DB_USER"),
+            "PASSWORD": os.getenv("DB_PASSWORD"),
+            "HOST": os.getenv("DB_HOST"),
+            "PORT": os.getenv("DB_PORT", "5432"),
+            "CONN_MAX_AGE": 60,
+        }
+    }
 
 # ============================
 # REDIS
