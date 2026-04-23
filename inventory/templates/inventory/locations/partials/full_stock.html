@@ -17,7 +17,7 @@
                 hx-get="{% url 'location_full_stock' location_id %}?mode=incidents"
                 hx-target="#expand-{{ location_id }}"
                 hx-swap="innerHTML">
-                Incidencias
+                Sólo incidencias
             </button>
         </div>
     </div>
@@ -55,7 +55,15 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="4" class="text-center text-muted">Sin datos</td></tr>
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        {% if mode == "incidents" %}
+                            Sin incidencias
+                        {% else %}
+                            Sin datos
+                        {% endif %}
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
