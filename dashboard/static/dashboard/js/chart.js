@@ -19,7 +19,8 @@ export function initChart() {
     const labels = window.chartData.labels || [];
     const values = window.chartData.values || [];
 
-    if (!labels.length) return;
+    // ❌ eliminamos el bloqueo
+    // if (!labels.length) return;
 
     if (categoryChart) {
         categoryChart.destroy();
@@ -46,29 +47,7 @@ export function initChart() {
 
     setCategoryChart(chart);
     initChartSelector();
-}
 
-export async function loadChartData(tipo) {
-    try {
-        const response = await fetch(
-            window.dashboardChartUrl.replace("TIPO", tipo)
-        );
-
-        const data = await response.json();
-
-        if (!categoryChart) return;
-
-        categoryChart.data.labels = data.labels || [];
-        categoryChart.data.datasets[0].data = data.values || [];
-        categoryChart.update();
-
-    } catch (error) {
-        console.error("Error gráfico:", error);
-    }
-}
-
-export function refreshChart() {
-    const selector = document.getElementById("chartSelector");
-    if (!selector) return;
-    loadChartData(selector.value);
+    // 🔥 IMPORTANTE: cargar datos reales siempre
+    loadChartData("categorias");
 }
