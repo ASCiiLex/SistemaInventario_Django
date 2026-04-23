@@ -11,6 +11,13 @@ from dashboard.services.charts import (
 
 
 def dashboard_chart(request):
+    if not request.organization:
+        return render(
+            request,
+            "dashboard/partials/chart.html",
+            {"chart_labels": [], "chart_values": []},
+        )
+
     labels, values = get_chart_by_category(request.organization)
 
     return render(
@@ -21,6 +28,9 @@ def dashboard_chart(request):
 
 
 def dashboard_chart_data(request, tipo):
+    if not request.organization:
+        return JsonResponse({"labels": [], "values": []})
+
     org = request.organization
 
     if tipo == "categorias":
