@@ -12,10 +12,15 @@ def category_list(request):
     if search:
         categories = categories.filter(name__icontains=search)
 
-    return render(request, "categories/list.html", {
+    context = {
         "categories": categories,
         "search": search,
-    })
+    }
+
+    if request.headers.get("HX-Request") == "true":
+        return render(request, "categories/partials/table.html", context)
+
+    return render(request, "categories/list.html", context)
 
 
 def category_create(request):

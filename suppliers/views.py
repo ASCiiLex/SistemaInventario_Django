@@ -15,10 +15,15 @@ def supplier_list(request):
     if search:
         suppliers = suppliers.filter(name__icontains=search)
 
-    return render(request, "suppliers/list.html", {
+    context = {
         "suppliers": suppliers,
         "search": search,
-    })
+    }
+
+    if request.headers.get("HX-Request") == "true":
+        return render(request, "suppliers/partials/table.html", context)
+
+    return render(request, "suppliers/list.html", context)
 
 
 def supplier_create(request):
