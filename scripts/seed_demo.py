@@ -108,7 +108,7 @@ def run():
     # ACTIVIDAD REALISTA
     # =====================
 
-    # 🔥 Consumo normal (no rompe nada)
+    # 🔥 Consumo normal
     for i, p in enumerate(products[:6]):
         loc = locations[i % len(locations)]
 
@@ -116,12 +116,12 @@ def run():
             organization=org,
             product=p,
             movement_type="OUT",
-            source_type="sale",
+            source_type="manual",
             origin=loc,
             quantity=10,
         )
 
-    # 🔥 Productos en riesgo (bajan justo bajo mínimo)
+    # 🔥 Productos bajo mínimo
     for i, p in enumerate(products[6:10]):
         loc = locations[i % len(locations)]
 
@@ -129,27 +129,12 @@ def run():
             organization=org,
             product=p,
             movement_type="OUT",
-            source_type="sale",
+            source_type="manual",
             origin=loc,
-            quantity=35,  # deja stock muy bajo pero no negativo
+            quantity=35,
         )
 
-    # 🔥 Transferencias (actividad visual)
-    for i, p in enumerate(products[:4]):
-        origin = locations[0]
-        destination = locations[1]
-
-        StockMovement.objects.create(
-            organization=org,
-            product=p,
-            movement_type="TRANSFER",
-            source_type="transfer",
-            origin=origin,
-            destination=destination,
-            quantity=5,
-        )
-
-    # 🔥 Reposición parcial (mezcla de estados)
+    # 🔥 Reposición parcial (válida)
     for i, p in enumerate(products[8:12]):
         loc = locations[i % len(locations)]
 
@@ -157,7 +142,7 @@ def run():
             organization=org,
             product=p,
             movement_type="IN",
-            source_type="purchase",
+            source_type="manual",
             destination=loc,
             quantity=10,
         )
