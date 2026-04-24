@@ -7,12 +7,13 @@ Aplicación SaaS de gestión de inventario desarrollada con Django, con soporte 
 ## 🚀 Características
 
 * Multi-tenant (organizaciones aisladas)
-* Roles: owner, admin, manager, staff
+* Roles: owner, manager, staff
 * Stock distribuido por ubicaciones
 * Movimientos (entrada, salida, transferencias)
 * Pedidos con impacto en stock
 * Notificaciones automáticas (stock mínimo)
-* Dashboard + métricas + observabilidad
+* Dashboard con métricas en tiempo real
+* Observabilidad integrada
 
 ---
 
@@ -25,13 +26,14 @@ Aplicación SaaS de gestión de inventario desarrollada con Django, con soporte 
 
 ---
 
-## ⚙️ Instalación
+## ⚙️ Instalación rápida (demo)
 
 ```bash
 git clone <URL_DEL_REPO>
 cd SistemaInventario
 docker compose up -d
 python manage.py migrate
+python manage.py flush
 python manage.py shell
 ```
 
@@ -50,23 +52,47 @@ Abrir: http://127.0.0.1:8000
 
 ## 🔐 Acceso demo
 
-| Usuario      | Password |
-| ------------ | -------- |
-| demo_admin   | demo1234 |
-| demo_manager | demo1234 |
-| demo_staff   | demo1234 |
+| Usuario      | Password  |
+| ------------ | --------- |
+| admin        | admin1234 |
+| demo_manager | demo1234  |
+| demo_staff   | demo1234  |
 
 ---
 
-## 🧭 Qué probar
+## 🎯 Qué ver primero (recomendado)
 
-* Dashboard (actividad y métricas)
-* Productos → stock por ubicación
-* Movimientos → trazabilidad real
-* Transferencias → validación de dominio
-* Pedidos → impacto en stock
-* Notificaciones automáticas
-* Observabilidad (`/metrics`)
+1. **Dashboard**
+
+   * KPIs dinámicos
+   * Productos bajo mínimo
+   * Actividad reciente
+
+2. **Notificaciones**
+
+   * Generadas automáticamente por stock bajo
+
+3. **Productos**
+
+   * Stock por ubicación
+   * Estados mixtos (normal / bajo mínimo)
+
+4. **Almacenes**
+
+   * Incidencias activas
+
+---
+
+## 🧪 Datos demo
+
+El script `seed_demo` genera un escenario realista:
+
+* Organización "Demo Corp"
+* Usuarios con distintos roles
+* Productos con stock distribuido
+* Movimientos (entrada, salida, transferencias)
+* Productos bajo mínimo → disparan alertas
+* Actividad suficiente para poblar dashboard y métricas
 
 ---
 
@@ -74,20 +100,9 @@ Abrir: http://127.0.0.1:8000
 
 * Multi-tenant por organización
 * Service layer para lógica de negocio
-* Dominio centralizado (no CRUD simple)
-* Event-driven (notificaciones y auditoría)
+* Dominio desacoplado (no CRUD simple)
+* Sistema orientado a eventos (notificaciones, auditoría)
 * Observabilidad integrada
-
----
-
-## 🧪 Datos demo
-
-El script `seed_demo` genera:
-
-* Organización Demo Corp
-* Usuarios demo
-* Productos, stock y movimientos
-* Pedidos y transferencias
 
 ---
 
@@ -95,7 +110,7 @@ El script `seed_demo` genera:
 
 * PostgreSQL obligatorio (no SQLite)
 * Redis requerido (cache + WebSockets)
-* Seed no destructivo
+* Seed idempotente y orientado a demo
 
 ---
 
