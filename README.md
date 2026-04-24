@@ -57,6 +57,16 @@ python manage.py migrate
 
 Railway no ejecuta scripts automáticamente, por lo que el seed debe lanzarse manualmente.
 
+#### ⚠️ Variable necesaria
+
+Para evitar ejecuciones accidentales del seed en arranque:
+
+```bash
+RUN_SEED=true
+```
+
+---
+
 #### Opción A — Terminal (recomendada)
 
 ```bash
@@ -151,6 +161,7 @@ El script `seed_demo` genera un escenario realista orientado a demostración fun
 * PostgreSQL obligatorio (no SQLite)
 * Redis requerido (cache + WebSockets)
 * Seed idempotente y orientado a demo
+* En Railway, errores de arranque pueden provocar 502 (revisar logs)
 
 ---
 
