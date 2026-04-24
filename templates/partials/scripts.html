@@ -229,18 +229,36 @@ function handleSubmit(form) {
 
 <script>
 (function () {
-    const navbar = document.querySelector(".navbar");
 
-    if (!navbar) return;
+    function initNavbarScroll() {
+        const navbar = document.querySelector(".navbar");
+        if (!navbar) return;
 
-    function handleScroll() {
-        if (window.scrollY > 10) {
-            navbar.classList.add("scrolled");
-        } else {
-            navbar.classList.remove("scrolled");
+        function handleScroll() {
+            if (window.scrollY > 10) {
+                navbar.classList.add("scrolled");
+            } else {
+                navbar.classList.remove("scrolled");
+            }
         }
+
+        // Evitar duplicados
+        window.removeEventListener("scroll", handleScroll);
+        window.addEventListener("scroll", handleScroll);
+
+        // Estado inicial
+        handleScroll();
     }
 
-    window.addEventListener("scroll", handleScroll);
+    // Primera carga
+    document.addEventListener("DOMContentLoaded", initNavbarScroll);
+
+    // 🔥 IMPORTANTE: HTMX
+    document.body.addEventListener("htmx:afterSwap", (e) => {
+        if (e.target.id === "app") {
+            initNavbarScroll();
+        }
+    });
+
 })();
 </script>
