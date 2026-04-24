@@ -1,23 +1,37 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const html = document.documentElement;
-    const btn = document.getElementById("themeToggle");
+(function () {
+    const STORAGE_KEY = "theme";
 
-    const saved = localStorage.getItem("theme") || "light";
-    html.setAttribute("data-theme", saved);
-
-    updateIcon(saved);
-
-    btn.addEventListener("click", () => {
-        const current = html.getAttribute("data-theme");
-        const next = current === "dark" ? "light" : "dark";
-
-        html.setAttribute("data-theme", next);
-        localStorage.setItem("theme", next);
-
-        updateIcon(next);
-    });
-
-    function updateIcon(theme) {
-        btn.textContent = theme === "dark" ? "☀️" : "🌙";
+    function applyTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem(STORAGE_KEY, theme);
+        updateIcons(theme);
     }
-});
+
+    function updateIcons(theme) {
+        document.querySelectorAll("#themeToggle").forEach(btn => {
+            btn.textContent = theme === "dark" ? "☀️" : "🌙";
+        });
+    }
+
+    function initTheme() {
+        const saved = localStorage.getItem(STORAGE_KEY) || "light";
+        applyTheme(saved);
+    }
+
+    function bindEvents() {
+        document.addEventListener("click", (e) => {
+            const btn = e.target.closest("#themeToggle");
+            if (!btn) return;
+
+            const current = document.documentElement.getAttribute("data-theme") || "light";
+            const next = current === "dark" ? "light" : "dark";
+            applyTheme(next);
+        });
+    }
+
+    // 🔥 Soporte HTMX + carga inicial
+    document.addEventListener("DOMContentLoaded", initTheme);
+    document.addEventListener("htmx:load", initTheme);
+
+    bindEvents();
+})();
