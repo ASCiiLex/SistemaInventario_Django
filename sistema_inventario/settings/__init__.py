@@ -1,8 +1,16 @@
 import os
 
-env = os.getenv("DJANGO_ENV")
+# 🔥 prioridad absoluta: variable estándar Django
+settings_module = os.getenv("DJANGO_SETTINGS_MODULE")
 
-if env == "prod":
-    from .prod import *
+if settings_module:
+    # Django ya sabe qué módulo usar → no interferimos
+    pass
 else:
-    from .dev import *
+    # fallback automático limpio
+    env = os.getenv("DJANGO_ENV", "prod")
+
+    if env == "prod":
+        from .prod import *
+    else:
+        from .dev import *
