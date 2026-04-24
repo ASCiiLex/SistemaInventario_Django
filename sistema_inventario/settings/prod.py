@@ -17,6 +17,7 @@ DEFAULT_HOSTS = [
     "127.0.0.1",
     "localhost",
     ".railway.app",
+    "sistemainventario.up.railway.app",  # 🔥 fix definitivo
 ]
 
 env_hosts = os.getenv("ALLOWED_HOSTS")
