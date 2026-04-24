@@ -9,10 +9,10 @@ from inventory.models import Location, StockMovement
 
 
 def run():
-    print("🚀 Seed DEMO (autosuficiente, rápido y consistente)")
+    print("🚀 Seed DEMO (escenario realista con alertas y actividad)")
 
     # =====================
-    # USERS (idempotente)
+    # USERS
     # =====================
     admin, _ = User.objects.get_or_create(
         username="admin",
@@ -75,7 +75,7 @@ def run():
     # PRODUCTS
     # =====================
     products = []
-    for i in range(10):
+    for i in range(12):
         p, _ = Product.objects.get_or_create(
             sku=f"DEMO-SKU-{i}",
             organization=org,
@@ -85,13 +85,13 @@ def run():
                 "supplier": suppliers[i % 3],
                 "cost_price": 10 + i,
                 "sale_price": 30 + i * 2,
-                "min_stock": 5 if i < 8 else 25,  # 🔥 algunos forzados a bajo stock
+                "min_stock": 8 if i < 8 else 20,
             },
         )
         products.append(p)
 
     # =====================
-    # STOCK INICIAL
+    # STOCK INICIAL (alto)
     # =====================
     for p in products:
         for loc in locations:
@@ -101,24 +101,65 @@ def run():
                 movement_type="IN",
                 source_type="manual",
                 destination=loc,
-                quantity=20,
+                quantity=40,
             )
 
     # =====================
-    # SALIDAS CONTROLADAS (generan alertas)
+    # ACTIVIDAD REALISTA
     # =====================
-    for i, p in enumerate(products):
-        loc = locations[i % len(locations)]
 
-        qty = 15 if i >= 8 else 5  # 🔥 últimos productos caerán bajo mínimo
+    # 🔥 Consumo normal (no rompe nada)
+    for i, p in enumerate(products[:6]):
+        loc = locations[i % len(locations)]
 
         StockMovement.objects.create(
             organization=org,
             product=p,
             movement_type="OUT",
-            source_type="manual",
+            source_type="sale",
             origin=loc,
-            quantity=qty,
+            quantity=10,
         )
 
-    print("✅ Seed DEMO completo")
+    # 🔥 Productos en riesgo (bajan justo bajo mínimo)
+    for i, p in enumerate(products[6:10]):
+        loc = locations[i % len(locations)]
+
+        StockMovement.objects.create(
+            organization=org,
+            product=p,
+            movement_type="OUT",
+            source_type="sale",
+            origin=loc,
+            quantity=35,  # deja stock muy bajo pero no negativo
+        )
+
+    # 🔥 Transferencias (actividad visual)
+    for i, p in enumerate(products[:4]):
+        origin = locations[0]
+        destination = locations[1]
+
+        StockMovement.objects.create(
+            organization=org,
+            product=p,
+            movement_type="TRANSFER",
+            source_type="transfer",
+            origin=origin,
+            destination=destination,
+            quantity=5,
+        )
+
+    # 🔥 Reposición parcial (mezcla de estados)
+    for i, p in enumerate(products[8:12]):
+        loc = locations[i % len(locations)]
+
+        StockMovement.objects.create(
+            organization=org,
+            product=p,
+            movement_type="IN",
+            source_type="purchase",
+            destination=loc,
+            quantity=10,
+        )
+
+    print("✅ Seed DEMO listo con actividad, alertas y KPIs vivos")
