@@ -113,7 +113,44 @@ def get_notifications_summary(user, organization):
     return result
 
 
-# 🔥 NUEVO: agrupación robusta con histórico controlado
+def get_recent_notifications(user, organization, limit=10):
+    cache_key = _cache_key(user.id, organization.id, "recent")
+    cached = _safe_cache_get(cache_key)
+
+    if cached:
+        metrics_logger.info(
+            "dashboard.cache.hit.notifications_recent",
+            extra={"org_id": organization.id, "user_id": user.id}
+        )
+        return cached
+
+    qs = (
+        UserNotification.objects
+        .filter(
+            user=user,
+            notification__organization=organization
+        )
+        .select_related("notification__product", "notification__location")
+        .order_by("-notification__created_at")[:limit]
+    )
+
+    result = list(qs)
+
+    ttl = getattr(settings, "CACHE_TTL", {}).get("notifications", 60)
+    _safe_cache_set(cache_key, result, ttl)
+
+    metrics_logger.info(
+        "dashboard.cache.miss.notifications_recent",
+        extra={
+            "org_id": organization.id,
+            "user_id": user.id,
+            "count": len(result),
+        }
+    )
+
+    return result
+
+
 def get_grouped_notifications(user, organization, limit_per_group=1, history_limit=20):
     qs = (
         UserNotification.objects
