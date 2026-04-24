@@ -1,10 +1,21 @@
-export let categoryChart = null;
-export let realtimeInitialized = false;
+let categoryChart = null;
+let realtimeInitialized = false;
 
-export function setCategoryChart(chart) {
+function setCategoryChart(chart) {
     categoryChart = chart;
 }
 
-export function setRealtimeInitialized(value) {
+function setRealtimeInitialized(value) {
     realtimeInitialized = value;
 }
+
+window.dashboardState = {
+    get categoryChart() {
+        return categoryChart;
+    },
+    get realtimeInitialized() {
+        return realtimeInitialized;
+    },
+    setCategoryChart,
+    setRealtimeInitialized
+};
