@@ -173,4 +173,15 @@
     position: sticky;
     top: 0;
     z-index: 1050;
+    transition: box-shadow 0.2s ease, background 0.2s ease;
+}
+
+/* 🔥 Estado con scroll */
+.navbar.scrolled {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Dark mode más suave */
+[data-theme="dark"] .navbar.scrolled {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }

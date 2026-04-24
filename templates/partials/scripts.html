@@ -225,3 +225,22 @@ function handleSubmit(form) {
 </script>
 
 <script src="{% static 'js/form_validation.js' %}"></script>
+
+
+<script>
+(function () {
+    const navbar = document.querySelector(".navbar");
+
+    if (!navbar) return;
+
+    function handleScroll() {
+        if (window.scrollY > 10) {
+            navbar.classList.add("scrolled");
+        } else {
+            navbar.classList.remove("scrolled");
+        }
+    }
+
+    window.addEventListener("scroll", handleScroll);
+})();
+</script>
