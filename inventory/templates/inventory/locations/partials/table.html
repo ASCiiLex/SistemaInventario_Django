@@ -4,11 +4,10 @@
         <tr>
             {% include "partials/sortable_th.html" with field="name" label="Nombre" target="#locations-table" %}
 
-            <th class="d-none d-sm-table-cell">
-                {% include "partials/sortable_th.html" with field="address" label="Dirección" target="#locations-table" %}
-            </th>
+            {% include "partials/sortable_th.html" with field="address" label="Dirección" target="#locations-table" extra_class="d-none d-sm-table-cell" %}
 
             {% include "partials/sortable_th.html" with field="is_active" label="Activo" target="#locations-table" %}
+
             <th class="text-center">Incidencias</th>
             <th class="text-end"></th>
         </tr>
@@ -37,7 +36,7 @@
                 {{ location.address|default:"-" }}
             </td>
 
-            <td class="text-center align-middle">
+            <td class="text-center">
                 {% if location.is_active %}
                     <span class="badge bg-success">Sí</span>
                 {% else %}
@@ -45,19 +44,17 @@
                 {% endif %}
             </td>
 
-            <td class="text-center align-middle">
+            <td class="text-center">
                 {% if location.low_stock_count > 0 %}
-                    <span class="badge bg-danger">
-                        🔴 {{ location.low_stock_count }}
-                    </span>
+                    <span class="badge bg-danger">🔴 {{ location.low_stock_count }}</span>
                 {% else %}
-                    <span class="text-muted">—</span>
+                    —
                 {% endif %}
             </td>
 
-            <td class="text-end align-middle">
+            <td class="text-end">
                 {% if perm.edit_inventory %}
-                    <div class="d-flex flex-column flex-sm-row gap-1 justify-content-end">
+                    <div class="actions-group">
                         <a href="{% url 'location_edit' location.id %}" class="btn btn-sm btn-primary">Editar</a>
                         <a href="{% url 'location_toggle_active' location.id %}" class="btn btn-sm btn-warning">
                             {% if location.is_active %}Desactivar{% else %}Activar{% endif %}

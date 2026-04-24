@@ -1,4 +1,5 @@
 <th
+    class="{{ extra_class|default:'' }}"
     hx-get="{{ url|default:request.path }}?sort={{ field }}&dir={% if current_sort == field and current_dir == 'asc' %}desc{% else %}asc{% endif %}"
     hx-target="{{ target|default:'#table' }}"
     hx-swap="innerHTML"

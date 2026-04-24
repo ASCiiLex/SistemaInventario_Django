@@ -1,16 +1,23 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2 class="mb-3">Proveedores</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Proveedores</h2>
 
-<form method="GET" class="mb-3 d-flex" style="gap: 10px;">
-    <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Buscar proveedor...">
-    <button class="btn btn-primary">Buscar</button>
+    {% if perm.manage_suppliers %}
+        <a href="{% url 'supplier_create' %}" class="btn btn-success">
+            Nuevo Proveedor
+        </a>
+    {% endif %}
+</div>
+
+<form method="GET" class="mb-3">
+    <input type="text"
+           name="q"
+           value="{{ search }}"
+           class="form-control"
+           placeholder="Buscar proveedor...">
 </form>
-
-{% if perm.manage_suppliers %}
-<a href="{% url 'supplier_create' %}" class="btn btn-success mb-3">Nuevo Proveedor</a>
-{% endif %}
 
 <div class="table-responsive">
 <table class="table table-striped align-middle">
@@ -20,24 +27,20 @@
             <th>Contacto</th>
             <th>Email</th>
             <th>Teléfono</th>
-            <th></th>
+            <th class="text-end"></th>
         </tr>
     </thead>
 
     <tbody>
     {% for s in suppliers %}
 
-    <!-- 🔥 MISMO PATRÓN QUE CATEGORÍAS -->
     <tr
         hx-get="{% url 'supplier_products' s.id %}"
         hx-target="#expand-{{ s.id }}"
         hx-swap="innerHTML"
         hx-trigger="click"
         hx-on::before-request="
-            if (event.target.closest('a, button')) {
-                return false;
-            }
-
+            if (event.target.closest('a, button')) return false;
             if (document.getElementById('expand-{{ s.id }}').innerHTML.trim() !== '') {
                 document.getElementById('expand-{{ s.id }}').innerHTML = '';
                 event.preventDefault();
@@ -58,7 +61,6 @@
         </td>
     </tr>
 
-    <!-- EXPAND -->
     <tr>
         <td colspan="5" class="p-0">
             <div id="expand-{{ s.id }}"></div>
