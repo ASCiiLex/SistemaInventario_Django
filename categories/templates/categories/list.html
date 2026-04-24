@@ -19,7 +19,7 @@
             <th>Nombre</th>
             <th>Descripción</th>
             <th>Padre</th>
-            <th></th>
+            <th class="text-end"></th>
         </tr>
     </thead>
 
@@ -32,6 +32,7 @@
             hx-swap="innerHTML"
             hx-trigger="click"
             hx-on::before-request="
+                if (event.target.closest('a, button')) return false;
                 if (document.getElementById('expand-{{ c.id }}').innerHTML.trim() !== '') {
                     document.getElementById('expand-{{ c.id }}').innerHTML = '';
                     event.preventDefault();
@@ -42,7 +43,13 @@
             <td>{{ c.name }}</td>
             <td>{{ c.description }}</td>
             <td>{{ c.parent }}</td>
-            <td></td>
+
+            <td class="text-end">
+                {% if perm.manage_categories %}
+                    <a href="{% url 'category_edit' c.id %}" class="btn btn-sm btn-primary">Editar</a>
+                    <a href="{% url 'category_delete' c.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                {% endif %}
+            </td>
         </tr>
 
         <tr>

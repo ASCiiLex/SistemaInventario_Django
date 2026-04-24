@@ -8,7 +8,7 @@
             {% include "partials/sortable_th.html" with field="supplier__name" label="Proveedor" target="#products-table" %}
             {% include "partials/sortable_th.html" with field="total_stock_db" label="Stock" target="#products-table" %}
             {% include "partials/sortable_th.html" with field="total_min_stock_db" label="Mínimo" target="#products-table" %}
-            <th></th>
+            <th class="text-end"></th>
         </tr>
     </thead>
 
@@ -21,6 +21,7 @@
             hx-swap="innerHTML"
             hx-trigger="click"
             hx-on::before-request="
+                if (event.target.closest('a, button')) return false;
                 if (document.getElementById('expand-{{ p.id }}').innerHTML.trim() !== '') {
                     document.getElementById('expand-{{ p.id }}').innerHTML = '';
                     event.preventDefault();
@@ -32,11 +33,21 @@
             <td>{{ p.sku }}</td>
             <td>{{ p.category }}</td>
             <td>{{ p.supplier }}</td>
+
             <td class="{% if p.total_stock_db <= p.total_min_stock_db %}text-danger fw-bold{% endif %}">
                 {{ p.total_stock_db }}
             </td>
+
             <td>{{ p.total_min_stock_db }}</td>
-            <td></td>
+
+            <td class="text-end">
+                {% if perm.edit_products %}
+                    <a href="{% url 'product_edit' p.id %}" class="btn btn-sm btn-primary">Editar</a>
+                {% endif %}
+                {% if perm.delete_products %}
+                    <a href="{% url 'product_delete' p.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                {% endif %}
+            </td>
         </tr>
 
         <tr>

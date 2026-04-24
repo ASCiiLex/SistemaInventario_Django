@@ -4,14 +4,13 @@
         <tr>
             {% include "partials/sortable_th.html" with field="name" label="Nombre" target="#locations-table" %}
 
-            <!-- 🔥 Dirección SOLO desktop -->
             <th class="d-none d-sm-table-cell">
                 {% include "partials/sortable_th.html" with field="address" label="Dirección" target="#locations-table" %}
             </th>
 
             {% include "partials/sortable_th.html" with field="is_active" label="Activo" target="#locations-table" %}
-            <th>Incidencias</th>
-            <th></th>
+            <th class="text-center">Incidencias</th>
+            <th class="text-end"></th>
         </tr>
     </thead>
 
@@ -24,6 +23,7 @@
             hx-swap="innerHTML"
             hx-trigger="click"
             hx-on::before-request="
+                if (event.target.closest('a, button')) return false;
                 if (document.getElementById('expand-{{ location.id }}').innerHTML.trim() !== '') {
                     document.getElementById('expand-{{ location.id }}').innerHTML = '';
                     event.preventDefault();
@@ -33,13 +33,11 @@
         >
             <td>{{ location.name }}</td>
 
-            <!-- 🔥 Dirección SOLO desktop -->
             <td class="d-none d-sm-table-cell">
                 {{ location.address|default:"-" }}
             </td>
 
-            <!-- 🔥 FIX alineación -->
-            <td class="text-center">
+            <td class="text-center align-middle">
                 {% if location.is_active %}
                     <span class="badge bg-success">Sí</span>
                 {% else %}
@@ -47,7 +45,7 @@
                 {% endif %}
             </td>
 
-            <td class="text-center">
+            <td class="text-center align-middle">
                 {% if location.low_stock_count > 0 %}
                     <span class="badge bg-danger">
                         🔴 {{ location.low_stock_count }}
@@ -57,10 +55,9 @@
                 {% endif %}
             </td>
 
-            <!-- 🔥 FIX botones responsive -->
-            <td class="text-end">
+            <td class="text-end align-middle">
                 {% if perm.edit_inventory %}
-                    <div class="actions-group">
+                    <div class="d-flex flex-column flex-sm-row gap-1 justify-content-end">
                         <a href="{% url 'location_edit' location.id %}" class="btn btn-sm btn-primary">Editar</a>
                         <a href="{% url 'location_toggle_active' location.id %}" class="btn btn-sm btn-warning">
                             {% if location.is_active %}Desactivar{% else %}Activar{% endif %}
