@@ -29,9 +29,13 @@
         values: {{ chart_values|safe }}
     };
 
-    // 🔥 Forzar init cuando HTMX inyecta este bloque
-    if (window.initView) {
-        window.initView();
-    }
+    // Inicialización robusta tras HTMX
+    document.addEventListener("DOMContentLoaded", () => {
+        if (window.initView) window.initView();
+    });
+
+    document.body.addEventListener("htmx:afterSwap", () => {
+        if (window.initView) window.initView();
+    });
 })();
 </script>

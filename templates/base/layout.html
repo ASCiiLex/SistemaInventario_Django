@@ -43,6 +43,12 @@
 
     <!-- JS APP -->
     <script src="{% static 'js/theme.js' %}" defer></script>
+
+    <!-- DASHBOARD JS (orden correcto) -->
+    <script src="{% static 'dashboard/js/ui.js' %}" defer></script>
+    <script src="{% static 'dashboard/js/state.js' %}" defer></script>
+    <script src="{% static 'dashboard/js/realtime.js' %}" defer></script>
+    <script src="{% static 'dashboard/js/chart.js' %}" defer></script>
     <script type="module" src="{% static 'dashboard/js/dashboard.js' %}"></script>
 
     {% block extra_js %}{% endblock %}
