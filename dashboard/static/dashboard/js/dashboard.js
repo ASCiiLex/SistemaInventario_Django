@@ -19,6 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
     initView();
 });
 
-document.body.addEventListener("htmx:afterSwap", () => {
-    initView();
+document.body.addEventListener("htmx:afterSwap", (e) => {
+    if (e.target.id === "app") {
+        initView();
+    }
 });

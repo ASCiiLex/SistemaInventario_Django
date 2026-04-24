@@ -1,13 +1,12 @@
-function initRealtimeListeners() {
-    if (window.dashboardState.realtimeInitialized) return;
+import { realtimeInitialized, setRealtimeInitialized } from "./state.js";
+import { refreshChart } from "./chart.js";
 
-    window.dashboardState.setRealtimeInitialized(true);
+export function initRealtimeListeners() {
+    if (realtimeInitialized) return;
+
+    setRealtimeInitialized(true);
 
     document.body.addEventListener("inventory:stock_changed", () => {
-        if (window.refreshChart) {
-            window.refreshChart();
-        }
+        refreshChart();
     });
 }
-
-window.initRealtimeListeners = initRealtimeListeners;

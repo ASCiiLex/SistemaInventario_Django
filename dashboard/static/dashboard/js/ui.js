@@ -1,4 +1,4 @@
-function initMainSections() {
+export function initMainSections() {
     document.querySelectorAll(".card-section").forEach(section => {
         const header = section.querySelector(".section-header");
         const content = section.querySelector(".section-content");
@@ -9,6 +9,7 @@ function initMainSections() {
         if (section.dataset.bound === "true") return;
         section.dataset.bound = "true";
 
+        // 🔥 SIEMPRE ABIERTO POR DEFECTO
         section.classList.remove("closed");
         content.style.display = "block";
         arrow.classList.add("arrow-up");
@@ -24,7 +25,7 @@ function initMainSections() {
     });
 }
 
-function initSubSections() {
+export function initSubSections() {
     document.querySelectorAll(".subsection").forEach(sub => {
         const header = sub.querySelector(".subsection-header");
         const content = sub.querySelector(".subsection-content");
@@ -35,6 +36,7 @@ function initSubSections() {
         if (sub.dataset.bound === "true") return;
         sub.dataset.bound = "true";
 
+        // 🔥 SIEMPRE CERRADO POR DEFECTO
         sub.classList.add("closed");
         content.style.display = "none";
         arrow.classList.add("sub-arrow-down");
@@ -49,6 +51,3 @@ function initSubSections() {
         });
     });
 }
-
-window.initMainSections = initMainSections;
-window.initSubSections = initSubSections;
