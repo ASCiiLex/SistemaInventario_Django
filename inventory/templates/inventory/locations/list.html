@@ -18,6 +18,7 @@
         hx-get="{% url 'location_list' %}"
         hx-target="#locations-table"
         hx-push-url="true"
+        hx-trigger="keyup changed delay:400ms from:input[name='q']"
         class="mb-3"
     >
         <input 

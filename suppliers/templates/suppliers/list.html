@@ -11,7 +11,13 @@
     {% endif %}
 </div>
 
-<form method="GET" class="mb-3">
+<form method="GET"
+      hx-get="{% url 'supplier_list' %}"
+      hx-target="#suppliers-table"
+      hx-push-url="true"
+      hx-trigger="keyup changed delay:400ms from:input[name='q']"
+      class="mb-3">
+
     <input type="text"
            name="q"
            value="{{ search }}"
@@ -19,61 +25,63 @@
            placeholder="Buscar proveedor...">
 </form>
 
-<div class="table-responsive">
-<table class="table table-striped align-middle">
-    <thead>
-        <tr>
-            <th>Nombre</th>
-            <th>Contacto</th>
-            <th>Email</th>
-            <th>Teléfono</th>
-            <th class="text-end"></th>
+<div id="suppliers-table">
+    <div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Contacto</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th class="text-end"></th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for s in suppliers %}
+
+        <tr
+            hx-get="{% url 'supplier_products' s.id %}"
+            hx-target="#expand-{{ s.id }}"
+            hx-swap="innerHTML"
+            hx-trigger="click"
+            hx-on::before-request="
+                if (event.target.closest('a, button')) return false;
+                if (document.getElementById('expand-{{ s.id }}').innerHTML.trim() !== '') {
+                    document.getElementById('expand-{{ s.id }}').innerHTML = '';
+                    event.preventDefault();
+                }
+            "
+            style="cursor:pointer"
+        >
+            <td>{{ s.name }}</td>
+            <td>{{ s.contact_name }}</td>
+            <td>{{ s.email }}</td>
+            <td>{{ s.phone }}</td>
+
+            <td class="text-end">
+                {% if perm.manage_suppliers %}
+                    <a href="{% url 'supplier_edit' s.id %}" class="btn btn-sm btn-primary">Editar</a>
+                    <a href="{% url 'supplier_delete' s.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                {% endif %}
+            </td>
         </tr>
-    </thead>
 
-    <tbody>
-    {% for s in suppliers %}
-
-    <tr
-        hx-get="{% url 'supplier_products' s.id %}"
-        hx-target="#expand-{{ s.id }}"
-        hx-swap="innerHTML"
-        hx-trigger="click"
-        hx-on::before-request="
-            if (event.target.closest('a, button')) return false;
-            if (document.getElementById('expand-{{ s.id }}').innerHTML.trim() !== '') {
-                document.getElementById('expand-{{ s.id }}').innerHTML = '';
-                event.preventDefault();
-            }
-        "
-        style="cursor:pointer"
-    >
-        <td>{{ s.name }}</td>
-        <td>{{ s.contact_name }}</td>
-        <td>{{ s.email }}</td>
-        <td>{{ s.phone }}</td>
-
-        <td class="text-end">
-            {% if perm.manage_suppliers %}
-                <a href="{% url 'supplier_edit' s.id %}" class="btn btn-sm btn-primary">Editar</a>
-                <a href="{% url 'supplier_delete' s.id %}" class="btn btn-sm btn-danger">Eliminar</a>
-            {% endif %}
-        </td>
-    </tr>
-
-    <tr>
-        <td colspan="5" class="p-0">
-            <div id="expand-{{ s.id }}"></div>
-        </td>
-    </tr>
-
-    {% empty %}
         <tr>
-            <td colspan="5" class="text-center">No hay proveedores.</td>
+            <td colspan="5" class="p-0">
+                <div id="expand-{{ s.id }}"></div>
+            </td>
         </tr>
-    {% endfor %}
-    </tbody>
-</table>
+
+        {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No hay proveedores.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
 </div>
 
 {% endblock %}

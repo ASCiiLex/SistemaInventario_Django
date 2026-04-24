@@ -11,7 +11,13 @@
     {% endif %}
 </div>
 
-<form method="GET" class="mb-3">
+<form method="GET"
+      hx-get="{% url 'category_list' %}"
+      hx-target="#categories-table"
+      hx-push-url="true"
+      hx-trigger="keyup changed delay:400ms from:input[name='q']"
+      class="mb-3">
+
     <input type="text"
            name="q"
            value="{{ search }}"
@@ -19,56 +25,58 @@
            placeholder="Buscar categoría...">
 </form>
 
-<div class="table-responsive">
-<table class="table table-striped align-middle">
-    <thead>
-        <tr>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Padre</th>
-            <th class="text-end"></th>
-        </tr>
-    </thead>
+<div id="categories-table">
+    <div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Padre</th>
+                <th class="text-end"></th>
+            </tr>
+        </thead>
 
-    <tbody>
-        {% for c in categories %}
+        <tbody>
+            {% for c in categories %}
 
-        <tr
-            hx-get="{% url 'category_products' c.id %}"
-            hx-target="#expand-{{ c.id }}"
-            hx-swap="innerHTML"
-            hx-trigger="click"
-            hx-on::before-request="
-                if (event.target.closest('a, button')) return false;
-                if (document.getElementById('expand-{{ c.id }}').innerHTML.trim() !== '') {
-                    document.getElementById('expand-{{ c.id }}').innerHTML = '';
-                    event.preventDefault();
-                }
-            "
-            style="cursor:pointer"
-        >
-            <td>{{ c.name }}</td>
-            <td>{{ c.description }}</td>
-            <td>{{ c.parent }}</td>
+            <tr
+                hx-get="{% url 'category_products' c.id %}"
+                hx-target="#expand-{{ c.id }}"
+                hx-swap="innerHTML"
+                hx-trigger="click"
+                hx-on::before-request="
+                    if (event.target.closest('a, button')) return false;
+                    if (document.getElementById('expand-{{ c.id }}').innerHTML.trim() !== '') {
+                        document.getElementById('expand-{{ c.id }}').innerHTML = '';
+                        event.preventDefault();
+                    }
+                "
+                style="cursor:pointer"
+            >
+                <td>{{ c.name }}</td>
+                <td>{{ c.description }}</td>
+                <td>{{ c.parent }}</td>
 
-            <td class="text-end">
-                {% if perm.manage_categories %}
-                    <a href="{% url 'category_edit' c.id %}" class="btn btn-sm btn-primary">Editar</a>
-                    <a href="{% url 'category_delete' c.id %}" class="btn btn-sm btn-danger">Eliminar</a>
-                {% endif %}
-            </td>
-        </tr>
+                <td class="text-end">
+                    {% if perm.manage_categories %}
+                        <a href="{% url 'category_edit' c.id %}" class="btn btn-sm btn-primary">Editar</a>
+                        <a href="{% url 'category_delete' c.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                    {% endif %}
+                </td>
+            </tr>
 
-        <tr>
-            <td colspan="4" class="p-0">
-                <div id="expand-{{ c.id }}"></div>
-            </td>
-        </tr>
+            <tr>
+                <td colspan="4" class="p-0">
+                    <div id="expand-{{ c.id }}"></div>
+                </td>
+            </tr>
 
-        {% empty %}
-        <tr><td colspan="4">No hay categorías.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+            {% empty %}
+            <tr><td colspan="4">No hay categorías.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
 </div>
 {% endblock %}
