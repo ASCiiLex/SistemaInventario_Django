@@ -131,27 +131,36 @@
 
 @media (max-width: 400px) {
 
-    /* 🔥 solo bell visible arriba */
+    /* 🔥 compactación real */
+    .counter-slot {
+        width: auto;
+        min-width: 26px;
+        height: 20px;
+    }
+
     .navbar-icons {
+        gap: 3px !important;
+    }
+
+    /* 🔥 eliminar iconos → SOLO NÚMERO */
+    .counter-slot i,
+    .counter-slot svg {
         display: none !important;
     }
 
-    /* 🔥 ajuste header */
+    /* 🔥 badge minimal */
+    .counter-slot .badge {
+        font-size: 0.65rem;
+        padding: 2px 5px;
+        border-radius: 6px;
+    }
+
+    /* 🔥 navbar más compacta */
     .navbar-brand {
         font-size: 0.75rem;
     }
 
     .navbar button {
         padding: 0.25rem 0.4rem;
-    }
-
-    /* 🔥 counters dentro del menú */
-    .mobile-counters {
-        justify-content: center;
-    }
-
-    .mobile-counters > div {
-        min-width: 80px;
-        text-align: center;
     }
 }
