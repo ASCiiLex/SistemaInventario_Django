@@ -45,3 +45,27 @@
         padding: 0.25rem 0.4rem;
     }
 }
+
+/* ===============================
+   🔥 ACTION BUTTONS MOBILE FIX
+=============================== */
+
+.actions-group {
+    display: flex;
+    gap: 0.3rem;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+}
+
+/* 🔥 En móviles: columna vertical limpia */
+@media (max-width: 576px) {
+    .actions-group {
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .actions-group .btn {
+        width: 100%;
+        min-width: 90px;
+    }
+}

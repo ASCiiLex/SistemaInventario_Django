@@ -4,7 +4,7 @@
         <tr>
             {% include "partials/sortable_th.html" with field="name" label="Nombre" target="#locations-table" %}
 
-            <!-- 🔥 Dirección ocultable en mobile -->
+            <!-- 🔥 Dirección SOLO desktop -->
             <th class="d-none d-sm-table-cell">
                 {% include "partials/sortable_th.html" with field="address" label="Dirección" target="#locations-table" %}
             </th>
@@ -33,12 +33,13 @@
         >
             <td>{{ location.name }}</td>
 
-            <!-- 🔥 Dirección ocultable -->
+            <!-- 🔥 Dirección SOLO desktop -->
             <td class="d-none d-sm-table-cell">
                 {{ location.address|default:"-" }}
             </td>
 
-            <td>
+            <!-- 🔥 FIX alineación -->
+            <td class="text-center">
                 {% if location.is_active %}
                     <span class="badge bg-success">Sí</span>
                 {% else %}
@@ -46,7 +47,7 @@
                 {% endif %}
             </td>
 
-            <td>
+            <td class="text-center">
                 {% if location.low_stock_count > 0 %}
                     <span class="badge bg-danger">
                         🔴 {{ location.low_stock_count }}
@@ -56,9 +57,10 @@
                 {% endif %}
             </td>
 
+            <!-- 🔥 FIX botones responsive -->
             <td class="text-end">
                 {% if perm.edit_inventory %}
-                    <div class="d-flex flex-wrap gap-1 justify-content-end">
+                    <div class="actions-group">
                         <a href="{% url 'location_edit' location.id %}" class="btn btn-sm btn-primary">Editar</a>
                         <a href="{% url 'location_toggle_active' location.id %}" class="btn btn-sm btn-warning">
                             {% if location.is_active %}Desactivar{% else %}Activar{% endif %}
