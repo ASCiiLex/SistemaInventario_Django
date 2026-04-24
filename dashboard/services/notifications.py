@@ -1,6 +1,7 @@
 from django.core.cache import cache
 from django.conf import settings
 from django.db.models import Count, Q
+from collections import defaultdict
 
 import logging
 
@@ -112,49 +113,49 @@ def get_notifications_summary(user, organization):
     return result
 
 
-def get_recent_notifications(user, organization, limit=10):
-    cache_key = _cache_key(user.id, organization.id, f"recent:{limit}")
-    cached = _safe_cache_get(cache_key)
-
-    if cached:
-        metrics_logger.info(
-            "dashboard.cache.hit.notifications_recent",
-            extra={"org_id": organization.id, "user_id": user.id}
-        )
-        return cached
-
-    qs = list(
+# 🔥 NUEVO: agrupación robusta con histórico controlado
+def get_grouped_notifications(user, organization, limit_per_group=1, history_limit=20):
+    qs = (
         UserNotification.objects
         .filter(
             user=user,
             notification__organization=organization
         )
         .select_related("notification__product", "notification__location")
-        .only(
-            "id",
-            "seen",
-            "notification__id",
-            "notification__message",
-            "notification__type",
-            "notification__priority",
-            "notification__created_at",
-            "notification__product__name",
-            "notification__location__name",
+        .order_by("-notification__created_at")
+    )
+
+    grouped = defaultdict(list)
+
+    for un in qs:
+        key = (
+            un.notification.product_id,
+            un.notification.type
         )
-        .order_by("-notification__created_at")[:limit]
-    )
+        grouped[key].append(un)
 
-    ttl = getattr(settings, "CACHE_TTL", {}).get("notifications", 60)
-    _safe_cache_set(cache_key, qs, ttl)
+    result = []
 
-    metrics_logger.info(
-        "dashboard.cache.miss.notifications_recent",
-        extra={
-            "org_id": organization.id,
-            "user_id": user.id,
-            "count": len(qs),
-            "limit": limit,
-        }
-    )
+    for (_, _), items in grouped.items():
+        visible = items[:limit_per_group]
+        hidden = items[limit_per_group:limit_per_group + history_limit]
 
-    return qs
+        icons = set()
+        for un in items:
+            if un.notification.type == Events.PRODUCT_RISK:
+                icons.add("⚠️")
+            elif un.notification.type == Events.STOCK_LOW:
+                icons.add("🔴")
+            else:
+                icons.add("🔔")
+
+        result.append({
+            "product": items[0].notification.product,
+            "count": len(items),
+            "items": visible,
+            "hidden_items": hidden,
+            "hidden_count": max(0, len(items) - len(visible)),
+            "icons": list(icons),
+        })
+
+    return result

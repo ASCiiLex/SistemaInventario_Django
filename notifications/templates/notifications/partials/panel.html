@@ -28,7 +28,6 @@
     {% for group in grouped_notifications %}
         <div class="mb-2 border rounded notification-group">
 
-            <!-- HEADER -->
             <div class="p-2 d-flex justify-content-between align-items-center bg-surface cursor-pointer group-header">
 
                 <div>
@@ -48,25 +47,14 @@
 
             </div>
 
-            <!-- BODY -->
             <div class="group-body d-none">
                 <ul class="list-group list-group-flush">
 
-                    <!-- ACTIVAS -->
+                    <!-- SOLO 1 ACTIVA -->
                     {% for un in group.items %}
                     <li class="list-group-item d-flex justify-content-between align-items-start fw-bold">
 
                         <div>
-                            {% if un.notification.type == "inventory:product_risk" %}
-                                ⚠️
-                            {% elif un.notification.type == "inventory:stock_low" %}
-                                🔴
-                            {% elif un.notification.type == "orders:updated" %}
-                                📦
-                            {% else %}
-                                🔔
-                            {% endif %}
-
                             {{ un.notification.message }}<br>
 
                             <small class="text-muted">
@@ -87,7 +75,7 @@
                     </li>
                     {% endfor %}
 
-                    <!-- HISTÓRICO -->
+                    <!-- HISTÓRICO SIEMPRE AGRUPADO -->
                     {% if group.hidden_count > 0 %}
                         <li class="list-group-item text-center text-muted small toggle-history"
                             data-label="+{{ group.hidden_count }} anteriores..."
@@ -123,7 +111,6 @@
 <script>
 function initNotificationPanel() {
 
-    // Toggle grupos
     document.querySelectorAll(".notification-group .group-header").forEach(header => {
         if (header.dataset.bound === "true") return;
         header.dataset.bound = "true";
@@ -141,7 +128,6 @@ function initNotificationPanel() {
 
 }
 
-// Toggle histórico
 function toggleHistory(el) {
     const items = el.parentElement.querySelectorAll(".history-item");
 
@@ -154,7 +140,6 @@ function toggleHistory(el) {
         : el.dataset.label;
 }
 
-// INIT (IMPORTANTE PARA HTMX)
 document.addEventListener("DOMContentLoaded", initNotificationPanel);
 document.body.addEventListener("htmx:afterSwap", initNotificationPanel);
 </script>
