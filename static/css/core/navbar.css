@@ -131,23 +131,27 @@
 
 @media (max-width: 400px) {
 
-    /* 🔥 Reducimos ruido visual */
-    .navbar-icons .counter-slot {
-        display: none;
+    /* 🔥 solo bell visible arriba */
+    .navbar-icons {
+        display: none !important;
     }
 
-    /* 🔥 Dejamos SOLO la campana */
-    #notifications-bell {
-        display: block !important;
-    }
-
-    /* Ajuste fino del header */
+    /* 🔥 ajuste header */
     .navbar-brand {
         font-size: 0.75rem;
     }
 
-    /* Evita que el botón hamburguesa se deforme */
     .navbar button {
         padding: 0.25rem 0.4rem;
+    }
+
+    /* 🔥 counters dentro del menú */
+    .mobile-counters {
+        justify-content: center;
+    }
+
+    .mobile-counters > div {
+        min-width: 80px;
+        text-align: center;
     }
 }

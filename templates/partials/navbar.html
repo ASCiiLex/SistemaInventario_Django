@@ -127,44 +127,16 @@
 
             <div class="d-flex align-items-center gap-2">
 
-                <div class="d-flex align-items-center gap-2 navbar-icons">
-
-                    {% if perm.view_orders %}
-                    <div class="counter-slot">
-                        <div id="orders-counter"
-                             hx-get="{% url 'orders_counter' %}"
-                             hx-trigger="load, orders:updated from:body"
-                             hx-target="this"
-                             hx-swap="outerHTML"></div>
-                    </div>
-                    {% endif %}
-
-                    <div class="counter-slot">
-                        <div id="stockitem-counter"
-                             hx-get="{% url 'stockitem_counter' %}"
-                             hx-trigger="load, inventory:stock_changed from:body"
-                             hx-target="this"
-                             hx-swap="outerHTML"></div>
-                    </div>
-
-                    <div class="counter-slot">
-                        <div id="lowstock-counter"
-                             hx-get="{% url 'lowstock_counter' %}"
-                             hx-trigger="load, inventory:stock_changed from:body"
-                             hx-target="this"
-                             hx-swap="outerHTML"></div>
-                    </div>
-
-                    <div class="counter-slot">
-                        <div id="notifications-bell"
-                             hx-get="{% url 'notifications:notifications_counter' %}"
-                             hx-trigger="load, inventory:notifications_updated from:body"
-                             hx-target="this"
-                             hx-swap="outerHTML"></div>
-                    </div>
-
+                <!-- 🔔 SOLO BELL -->
+                <div class="counter-slot">
+                    <div id="notifications-bell"
+                         hx-get="{% url 'notifications:notifications_counter' %}"
+                         hx-trigger="load, inventory:notifications_updated from:body"
+                         hx-target="this"
+                         hx-swap="outerHTML"></div>
                 </div>
 
+                <!-- ☰ -->
                 <button class="btn btn-sm btn-outline-light"
                         type="button"
                         data-bs-toggle="collapse"
@@ -176,9 +148,34 @@
 
         </div>
 
-        <div class="collapse mt-2" id="navbarMobile">
+        <div class="collapse mt-3" id="navbarMobile">
 
-            <!-- 🔥 MISMA ESTRUCTURA QUE DESKTOP -->
+            <!-- 🔢 COUNTERS DENTRO -->
+            <div class="mobile-counters d-flex flex-wrap justify-content-center gap-2 mb-3">
+
+                {% if perm.view_orders %}
+                <div id="orders-counter"
+                     hx-get="{% url 'orders_counter' %}"
+                     hx-trigger="load, orders:updated from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML"></div>
+                {% endif %}
+
+                <div id="stockitem-counter"
+                     hx-get="{% url 'stockitem_counter' %}"
+                     hx-trigger="load, inventory:stock_changed from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML"></div>
+
+                <div id="lowstock-counter"
+                     hx-get="{% url 'lowstock_counter' %}"
+                     hx-trigger="load, inventory:stock_changed from:body"
+                     hx-target="this"
+                     hx-swap="outerHTML"></div>
+
+            </div>
+
+            <!-- NAV -->
             <ul class="navbar-nav flex-column align-items-center gap-2 mb-3">
 
                 <li class="nav-item"><a href="/categorias/" class="nav-link">Categorías</a></li>
@@ -215,6 +212,7 @@
 
             </ul>
 
+            <!-- ACTIONS -->
             <div class="d-flex flex-wrap justify-content-center gap-2">
 
                 <div class="dropdown">
