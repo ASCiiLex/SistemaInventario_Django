@@ -29,13 +29,9 @@
         values: {{ chart_values|safe }}
     };
 
-    // Inicialización robusta tras HTMX
-    document.addEventListener("DOMContentLoaded", () => {
-        if (window.initView) window.initView();
-    });
-
-    document.body.addEventListener("htmx:afterSwap", () => {
-        if (window.initView) window.initView();
-    });
+    // 🔥 Inicialización inmediata (HTMX-safe)
+    if (window.initView) {
+        window.initView();
+    }
 })();
 </script>
