@@ -94,17 +94,20 @@ TEMPLATES = [
 ]
 
 # ============================
-# DATABASE (Railway + local unificado)
+# DATABASE (Railway + local unificado PRO)
 # ============================
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = (
+    os.getenv("DATABASE_PUBLIC_URL")
+    or os.getenv("DATABASE_URL")
+)
 
 if DATABASE_URL:
     DATABASES = {
         "default": dj_database_url.parse(
             DATABASE_URL,
             conn_max_age=600,
-            ssl_require=True
+            ssl_require=True,
         )
     }
 else:
@@ -121,10 +124,13 @@ else:
     }
 
 # ============================
-# REDIS / CACHE (ROBUSTO)
+# REDIS / CACHE (ROBUSTO Y PORTABLE)
 # ============================
 
-REDIS_URL = os.getenv("REDIS_URL")
+REDIS_URL = (
+    os.getenv("REDIS_PUBLIC_URL")
+    or os.getenv("REDIS_URL")
+)
 
 if REDIS_URL:
     CACHES = {
@@ -147,7 +153,6 @@ if REDIS_URL:
     }
 
 else:
-    # 🔥 fallback seguro (evita caída total en Railway sin Redis)
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache"
@@ -204,3 +209,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
+
+# ============================
+# HOSTS (FIX RUNSERVER + RAILWAY)
+# ============================
+
+ALLOWED_HOSTS = os.getenv(
+    "ALLOWED_HOSTS",
+    "127.0.0.1,localhost,.railway.app"
+).split(",")

@@ -6,11 +6,11 @@ from django.db import connection
 
 import logging
 import time
+import os
 
 logger = logging.getLogger("inventory.domain")
 metrics = logging.getLogger("inventory.metrics")
 
-# 🔥 OBSERVABILIDAD CENTRALIZADA
 from core.observability.metrics import domain_events_total, errors_total
 from prometheus_client import Histogram
 
@@ -100,7 +100,6 @@ class StockDomainService:
 
         duration = time.time() - start_time
 
-        # 🔥 MÉTRICA DE DOMINIO REAL
         domain_events_total.labels(
             event_type=f"stock:{movement.movement_type.lower()}"
         ).inc()
@@ -117,6 +116,9 @@ class StockDomainService:
 
     @staticmethod
     def _lock_product_scope(movement):
+        if os.getenv("DISABLE_DB_LOCKS", "true") == "true":
+            return
+
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT pg_advisory_xact_lock(%s)",
@@ -200,7 +202,7 @@ class StockDomainService:
 
         from notifications.events import emit_event
         from notifications.constants import Events
-        from inventory.services.stock_alerts import sync_all_notifications
+        from inventory.services.stock_alerts import invalidate_dashboard_cache
 
         emit_event(
             Events.MOVEMENT_CREATED,
@@ -216,4 +218,6 @@ class StockDomainService:
             }
         )
 
-        sync_all_notifications(movement.organization)
+        # 🔥 SOLO invalidamos cache, NO recalculamos todo
+        if movement.organization_id:
+            invalidate_dashboard_cache(movement.organization_id)

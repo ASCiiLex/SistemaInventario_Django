@@ -7,10 +7,6 @@ from notifications.events import emit_event
 from notifications.constants import Events
 
 
-# ==========================================
-# CACHE
-# ==========================================
-
 def invalidate_dashboard_cache(org_id=None):
     if not org_id:
         return
@@ -28,14 +24,8 @@ def invalidate_dashboard_cache(org_id=None):
     cache.delete_many(keys)
 
 
-# ==========================================
-# ALERTS
-# ==========================================
-
-def sync_stock_item_notifications(organization):
-    """
-    🔥 NIVEL ALMACÉN (fuente de verdad)
-    """
+# 🔥 SOLO PARA USO MANUAL / BATCH (NO EN REQUEST)
+def sync_all_notifications(organization):
     items = (
         StockItem.objects
         .select_related("product", "location")
@@ -52,11 +42,6 @@ def sync_stock_item_notifications(organization):
                 }
             )
 
-
-def sync_product_risk_notifications(organization):
-    """
-    🔥 NIVEL GLOBAL (derivado + consistente)
-    """
     products = Product.objects.filter(organization=organization)
 
     for p in products:
@@ -73,7 +58,6 @@ def sync_product_risk_notifications(organization):
         total_qty = agg["total_qty"] or 0
         total_min = agg["total_min"] or 0
 
-        # 🔥 CLAVE: debe existir problema local
         has_local_issue = StockItem.objects.filter(
             organization=organization,
             product=p,
@@ -87,10 +71,5 @@ def sync_product_risk_notifications(organization):
                     "product": p,
                 }
             )
-
-
-def sync_all_notifications(organization):
-    sync_stock_item_notifications(organization)
-    sync_product_risk_notifications(organization)
 
     invalidate_dashboard_cache(organization.id)

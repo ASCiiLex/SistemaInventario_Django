@@ -33,7 +33,33 @@ git clone <URL_DEL_REPO>
 cd SistemaInventario
 docker compose up -d
 python manage.py migrate
-python manage.py flush
+./run_demo.sh
+```
+
+Abrir: http://127.0.0.1:8000
+
+---
+
+## 🚀 Entorno Demo
+
+El proyecto incluye un script para generar un entorno demo completo con datos realistas.
+
+### ▶️ Ejecución en local
+
+```bash
+python manage.py migrate
+./run_demo.sh
+```
+
+---
+
+### ☁️ Ejecución en Railway
+
+Railway no ejecuta scripts automáticamente, por lo que el seed debe lanzarse manualmente.
+
+#### Opción A — Terminal (recomendada)
+
+```bash
 python manage.py shell
 ```
 
@@ -42,11 +68,32 @@ from scripts.seed_demo import run
 run()
 ```
 
+---
+
+#### Opción B — Datos ya cargados
+
+Si el entorno ya ha sido inicializado, el sistema estará listo directamente al acceder.
+
+---
+
+### 🔁 Reset de datos (solo local)
+
 ```bash
-daphne sistema_inventario.asgi:application
+python manage.py flush --no-input
+./run_demo.sh
 ```
 
-Abrir: http://127.0.0.1:8000
+---
+
+### 🎯 Qué genera el seed
+
+* Organización "Demo Corp"
+* Usuarios con distintos roles
+* Stock inicial distribuido
+* Consumo realista de productos
+* Productos bajo mínimo (alertas activas)
+* Reposición parcial
+* Actividad suficiente para dashboard y métricas
 
 ---
 
@@ -85,14 +132,7 @@ Abrir: http://127.0.0.1:8000
 
 ## 🧪 Datos demo
 
-El script `seed_demo` genera un escenario realista:
-
-* Organización "Demo Corp"
-* Usuarios con distintos roles
-* Productos con stock distribuido
-* Movimientos (entrada, salida, transferencias)
-* Productos bajo mínimo → disparan alertas
-* Actividad suficiente para poblar dashboard y métricas
+El script `seed_demo` genera un escenario realista orientado a demostración funcional del sistema.
 
 ---
 

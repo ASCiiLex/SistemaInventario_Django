@@ -5,7 +5,8 @@ from products.models import Product
 from categories.models import Category
 from suppliers.models import Supplier
 
-from inventory.models import Location, StockMovement
+from inventory.models import Location
+from inventory.models.stock import StockItem
 
 
 def run():
@@ -91,60 +92,38 @@ def run():
         products.append(p)
 
     # =====================
-    # STOCK INICIAL (alto)
+    # STOCK DIRECTO (SIN DOMINIO)
     # =====================
+    stock_items = []
+
     for p in products:
         for loc in locations:
-            StockMovement.objects.create(
-                organization=org,
-                product=p,
-                movement_type="IN",
-                source_type="manual",
-                destination=loc,
-                quantity=40,
+            stock_items.append(
+                StockItem(
+                    organization=org,
+                    product=p,
+                    location=loc,
+                    quantity=40,
+                    min_stock=p.min_stock,
+                )
             )
 
+    StockItem.objects.bulk_create(stock_items, ignore_conflicts=True)
+
     # =====================
-    # ACTIVIDAD REALISTA
+    # ESTADOS FINALES (SIMULACIÓN)
     # =====================
 
-    # 🔥 Consumo normal
-    for i, p in enumerate(products[:6]):
-        loc = locations[i % len(locations)]
+    # consumo normal
+    for p in products[:6]:
+        StockItem.objects.filter(product=p, organization=org).update(quantity=30)
 
-        StockMovement.objects.create(
-            organization=org,
-            product=p,
-            movement_type="OUT",
-            source_type="manual",
-            origin=loc,
-            quantity=10,
-        )
+    # bajo mínimo
+    for p in products[6:10]:
+        StockItem.objects.filter(product=p, organization=org).update(quantity=5)
 
-    # 🔥 Productos bajo mínimo
-    for i, p in enumerate(products[6:10]):
-        loc = locations[i % len(locations)]
+    # reposición parcial
+    for p in products[8:12]:
+        StockItem.objects.filter(product=p, organization=org).update(quantity=10)
 
-        StockMovement.objects.create(
-            organization=org,
-            product=p,
-            movement_type="OUT",
-            source_type="manual",
-            origin=loc,
-            quantity=35,
-        )
-
-    # 🔥 Reposición parcial (válida)
-    for i, p in enumerate(products[8:12]):
-        loc = locations[i % len(locations)]
-
-        StockMovement.objects.create(
-            organization=org,
-            product=p,
-            movement_type="IN",
-            source_type="manual",
-            destination=loc,
-            quantity=10,
-        )
-
-    print("✅ Seed DEMO listo con actividad, alertas y KPIs vivos")
+    print("✅ Seed DEMO listo (rápido, consistente y sin bloqueo)")
