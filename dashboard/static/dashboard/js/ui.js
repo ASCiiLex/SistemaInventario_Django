@@ -6,16 +6,14 @@ export function initMainSections() {
 
         if (!header || !content || !arrow) return;
 
-        // ✅ evitar re-bind
         if (section.dataset.bound === "true") return;
         section.dataset.bound = "true";
 
-        // ✅ estado inicial SOLO si no existe
-        const isClosed = section.classList.contains("closed");
-
-        content.style.display = isClosed ? "none" : "block";
-        arrow.classList.toggle("arrow-up", !isClosed);
-        arrow.classList.toggle("arrow-down", isClosed);
+        // 🔥 SIEMPRE ABIERTO POR DEFECTO
+        section.classList.remove("closed");
+        content.style.display = "block";
+        arrow.classList.add("arrow-up");
+        arrow.classList.remove("arrow-down");
 
         header.addEventListener("click", () => {
             const nowClosed = section.classList.toggle("closed");
@@ -35,16 +33,14 @@ export function initSubSections() {
 
         if (!header || !content || !arrow) return;
 
-        // ✅ evitar re-bind
         if (sub.dataset.bound === "true") return;
         sub.dataset.bound = "true";
 
-        // ✅ estado inicial SOLO si no existe
-        const isClosed = sub.classList.contains("closed");
-
-        content.style.display = isClosed ? "none" : "block";
-        arrow.classList.toggle("sub-arrow-up", !isClosed);
-        arrow.classList.toggle("sub-arrow-down", isClosed);
+        // 🔥 SIEMPRE CERRADO POR DEFECTO
+        sub.classList.add("closed");
+        content.style.display = "none";
+        arrow.classList.add("sub-arrow-down");
+        arrow.classList.remove("sub-arrow-up");
 
         header.addEventListener("click", () => {
             const nowClosed = sub.classList.toggle("closed");
