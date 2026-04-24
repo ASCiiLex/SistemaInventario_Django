@@ -11,3 +11,23 @@
     font-size: 0.9rem;
     font-weight: 600;
 }
+
+/* ===============================
+   🔥 FIX MOBILE TABLE OVERFLOW
+=============================== */
+
+.dashboard-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.dashboard-table-wrapper table {
+    min-width: 600px;
+}
+
+/* Evita romper layout en móviles pequeños */
+@media (max-width: 400px) {
+    .dashboard-table-wrapper table {
+        min-width: 520px;
+    }
+}

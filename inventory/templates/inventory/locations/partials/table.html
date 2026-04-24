@@ -3,7 +3,12 @@
     <thead>
         <tr>
             {% include "partials/sortable_th.html" with field="name" label="Nombre" target="#locations-table" %}
-            {% include "partials/sortable_th.html" with field="address" label="Dirección" target="#locations-table" %}
+
+            <!-- 🔥 Dirección ocultable en mobile -->
+            <th class="d-none d-sm-table-cell">
+                {% include "partials/sortable_th.html" with field="address" label="Dirección" target="#locations-table" %}
+            </th>
+
             {% include "partials/sortable_th.html" with field="is_active" label="Activo" target="#locations-table" %}
             <th>Incidencias</th>
             <th></th>
@@ -13,7 +18,6 @@
     <tbody>
         {% for location in locations %}
 
-        <!-- MAIN ROW -->
         <tr 
             hx-get="{% url 'location_full_stock' location.id %}?mode=all"
             hx-target="#expand-{{ location.id }}"
@@ -28,7 +32,11 @@
             style="cursor:pointer"
         >
             <td>{{ location.name }}</td>
-            <td>{{ location.address|default:"-" }}</td>
+
+            <!-- 🔥 Dirección ocultable -->
+            <td class="d-none d-sm-table-cell">
+                {{ location.address|default:"-" }}
+            </td>
 
             <td>
                 {% if location.is_active %}
@@ -50,16 +58,17 @@
 
             <td class="text-end">
                 {% if perm.edit_inventory %}
-                    <a href="{% url 'location_edit' location.id %}" class="btn btn-sm btn-primary">Editar</a>
-                    <a href="{% url 'location_toggle_active' location.id %}" class="btn btn-sm btn-warning">
-                        {% if location.is_active %}Desactivar{% else %}Activar{% endif %}
-                    </a>
-                    <a href="{% url 'location_delete' location.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                    <div class="d-flex flex-wrap gap-1 justify-content-end">
+                        <a href="{% url 'location_edit' location.id %}" class="btn btn-sm btn-primary">Editar</a>
+                        <a href="{% url 'location_toggle_active' location.id %}" class="btn btn-sm btn-warning">
+                            {% if location.is_active %}Desactivar{% else %}Activar{% endif %}
+                        </a>
+                        <a href="{% url 'location_delete' location.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                    </div>
                 {% endif %}
             </td>
         </tr>
 
-        <!-- EXPAND -->
         <tr>
             <td colspan="5" class="p-0">
                 <div id="expand-{{ location.id }}"></div>
