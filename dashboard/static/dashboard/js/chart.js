@@ -12,12 +12,17 @@ function initChartSelector() {
     });
 }
 
+function applyEmptyState(chart) {
+    chart.data.labels = ["Sin datos"];
+    chart.data.datasets[0].data = [0];
+}
+
 export function initChart() {
     const canvas = document.getElementById("categoryChart");
     if (!canvas || !window.chartData) return;
 
-    const labels = window.chartData.labels || [];
-    const values = window.chartData.values || [];
+    let labels = window.chartData.labels || [];
+    let values = window.chartData.values || [];
 
     if (categoryChart) {
         categoryChart.destroy();
@@ -26,10 +31,10 @@ export function initChart() {
     const chart = new Chart(canvas, {
         type: "bar",
         data: {
-            labels,
+            labels: labels.length ? labels : ["Sin datos"],
             datasets: [{
                 label: "Stock",
-                data: values,
+                data: values.length ? values : [0],
                 backgroundColor: "#0d6efd"
             }]
         },
@@ -67,8 +72,16 @@ export async function loadChartData(tipo) {
             return;
         }
 
-        categoryChart.data.labels = data.labels || [];
-        categoryChart.data.datasets[0].data = data.values || [];
+        const labels = data.labels || [];
+        const values = data.values || [];
+
+        if (!labels.length) {
+            applyEmptyState(categoryChart);
+        } else {
+            categoryChart.data.labels = labels;
+            categoryChart.data.datasets[0].data = values;
+        }
+
         categoryChart.update();
 
     } catch (error) {
