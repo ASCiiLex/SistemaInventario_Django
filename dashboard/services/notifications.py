@@ -172,34 +172,33 @@ def get_grouped_notifications(user, organization, limit_per_group=1, history_lim
 
     grouped = defaultdict(list)
 
+    # 🔥 AGRUPACIÓN SOLO POR PRODUCTO
     for un in qs:
-        key = (
-            un.notification.product_id,
-            un.notification.type
-        )
+        key = un.notification.product_id
         grouped[key].append(un)
 
     result = []
 
-    for (_, _), items in grouped.items():
+    for _, items in grouped.items():
         visible = items[:limit_per_group]
         hidden = items[limit_per_group:limit_per_group + history_limit]
 
         icons = set()
-
         visible_items = []
         hidden_items = []
 
+        # Header icons (mix tipos)
         for un in items:
-            icon = _get_icon(un.notification.type)
-            icons.add(icon)
+            icons.add(_get_icon(un.notification.type))
 
+        # Items visibles
         for un in visible:
             visible_items.append({
                 "obj": un,
                 "icon": _get_icon(un.notification.type),
             })
 
+        # Histórico
         for un in hidden:
             hidden_items.append({
                 "obj": un,
