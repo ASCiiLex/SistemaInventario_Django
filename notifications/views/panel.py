@@ -4,34 +4,25 @@ from ..models import UserNotification
 from ..utils import send_ui_event_to_all
 from ..constants import Events
 from ..services import sync_notifications_for_org
-from .utils import group_notifications_by_product, user_qs, has_unread
-
-
-def _get_panel_notifications(request):
-    # 🔥 SINCRONIZA ANTES DE MOSTRAR
-    sync_notifications_for_org(request.organization)
-
-    qs = user_qs(request)
-
-    qs = qs.filter(notification__is_active=True)
-
-    q = request.GET.get("q", "").strip()
-    if q:
-        qs = qs.filter(notification__message__icontains=q)
-
-    return qs.order_by("-notification__created_at")
-
-
-def _panel_context(request, qs):
-    return {
-        "grouped_notifications": group_notifications_by_product(qs),
-        "has_unread": has_unread(request),
-    }
+from dashboard.services.notifications import get_grouped_notifications  # 🔥 IMPORTANTE
+from .utils import user_qs, has_unread
 
 
 def notifications_panel(request):
-    qs = _get_panel_notifications(request)
-    return render(request, "notifications/partials/panel.html", _panel_context(request, qs))
+    # 🔥 sincroniza
+    sync_notifications_for_org(request.organization)
+
+    grouped = get_grouped_notifications(
+        request.user,
+        request.organization
+    )
+
+    context = {
+        "grouped_notifications": grouped,
+        "has_unread": has_unread(request),
+    }
+
+    return render(request, "notifications/partials/panel.html", context)
 
 
 def notifications_panel_mark_all(request):
