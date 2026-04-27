@@ -1,7 +1,14 @@
-from django.db.models import Sum, F, DecimalField, ExpressionWrapper, Q
+from django.db.models import Sum, F, DecimalField, ExpressionWrapper, Q, IntegerField
+from django.db.models.functions import Cast, Substr
+from django.db.models.expressions import Func
 
 from products.models import Product
 from inventory.models import StockItem, Order
+
+
+class RegexpReplace(Func):
+    function = "REGEXP_REPLACE"
+    arity = 3
 
 
 # ==========================================
@@ -9,12 +16,6 @@ from inventory.models import StockItem, Order
 # ==========================================
 
 def _get_products_in_risk(org):
-    """
-    Producto en riesgo =
-    - Tiene al menos un problema local (stock <= min)
-    - Y globalmente SUM(qty) <= SUM(min)
-    """
-
     products = Product.objects.filter(organization=org)
 
     risk_count = 0
@@ -49,13 +50,11 @@ def _get_products_in_risk(org):
 # ==========================================
 
 def get_dashboard_metrics(org):
-    # 🔹 Total unidades en stock
     total_units = (
         StockItem.objects.filter(organization=org)
         .aggregate(total=Sum("quantity"))["total"] or 0
     )
 
-    # 🔹 Valor inventario
     inventory_value = (
         StockItem.objects.filter(organization=org)
         .annotate(
@@ -67,14 +66,12 @@ def get_dashboard_metrics(org):
         .aggregate(total=Sum("item_value"))["total"] or 0
     )
 
-    # 🔹 Pedidos pendientes
     pending_orders = Order.objects.filter(
         organization=org
     ).filter(
         Q(status="pending") | Q(status="partially_received")
     ).count()
 
-    # 🔥 CORREGIDO: productos en riesgo REAL (nivel dominio)
     product_risk_count = _get_products_in_risk(org)
 
     return {
@@ -90,10 +87,20 @@ def get_dashboard_metrics(org):
 # ==========================================
 
 def get_low_stock(org):
-    return (
+    qs = (
         StockItem.objects.filter(
             organization=org,
             quantity__lte=F("min_stock")
         )
         .select_related("product", "location")
     )
+
+    # 🔥 Natural sorting para product__name
+    qs = qs.annotate(
+        product_name_num=Cast(
+            RegexpReplace(F("product__name"), r"\D", ""),
+            IntegerField()
+        )
+    )
+
+    return qs
