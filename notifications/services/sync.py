@@ -72,7 +72,7 @@ def _ensure_user_notifications(notification):
 
         User = get_user_model()
         users = User.objects.filter(
-            membership__organization=notification.organization
+            memberships__organization=notification.organization
         ).values_list("id", flat=True)
 
     existing = set(
@@ -102,7 +102,6 @@ def _generate_missing_notifications(organization):
     stock_items = StockItem.objects.filter(organization=organization)
 
     for item in stock_items:
-        # STOCK LOW
         if item.quantity <= item.min_stock:
             notif = _get_or_create_notification(
                 organization,
@@ -112,10 +111,7 @@ def _generate_missing_notifications(organization):
             )
             _ensure_user_notifications(notif)
 
-    # PRODUCT RISK
-    products = (
-        stock_items.values_list("product_id", flat=True).distinct()
-    )
+    products = stock_items.values_list("product_id", flat=True).distinct()
 
     for product_id in products:
         items = stock_items.filter(product_id=product_id)
@@ -153,10 +149,8 @@ def sync_notification_state(notification):
 
 
 def sync_notifications_for_org(organization):
-    # 🔥 1. Generar notificaciones si no existen (clave de tu bug)
     _generate_missing_notifications(organization)
 
-    # 🔥 2. Sincronizar estado
     qs = Notification.objects.filter(
         organization=organization,
         type__in=[Events.STOCK_LOW, Events.PRODUCT_RISK],
