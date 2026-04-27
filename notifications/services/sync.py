@@ -50,16 +50,42 @@ def _should_be_active(notification):
     return False
 
 
+def _build_message(notif_type, product, location):
+    if notif_type == Events.STOCK_LOW:
+        return f"Stock bajo en {location.name}: {product.name}"
+    if notif_type == Events.PRODUCT_RISK:
+        return f"Producto en riesgo: {product.name}"
+    return notif_type
+
+
 def _get_or_create_notification(org, product, location, notif_type):
-    return Notification.objects.get_or_create(
+    notif, created = Notification.objects.get_or_create(
         organization=org,
         product=product,
         location=location,
         type=notif_type,
         defaults={
             "is_active": True,
+            "message": _build_message(notif_type, product, location),
+            "priority": "warning" if notif_type == Events.STOCK_LOW else "critical",
         },
-    )[0]
+    )
+
+    # 🔥 si existe pero está incompleta (caso actual), la corregimos
+    updated = False
+
+    if not notif.message:
+        notif.message = _build_message(notif_type, product, location)
+        updated = True
+
+    if not notif.priority:
+        notif.priority = "warning" if notif_type == Events.STOCK_LOW else "critical"
+        updated = True
+
+    if updated:
+        notif.save(update_fields=["message", "priority"])
+
+    return notif
 
 
 def _ensure_user_notifications(notification):
@@ -69,8 +95,8 @@ def _ensure_user_notifications(notification):
 
     if not users:
         from django.contrib.auth import get_user_model
-
         User = get_user_model()
+
         users = User.objects.filter(
             memberships__organization=notification.organization
         ).values_list("id", flat=True)
@@ -81,16 +107,11 @@ def _ensure_user_notifications(notification):
         )
     )
 
-    to_create = []
-    for user_id in users:
-        if user_id not in existing:
-            to_create.append(
-                UserNotification(
-                    user_id=user_id,
-                    notification=notification,
-                    seen=False,
-                )
-            )
+    to_create = [
+        UserNotification(user_id=u, notification=notification, seen=False)
+        for u in users
+        if u not in existing
+    ]
 
     if to_create:
         UserNotification.objects.bulk_create(to_create, ignore_conflicts=True)
