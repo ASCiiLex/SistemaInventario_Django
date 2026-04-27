@@ -7,6 +7,10 @@ from suppliers.models import Supplier
 
 from inventory.models import Location
 from inventory.models.stock import StockItem
+from inventory.models import StockMovement
+
+from django.utils import timezone
+from random import randint, choice
 
 
 def run():
@@ -126,4 +130,32 @@ def run():
     for p in products[8:12]:
         StockItem.objects.filter(product=p, organization=org).update(quantity=10)
 
-    print("✅ Seed DEMO listo (rápido, consistente y sin bloqueo)")
+    # =====================
+    # 🔥 STOCK MOVEMENTS (NUEVO)
+    # =====================
+    print("📦 Generando movimientos de stock...")
+
+    stock_items = StockItem.objects.select_related("product", "location", "organization")
+
+    movement_types = ["IN", "OUT", "TRANSFER"]
+
+    movements = []
+
+    for item in stock_items:
+        for _ in range(randint(1, 3)):
+            movements.append(
+                StockMovement(
+                    organization=item.organization,
+                    product=item.product,
+                    location=item.location,
+                    quantity=randint(1, 10),
+                    movement_type=choice(movement_types),
+                    created_at=timezone.now(),
+                )
+            )
+
+    StockMovement.objects.bulk_create(movements, ignore_conflicts=True)
+
+    print(f"✔ Movimientos creados: {len(movements)}")
+
+    print("✅ Seed DEMO listo (rápido, consistente y con movimientos)")
