@@ -6,6 +6,17 @@ from dashboard.services.dashboard_metrics import (
 )
 from dashboard.services.observability_metrics import get_system_metrics
 from accounts.permissions import can_view_system_metrics
+from inventory.utils.listing import ListViewMixin
+
+
+class LowStockListViewMixin(ListViewMixin):
+    allowed_sort_fields = [
+        "product__name",
+        "location__name",
+        "min_stock",
+        "quantity",
+    ]
+    default_ordering = "product__name"
 
 
 def dashboard_totals(request):
@@ -15,10 +26,19 @@ def dashboard_totals(request):
 
 def dashboard_low_stock(request):
     low_stock = get_low_stock(request.organization)
+
+    mixin = LowStockListViewMixin()
+    low_stock = mixin.apply_ordering(request, low_stock)
+
+    context = {
+        "low_stock": low_stock,
+        **mixin.get_ordering_context(request),
+    }
+
     return render(
         request,
         "dashboard/partials/low_stock.html",
-        {"low_stock": low_stock},
+        context,
     )
 
 
