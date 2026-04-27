@@ -51,7 +51,7 @@ export async function loadChartData(tipo) {
         const loader = document.getElementById("chart-loader");
         if (loader) loader.style.display = "flex";
 
-        const url = `${window.dashboardChartUrl}${tipo}/`;
+        const url = window.dashboardChartUrl.replace("TIPO", tipo);
 
         const response = await fetch(url);
 
@@ -62,16 +62,13 @@ export async function loadChartData(tipo) {
 
         const data = await response.json();
 
-        const labels = data.labels || [];
-        const values = data.values || [];
-
         if (!categoryChart) {
             initChart();
             return;
         }
 
-        categoryChart.data.labels = labels;
-        categoryChart.data.datasets[0].data = values;
+        categoryChart.data.labels = data.labels || [];
+        categoryChart.data.datasets[0].data = data.values || [];
         categoryChart.update();
 
     } catch (error) {
