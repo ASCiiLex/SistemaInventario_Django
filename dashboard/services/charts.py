@@ -49,8 +49,8 @@ def _format_result(qs, label_field, value_field):
     values = []
 
     for row in qs:
-        labels.append(row[label_field] or "Sin dato")
-        values.append(row[value_field] or 0)
+        labels.append(row.get(label_field) or "Sin dato")
+        values.append(row.get(value_field) or 0)
 
     return labels, values
 
@@ -139,6 +139,8 @@ def get_chart_movements_by_type(organization):
         qs = (
             StockMovement.objects
             .filter(organization=organization)
+            .exclude(movement_type__isnull=True)
+            .exclude(movement_type__exact="")
             .values("movement_type")
             .annotate(total=Coalesce(Sum("quantity"), Value(0)))
         )

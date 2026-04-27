@@ -48,6 +48,9 @@ export function initChart() {
 
 export async function loadChartData(tipo) {
     try {
+        const loader = document.getElementById("chart-loader");
+        if (loader) loader.style.display = "flex";
+
         const response = await fetch(
             window.dashboardChartUrl.replace("TIPO", tipo)
         );
@@ -59,18 +62,24 @@ export async function loadChartData(tipo) {
 
         const data = await response.json();
 
-        // 🔥 FIX: si no hay chart aún (caso HTMX timing), reintentar init
+        // 🔥 FIX CLAVE: si no hay datos, limpiar gráfico
+        const labels = data.labels || [];
+        const values = data.values || [];
+
         if (!categoryChart) {
             initChart();
             return;
         }
 
-        categoryChart.data.labels = data.labels || [];
-        categoryChart.data.datasets[0].data = data.values || [];
+        categoryChart.data.labels = labels;
+        categoryChart.data.datasets[0].data = values;
         categoryChart.update();
 
     } catch (error) {
         console.error("Error gráfico:", error);
+    } finally {
+        const loader = document.getElementById("chart-loader");
+        if (loader) loader.style.display = "none";
     }
 }
 
