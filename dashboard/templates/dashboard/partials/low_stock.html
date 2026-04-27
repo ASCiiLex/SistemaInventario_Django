@@ -1,10 +1,10 @@
 <table class="table table-striped">
     <thead class="table-danger">
         <tr>
-            <th>Producto</th>
-            <th>Almacén</th>
-            <th>Mínimo</th>
-            <th>Stock</th>
+            {% include "partials/sortable_th.html" with label="Producto" field="product__name" %}
+            {% include "partials/sortable_th.html" with label="Almacén" field="location__name" %}
+            {% include "partials/sortable_th.html" with label="Mínimo" field="min_stock" %}
+            {% include "partials/sortable_th.html" with label="Stock" field="quantity" %}
         </tr>
     </thead>
     <tbody>

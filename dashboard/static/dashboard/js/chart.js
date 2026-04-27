@@ -52,11 +52,18 @@ export async function loadChartData(tipo) {
             window.dashboardChartUrl.replace("TIPO", tipo)
         );
 
-        if (!response.ok) return;
+        if (!response.ok) {
+            console.warn("Chart response no OK:", tipo);
+            return;
+        }
 
         const data = await response.json();
 
-        if (!categoryChart) return;
+        // 🔥 FIX: si no hay chart aún (caso HTMX timing), reintentar init
+        if (!categoryChart) {
+            initChart();
+            return;
+        }
 
         categoryChart.data.labels = data.labels || [];
         categoryChart.data.datasets[0].data = data.values || [];

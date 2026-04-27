@@ -80,12 +80,12 @@
                             {% elif alert.level == "warning" %}
                                 🟠
                             {% else %}
-                                🟢
+                                ✅
                             {% endif %}
                             {{ alert.msg }}
                         </li>
                     {% empty %}
-                        <li class="text-success">🟢 Sistema estable</li>
+                        <li class="text-success">✅ Sistema estable</li>
                     {% endfor %}
                 </ul>
             </div>
