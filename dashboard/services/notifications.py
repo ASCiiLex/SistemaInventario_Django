@@ -151,6 +151,14 @@ def get_recent_notifications(user, organization, limit=10):
     return result
 
 
+def _get_icon(notification_type):
+    if notification_type == Events.PRODUCT_RISK:
+        return "⚠️"
+    elif notification_type == Events.STOCK_LOW:
+        return "🔴"
+    return "🔔"
+
+
 def get_grouped_notifications(user, organization, limit_per_group=1, history_limit=20):
     qs = (
         UserNotification.objects
@@ -179,12 +187,14 @@ def get_grouped_notifications(user, organization, limit_per_group=1, history_lim
 
         icons = set()
         for un in items:
-            if un.notification.type == Events.PRODUCT_RISK:
-                icons.add("⚠️")
-            elif un.notification.type == Events.STOCK_LOW:
-                icons.add("🔴")
-            else:
-                icons.add("🔔")
+            icons.add(_get_icon(un.notification.type))
+
+        # 🔥 añadimos icono directo a cada item (clave)
+        for un in visible:
+            un.icon = _get_icon(un.notification.type)
+
+        for un in hidden:
+            un.icon = _get_icon(un.notification.type)
 
         result.append({
             "product": items[0].notification.product,

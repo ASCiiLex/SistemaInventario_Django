@@ -50,19 +50,11 @@
             <div class="group-body d-none">
                 <ul class="list-group list-group-flush">
 
-                    <!-- SOLO 1 ACTIVA -->
                     {% for un in group.items %}
                     <li class="list-group-item d-flex justify-content-between align-items-start fw-bold">
 
                         <div>
-                            {% if un.notification.type == "PRODUCT_RISK" %}
-                                ⚠️
-                            {% elif un.notification.type == "STOCK_LOW" %}
-                                🔴
-                            {% else %}
-                                🔔
-                            {% endif %}
-
+                            {{ un.icon }}
                             {{ un.notification.message }}<br>
 
                             <small class="text-muted">
@@ -83,7 +75,6 @@
                     </li>
                     {% endfor %}
 
-                    <!-- HISTÓRICO SIEMPRE AGRUPADO -->
                     {% if group.hidden_count > 0 %}
                         <li class="list-group-item text-center text-muted small toggle-history"
                             data-label="+{{ group.hidden_count }} anteriores..."
@@ -95,14 +86,7 @@
                         <li class="list-group-item d-none history-item d-flex justify-content-between align-items-start">
 
                             <div>
-                                {% if un.notification.type == "PRODUCT_RISK" %}
-                                    ⚠️
-                                {% elif un.notification.type == "STOCK_LOW" %}
-                                    🔴
-                                {% else %}
-                                    🔔
-                                {% endif %}
-
+                                {{ un.icon }}
                                 {{ un.notification.message }}<br>
 
                                 <small class="text-muted">
