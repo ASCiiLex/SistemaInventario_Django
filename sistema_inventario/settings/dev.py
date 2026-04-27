@@ -7,6 +7,14 @@ DEBUG = True
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 # ============================
+# 🔥 OBSERVABILIDAD OFF EN DEV
+# ============================
+
+OBSERVABILITY_ENABLED = False
+OBSERVABILITY_TRACE_ENABLED = False
+OBSERVABILITY_METRICS_ENABLED = False
+
+# ============================
 # LOGGING OPTIMIZADO DEV
 # ============================
 
@@ -16,7 +24,7 @@ LOGGING = {
     "loggers": {
         "inventory.metrics": {
             "handlers": ["console"],
-            "level": "WARNING",  # 🔥 elimina ruido y mejora rendimiento
+            "level": "WARNING",
         },
     },
 }
@@ -25,10 +33,8 @@ LOGGING = {
 # DEV PERFORMANCE BOOST
 # ============================
 
-# 🔥 evita latencias en queries largas
 DATABASES["default"]["CONN_MAX_AGE"] = 0
 
-# 🔥 desactiva seguridad innecesaria en local
 SECURE_BROWSER_XSS_FILTER = False
 SECURE_CONTENT_TYPE_NOSNIFF = False
 X_FRAME_OPTIONS = "SAMEORIGIN"

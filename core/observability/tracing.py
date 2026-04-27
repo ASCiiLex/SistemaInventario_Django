@@ -1,11 +1,15 @@
 import time
 import threading
 from contextlib import contextmanager
+from django.conf import settings
 
 _thread_locals = threading.local()
 
 
 def set_trace_id(trace_id):
+    if not getattr(settings, "OBSERVABILITY_TRACE_ENABLED", True):
+        return
+
     _thread_locals.trace_id = trace_id
     _thread_locals.db_time = 0
     _thread_locals.db_queries = 0
@@ -13,10 +17,20 @@ def set_trace_id(trace_id):
 
 
 def get_trace_id():
+    if not getattr(settings, "OBSERVABILITY_TRACE_ENABLED", True):
+        return None
+
     return getattr(_thread_locals, "trace_id", None)
 
 
 def get_trace_stats():
+    if not getattr(settings, "OBSERVABILITY_TRACE_ENABLED", True):
+        return {
+            "db_time": 0,
+            "db_queries": 0,
+            "slow_queries": 0,
+        }
+
     return {
         "db_time": getattr(_thread_locals, "db_time", 0),
         "db_queries": getattr(_thread_locals, "db_queries", 0),
@@ -25,6 +39,9 @@ def get_trace_stats():
 
 
 def clear_trace():
+    if not getattr(settings, "OBSERVABILITY_TRACE_ENABLED", True):
+        return
+
     _thread_locals.trace_id = None
     _thread_locals.current_span = None
     _thread_locals.db_time = 0
@@ -42,6 +59,10 @@ def _get_current_span():
 
 @contextmanager
 def trace(span_name: str):
+    if not getattr(settings, "OBSERVABILITY_TRACE_ENABLED", True):
+        yield
+        return
+
     start = time.time()
 
     parent = _get_current_span()
@@ -65,11 +86,10 @@ def trace(span_name: str):
         _set_current_span(parent)
 
 
-# ==========================================
-# 🔥 DB TRACE WRAPPER
-# ==========================================
-
 def trace_db_query(execute, sql, params, many, context):
+    if not getattr(settings, "OBSERVABILITY_METRICS_ENABLED", True):
+        return execute(sql, params, many, context)
+
     from .metrics import (
         db_query_count_total,
         db_query_duration_seconds,
@@ -83,7 +103,6 @@ def trace_db_query(execute, sql, params, many, context):
     finally:
         duration = time.time() - start
 
-        # 🔥 acumular stats en request
         _thread_locals.db_time += duration
         _thread_locals.db_queries += 1
 

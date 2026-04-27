@@ -5,6 +5,7 @@ import uuid
 import logging
 
 from django.urls import resolve
+from django.conf import settings
 
 from core.security.errors import safe_log_error
 
@@ -31,9 +32,12 @@ class ObservabilityMiddleware:
 
     def __call__(self, request):
 
+        # 🔥 HARD OFF en DEV
+        if not getattr(settings, "OBSERVABILITY_ENABLED", True):
+            return self.get_response(request)
+
         path = request.path
 
-        # 🔥 CRÍTICO: NO aplicar observabilidad en login y recursos básicos
         if any(path.startswith(p) for p in self.EXCLUDED_PATHS):
             return self.get_response(request)
 
