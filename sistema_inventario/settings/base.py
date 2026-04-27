@@ -132,13 +132,18 @@ REDIS_URL = (
     or os.getenv("REDIS_URL")
 )
 
-if REDIS_URL:
+IS_DEV = os.getenv("DJANGO_ENV") != "prod"
+
+# 🔥 OPTIMIZACIÓN LOCAL: nunca usar Redis en dev
+if REDIS_URL and not IS_DEV:
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
             "LOCATION": REDIS_URL,
             "OPTIONS": {
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "SOCKET_CONNECT_TIMEOUT": 2,
+                "SOCKET_TIMEOUT": 2,
             }
         }
     }
@@ -153,9 +158,11 @@ if REDIS_URL:
     }
 
 else:
+    # 🔥 DEV RÁPIDO (sin latencia)
     CACHES = {
         "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache"
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-dev",
         }
     }
 
@@ -211,10 +218,18 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
 # ============================
-# HOSTS (FIX RUNSERVER + RAILWAY)
+# HOSTS
 # ============================
 
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
     "127.0.0.1,localhost,.railway.app"
 ).split(",")
+
+# ============================
+# CACHE TTL (CONTROL GLOBAL)
+# ============================
+
+CACHE_TTL = {
+    "charts": 60 if not IS_DEV else 1,  # 🔥 ultra rápido en dev
+}

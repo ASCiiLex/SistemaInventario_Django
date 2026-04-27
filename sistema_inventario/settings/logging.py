@@ -2,6 +2,7 @@ import logging
 import sys
 import json
 from datetime import datetime
+import os
 
 
 class JSONFormatter(logging.Formatter):
@@ -32,6 +33,8 @@ class JSONFormatter(logging.Formatter):
         return json.dumps(log_record)
 
 
+IS_DEV = os.getenv("DJANGO_ENV") != "prod"
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -48,12 +51,12 @@ LOGGING = {
     "loggers": {
         "inventory.domain": {
             "handlers": ["console"],
-            "level": "INFO",
+            "level": "WARNING" if IS_DEV else "INFO",
             "propagate": False,
         },
         "inventory.metrics": {
             "handlers": ["console"],
-            "level": "INFO",
+            "level": "WARNING" if IS_DEV else "INFO",  # 🔥 clave
             "propagate": False,
         },
         "django.request": {
