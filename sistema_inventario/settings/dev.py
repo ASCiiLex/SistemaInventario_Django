@@ -1,4 +1,5 @@
 from .base import *
+import os
 
 SECRET_KEY = 'django-insecure-dev-key'
 
@@ -7,7 +8,14 @@ DEBUG = True
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 # ============================
-# 🔥 OBSERVABILIDAD OFF EN DEV
+# 🔥 PROTECCIÓN: evitar Railway en local
+# ============================
+
+if os.getenv("DATABASE_URL") and "railway" in os.getenv("DATABASE_URL"):
+    raise RuntimeError("Estás usando Railway DB en local. Limpia las variables de entorno.")
+
+# ============================
+# OBSERVABILIDAD OFF EN DEV
 # ============================
 
 OBSERVABILITY_ENABLED = False

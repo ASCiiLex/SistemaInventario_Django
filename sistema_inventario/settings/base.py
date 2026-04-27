@@ -5,8 +5,15 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# Solo cargar .env en local (evita conflictos en Railway)
-if os.getenv("DJANGO_ENV") != "prod":
+# ============================
+# ENTORNO
+# ============================
+
+DJANGO_ENV = os.getenv("DJANGO_ENV", "dev")
+IS_DEV = DJANGO_ENV != "prod"
+
+# Solo cargar .env en local
+if IS_DEV:
     load_dotenv(BASE_DIR / ".env")
 
 # ============================
@@ -94,13 +101,16 @@ TEMPLATES = [
 ]
 
 # ============================
-# DATABASE (Railway + local unificado PRO)
+# DATABASE (SEPARACIÓN REAL DEV/PROD)
 # ============================
 
-DATABASE_URL = (
-    os.getenv("DATABASE_PUBLIC_URL")
-    or os.getenv("DATABASE_URL")
-)
+if IS_DEV:
+    DATABASE_URL = None
+else:
+    DATABASE_URL = (
+        os.getenv("DATABASE_URL")
+        or os.getenv("DATABASE_PUBLIC_URL")
+    )
 
 if DATABASE_URL:
     DATABASES = {
@@ -124,7 +134,7 @@ else:
     }
 
 # ============================
-# REDIS / CACHE (ROBUSTO Y PORTABLE)
+# REDIS / CACHE
 # ============================
 
 REDIS_URL = (
@@ -132,9 +142,6 @@ REDIS_URL = (
     or os.getenv("REDIS_URL")
 )
 
-IS_DEV = os.getenv("DJANGO_ENV") != "prod"
-
-# 🔥 OPTIMIZACIÓN LOCAL: nunca usar Redis en dev
 if REDIS_URL and not IS_DEV:
     CACHES = {
         "default": {
@@ -158,7 +165,6 @@ if REDIS_URL and not IS_DEV:
     }
 
 else:
-    # 🔥 DEV RÁPIDO (sin latencia)
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -227,9 +233,9 @@ ALLOWED_HOSTS = os.getenv(
 ).split(",")
 
 # ============================
-# CACHE TTL (CONTROL GLOBAL)
+# CACHE TTL
 # ============================
 
 CACHE_TTL = {
-    "charts": 60 if not IS_DEV else 1,  # 🔥 ultra rápido en dev
+    "charts": 60 if not IS_DEV else 1,
 }
