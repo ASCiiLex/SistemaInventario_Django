@@ -51,18 +51,17 @@ export async function loadChartData(tipo) {
         const loader = document.getElementById("chart-loader");
         if (loader) loader.style.display = "flex";
 
-        const response = await fetch(
-            window.dashboardChartUrl.replace("TIPO", tipo)
-        );
+        const url = `${window.dashboardChartUrl}${tipo}/`;
+
+        const response = await fetch(url);
 
         if (!response.ok) {
-            console.warn("Chart response no OK:", tipo);
+            console.warn("Chart response no OK:", tipo, url);
             return;
         }
 
         const data = await response.json();
 
-        // 🔥 FIX CLAVE: si no hay datos, limpiar gráfico
         const labels = data.labels || [];
         const values = data.values || [];
 

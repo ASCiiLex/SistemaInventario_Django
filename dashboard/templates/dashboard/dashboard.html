@@ -16,7 +16,7 @@
 </div>
 
 <script>
-window.dashboardChartUrl = "{% url 'dashboard_chart_data' 'TIPO' %}";
+window.dashboardChartUrl = "{% url 'dashboard_chart_data' 'TIPO' %}".replace("/TIPO/", "/");
 </script>
 
 {% endblock %}
