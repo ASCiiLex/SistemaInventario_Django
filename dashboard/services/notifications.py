@@ -186,21 +186,31 @@ def get_grouped_notifications(user, organization, limit_per_group=1, history_lim
         hidden = items[limit_per_group:limit_per_group + history_limit]
 
         icons = set()
-        for un in items:
-            icons.add(_get_icon(un.notification.type))
 
-        # 🔥 añadimos icono directo a cada item (clave)
+        visible_items = []
+        hidden_items = []
+
+        for un in items:
+            icon = _get_icon(un.notification.type)
+            icons.add(icon)
+
         for un in visible:
-            un.icon = _get_icon(un.notification.type)
+            visible_items.append({
+                "obj": un,
+                "icon": _get_icon(un.notification.type),
+            })
 
         for un in hidden:
-            un.icon = _get_icon(un.notification.type)
+            hidden_items.append({
+                "obj": un,
+                "icon": _get_icon(un.notification.type),
+            })
 
         result.append({
             "product": items[0].notification.product,
             "count": len(items),
-            "items": visible,
-            "hidden_items": hidden,
+            "items": visible_items,
+            "hidden_items": hidden_items,
             "hidden_count": max(0, len(items) - len(visible)),
             "icons": list(icons),
         })

@@ -50,15 +50,15 @@
             <div class="group-body d-none">
                 <ul class="list-group list-group-flush">
 
-                    {% for un in group.items %}
+                    {% for item in group.items %}
                     <li class="list-group-item d-flex justify-content-between align-items-start fw-bold">
 
                         <div>
-                            {{ un.icon }}
-                            {{ un.notification.message }}<br>
+                            {{ item.icon }}
+                            {{ item.obj.notification.message }}<br>
 
                             <small class="text-muted">
-                                {{ un.notification.created_at|date:"d/m/Y H:i" }}
+                                {{ item.obj.notification.created_at|date:"d/m/Y H:i" }}
                             </small>
                         </div>
 
@@ -82,15 +82,15 @@
                             +{{ group.hidden_count }} anteriores...
                         </li>
 
-                        {% for un in group.hidden_items %}
+                        {% for item in group.hidden_items %}
                         <li class="list-group-item d-none history-item d-flex justify-content-between align-items-start">
 
                             <div>
-                                {{ un.icon }}
-                                {{ un.notification.message }}<br>
+                                {{ item.icon }}
+                                {{ item.notification.message }}<br>
 
                                 <small class="text-muted">
-                                    {{ un.notification.created_at|date:"d/m/Y H:i" }}
+                                    {{ item.notification.created_at|date:"d/m/Y H:i" }}
                                 </small>
                             </div>
 
