@@ -64,7 +64,7 @@
 
                         <div>
                             <form method="post"
-                                  hx-post="{% url 'notifications:notifications_panel_mark_one' un.pk %}"
+                                  hx-post="{% url 'notifications:notifications_panel_mark_one' item.obj.pk %}"
                                   hx-target="closest #notificationsPanelBody"
                                   hx-swap="outerHTML">
                                 {% csrf_token %}
@@ -87,10 +87,10 @@
 
                             <div>
                                 {{ item.icon }}
-                                {{ item.notification.message }}<br>
+                                {{ item.obj.notification.message }}<br>
 
                                 <small class="text-muted">
-                                    {{ item.notification.created_at|date:"d/m/Y H:i" }}
+                                    {{ item.obj.notification.created_at|date:"d/m/Y H:i" }}
                                 </small>
                             </div>
 
