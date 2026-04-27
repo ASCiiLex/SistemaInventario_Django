@@ -1,14 +1,7 @@
-from django.db.models import Sum, F, DecimalField, ExpressionWrapper, Q, IntegerField
-from django.db.models.functions import Cast, Substr
-from django.db.models.expressions import Func
+from django.db.models import Sum, F, DecimalField, ExpressionWrapper, Q
 
 from products.models import Product
 from inventory.models import StockItem, Order
-
-
-class RegexpReplace(Func):
-    function = "REGEXP_REPLACE"
-    arity = 3
 
 
 # ==========================================
@@ -87,20 +80,10 @@ def get_dashboard_metrics(org):
 # ==========================================
 
 def get_low_stock(org):
-    qs = (
+    return (
         StockItem.objects.filter(
             organization=org,
             quantity__lte=F("min_stock")
         )
         .select_related("product", "location")
     )
-
-    # 🔥 Natural sorting para product__name
-    qs = qs.annotate(
-        product_name_num=Cast(
-            RegexpReplace(F("product__name"), r"\D", ""),
-            IntegerField()
-        )
-    )
-
-    return qs
