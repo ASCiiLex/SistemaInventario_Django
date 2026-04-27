@@ -96,7 +96,7 @@ def run():
         products.append(p)
 
     # =====================
-    # STOCK DIRECTO (SIN DOMINIO)
+    # STOCK
     # =====================
     stock_items = []
 
@@ -115,31 +115,28 @@ def run():
     StockItem.objects.bulk_create(stock_items, ignore_conflicts=True)
 
     # =====================
-    # ESTADOS FINALES (SIMULACIÓN)
+    # ESTADOS
     # =====================
 
-    # consumo normal
     for p in products[:6]:
         StockItem.objects.filter(product=p, organization=org).update(quantity=30)
 
-    # bajo mínimo
     for p in products[6:10]:
         StockItem.objects.filter(product=p, organization=org).update(quantity=5)
 
-    # reposición parcial
     for p in products[8:12]:
         StockItem.objects.filter(product=p, organization=org).update(quantity=10)
 
     # =====================
-    # 🔥 STOCK MOVEMENTS (NUEVO)
+    # 🔥 MOVIMIENTOS (CORREGIDO)
     # =====================
     print("📦 Generando movimientos de stock...")
-
-    stock_items = StockItem.objects.select_related("product", "location", "organization")
 
     movement_types = ["IN", "OUT", "TRANSFER"]
 
     movements = []
+
+    stock_items = StockItem.objects.select_related("product", "organization")
 
     for item in stock_items:
         for _ in range(randint(1, 3)):
@@ -147,7 +144,6 @@ def run():
                 StockMovement(
                     organization=item.organization,
                     product=item.product,
-                    location=item.location,
                     quantity=randint(1, 10),
                     movement_type=choice(movement_types),
                     created_at=timezone.now(),
@@ -157,5 +153,4 @@ def run():
     StockMovement.objects.bulk_create(movements, ignore_conflicts=True)
 
     print(f"✔ Movimientos creados: {len(movements)}")
-
-    print("✅ Seed DEMO listo (rápido, consistente y con movimientos)")
+    print("✅ Seed DEMO listo (correcto y consistente)")
